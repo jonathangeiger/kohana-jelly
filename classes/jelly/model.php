@@ -1,7 +1,8 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 abstract class Jelly_Model
-{		
+{	
+		
 	/**
 	 * Factory for generating models
 	 *
@@ -16,14 +17,14 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * @var string The database key to use for connection
-	 */
-	protected $_db = 'default';
-	
-	/**
 	 * @var string The table this model represents
 	 */
 	protected $_table = '';
+	
+	/**
+	 * @var string The primary key
+	 */
+	protected $_primary = '';
 	
 	/**
 	 * @var string The model name
@@ -36,9 +37,43 @@ abstract class Jelly_Model
 	protected $_map = array();
 	
 	/**
-	 * @var array Allows us to quickly find fields in the ORM based on their actual name in the database.
+	 * @var array An array of ordering options for selects
 	 */
-	protected $_reverse_map = array();
+	protected $_sorting = array();
+	
+	/**
+	 * @var array Let's us know if we've initialized since mysql_fetch_object is a bit wonky
+	 */
+	protected $_init = array();
+		
+	/**
+	 * @var string The database key to use for connection
+	 */
+	protected $_db = 'default';
+	protected $_db_applied = array();
+	protected $_db_pending = array();
+	protected $_db_reset   = TRUE;
+	protected $_db_builder;
+	
+	/**
+	 * @var array Callable database methods
+	 */
+	protected static $_db_methods = array
+	(
+		'where', 'and_where', 'or_where', 'where_open', 'and_where_open', 'or_where_open', 'where_close',
+		'and_where_close', 'or_where_close', 'distinct', 'select', 'from', 'join', 'on', 'group_by',
+		'having', 'and_having', 'or_having', 'having_open', 'and_having_open', 'or_having_open',
+		'having_close', 'and_having_close', 'or_having_close', 'order_by', 'limit', 'offset', 'cached'
+	);
+	
+	/**
+	 * @var array DB methods that must be aliased
+	 */
+	protected static $_alias = array
+	(
+		'where', 'and_where', 'or_where', 'select', 'from', 'join', 'on', 'group_by',
+		'having', 'and_having', 'or_having', 'order_by',
+	);
 	
 	/**
 	 * Calls initialize() and sets up the model
@@ -66,6 +101,15 @@ abstract class Jelly_Model
 		
 		// Map the map
 		$this->_map();
+		
+		// Add the values stored by __set
+		if (is_array($this->_init) && !empty($this->_init))
+		{
+			$this->values($this->_init);
+		}
+		
+		// Finished initialized
+		$this->_init = TRUE;
 	}
 	
 	/**
@@ -94,9 +138,42 @@ abstract class Jelly_Model
 	 */
 	public function __set($name, $value)
 	{
+		// Being set by mysql_fetch_object, store the values for the constructor
+		if (is_array($this->_init))
+		{
+			$this->_init[$name] = $value;
+			return;
+		}
+		
+		// Normal, user-initiated set
 		if (isset($this->_map[$name]))
 		{
 			$this->_map[$name]->set($value);
+		}
+	}
+	
+	/**
+	 * Handles pass-through to database methods. Calls to query methods
+	 * (query, get, insert, update) are not allowed. Query builder methods
+	 * are chainable.
+	 *
+	 * @param   string  method name
+	 * @param   array   method arguments
+	 * @return  mixed
+	 */
+	public function __call($method, array $args)
+	{
+		if (in_array($method, self::$_db_methods))
+		{
+			// Add pending database call which is executed after query type is determined
+			$this->_db_pending[] = array('name' => $method, 'args' => $args);
+
+			return $this;
+		}
+		else
+		{
+			throw new Kohana_Exception('Invalid method :method called in :class',
+				array(':method' => $method, ':class' => get_class($this)));
 		}
 	}
 	
@@ -120,42 +197,46 @@ abstract class Jelly_Model
 		{
 			// Initialize the field with a copy of the model and column
 			$field->initialize($this, $column);
-			
-			// Create the reverse map at the same time, which allows us to quickly 
-			// find fields in the ORM based on their actual name in the database
-			$this->_reverse_map[$field->column()] = $column;
+
+			// Check to see if we can find a primary key for searching
+			if ($field->primary())
+			{
+				$this->_primary = $field->column();
+			}
 		}
-	}
-	
-	/**
-	 * Returns the resource map
-	 *
-	 * @return array
-	 * @author Jonathan Geiger
-	 **/
-	public function map()
-	{
-		return $this->_map;
 	}
 	
 	/**
 	 * Loads a single row or multiple rows
 	 *
-	 * @param Database_Query_Builder_Select $query 
-	 * @param string $limit 
+	 * @param mixed an array or id to load 
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function load(Database_Query_Builder_Select $query = NULL, $limit = 1)
+	public function load($id = NULL, $limit = NULL)
 	{
 		// Set the working query
-		$query = ($query === NULL) ? DB::select() : $query;
-		
-		// Ensure we're on the correct table
+		$query = $this->_build(Database::SELECT)->_db_builder;
 		$query->from($this->_table);
 		
 		// Apply the limit
-		if ($limit)
+		if (is_int($id) && $limit === NULL)
+		{
+			$query->where($this->_primary, '=', $id);
+			$limit = 1;
+		}
+		
+		// Simple where clause
+		else if (is_array($id))
+		{
+			foreach($id as $column => $value)
+			{
+				$query->where($this->column($column), '=', $value);
+			}
+		}
+		
+		// Apply the limit if we can
+		if ($limit !== NULL)
 		{
 			$query->limit($limit);
 		}
@@ -171,18 +252,11 @@ abstract class Jelly_Model
 				continue;
 			}
 			
-			$column = $field->column();
-			$query->select(array("{$table}.{$column}", $name));
-			
-			// Search on primary keys
-			if ($field->primary() && $field->get())
-			{
-				$query->where("{$table}.{$column}", '=', $field->get());
-			}
+			$query->select(array($this->column($name), $name));
 		}
 		
 		// Attempt to load it
-		if ($limit == 1)
+		if ($limit === 1)
 		{
 			$result = $query->execute($this->_db);
 			
@@ -195,6 +269,62 @@ abstract class Jelly_Model
 			// Set the values in the object
 			$this->values($values);
 		}
+		else
+		{
+			// Apply sorting options
+			foreach($this->_sorting as $column => $direction)
+			{
+				$query->order_by($column, $direction);
+			}
+			
+			return $query->as_object(get_class($this))->execute($this->_db);
+		}
+	}
+	
+	/**
+	 * Returns the actual column name of an aliased column
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 **/
+	public function column($column, $table = NULL)
+	{
+		if ($table == NULL) $table = $this->_table;
+		
+		// Save the original if we can't find the table
+		$original = $column;
+		
+		// Handles aliased columns
+		if (is_array($column))
+		{
+			$column = $args[0];
+		}
+		
+		// Check for a table		
+		if (strpos($column, '.') !== FALSE)
+		{
+			list($table, $column) = explode('.', $column);
+		}
+		
+		if ($table == $this->_table)
+		{
+			if (isset($this->_map[$column]))
+			{
+				return $table.'.'.$this->_map[$column]->column();	
+			}	
+		}
+		else
+		{
+			// Find the actual table name
+			$table = Model::Factory($table);
+			
+			if (isset($table->_map[$column]))
+			{
+				return $table->_table.'.'.$table->_map[$column]->column();
+			}
+		}
+		
+		return $original;
 	}
 	
 	/**
@@ -219,4 +349,96 @@ abstract class Jelly_Model
 			$field->set($values[$column]);
 		}
 	}	
+	
+	/**
+	 * Initializes the Database Builder to given query type
+	 *
+	 * @param   int  Type of Database query
+	 * @return  ORM
+	 */
+	protected function _build($type)
+	{
+		// Construct new builder object based on query type
+		switch ($type)
+		{
+			case Database::SELECT:
+				$this->_db_builder = DB::select();
+			break;
+			case Database::UPDATE:
+				$this->_db_builder = DB::update($this->_table);
+			break;
+			case Database::DELETE:
+				$this->_db_builder = DB::delete($this->_table);
+		}
+		
+		// Process pending database method calls
+		foreach ($this->_db_pending as $method)
+		{
+			$name = $method['name'];
+			$args = $method['args'];
+
+			$this->_db_applied[$name] = $name;
+			
+			// Add support for column aliasing
+			// Get the edge-cases first
+			if ($name == 'select')
+			{				
+				$args[0] = $this->column($args[0]);
+			}
+			
+			// Table alias
+			if ($name == 'from' || $name == 'join')
+			{
+				if (is_array($args[0]))
+				{
+					foreach($args as $index => $table)
+					{
+						$args[$i] = Model::factory($table)->_table;
+					}
+				}
+				else
+				{
+					$args[0] = Model::factory($args[0])->_table;
+				}
+			}
+			
+			// Join on
+			else if ($name == 'on')
+			{
+				$args[0] = $this->column($args[0]);
+				$args[2] = $this->column($args[2]);
+			}
+			
+			// Everything else
+			else if (in_array($name, self::$_alias))
+			{
+				$args[0] = $this->column($args[0]);
+			}
+
+			switch (count($args))
+			{
+				case 0:
+					$this->_db_builder->$name();
+				break;
+				case 1:
+					$this->_db_builder->$name($args[0]);
+				break;
+				case 2:
+					$this->_db_builder->$name($args[0], $args[1]);
+				break;
+				case 3:
+					$this->_db_builder->$name($args[0], $args[1], $args[2]);
+				break;
+				case 4:
+					$this->_db_builder->$name($args[0], $args[1], $args[2], $args[3]);
+				break;
+				default:
+					// Here comes the snail...
+					call_user_func_array(array($this->_db_builder, $name), $args);
+				break;
+			}
+		}
+
+		return $this;
+	}
 }

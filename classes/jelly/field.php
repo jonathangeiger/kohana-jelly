@@ -103,7 +103,11 @@ abstract class Jelly_Field
 	{
 		// This will come in handy for setting complex relationships
 		$this->model = $model;
-		$this->column = $column;
+		
+		if (!$this->column)
+		{
+			$this->column = $column;
+		}
 		
 		// Check for a name, because we can easily provide a default
 		if (!$this->label)
