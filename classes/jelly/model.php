@@ -24,7 +24,12 @@ abstract class Jelly_Model
 	/**
 	 * @var string The primary key
 	 */
-	protected $_primary = '';
+	protected $_primary_key;
+	
+	/**
+	 * @var string The title key
+	 */
+	protected $_name_key = 'name';
 	
 	/**
 	 * @var string The model name
@@ -42,9 +47,9 @@ abstract class Jelly_Model
 	protected $_sorting = array();
 	
 	/**
-	 * @var array Let's us know if we've initialized since mysql_fetch_object is a bit wonky
+	 * @var array Data that is automatically loaded into the model on each instantiation
 	 */
-	protected $_init = array();
+	protected $_preload_data = array();
 		
 	/**
 	 * @var string The database key to use for connection
@@ -103,17 +108,17 @@ abstract class Jelly_Model
 		$this->_map();
 		
 		// Add the values stored by __set
-		if (is_array($this->_init) && !empty($this->_init))
+		if (is_array($this->_preload_data) && !empty($this->_preload_data))
 		{
-			$this->values($this->_init);
+			$this->values($this->_preload_data, TRUE);
 		}
 		
 		// Finished initialized
-		$this->_init = TRUE;
+		$this->_preload_data = NULL;
 	}
 	
 	/**
-	 * Gets values from the fields
+	 * Gets the internally represented value from a field
 	 *
 	 * @param string $name 
 	 * @param string $value 
@@ -139,9 +144,9 @@ abstract class Jelly_Model
 	public function __set($name, $value)
 	{
 		// Being set by mysql_fetch_object, store the values for the constructor
-		if (is_array($this->_init))
+		if (is_array($this->_preload_data))
 		{
-			$this->_init[$name] = $value;
+			$this->_preload_data[$name] = $value;
 			return;
 		}
 		
@@ -165,6 +170,53 @@ abstract class Jelly_Model
 	{
 		if (in_array($method, self::$_db_methods))
 		{
+			// Add support for column aliasing
+			// Get the edge-cases first
+			if ($method == 'select')
+			{
+				foreach ($args as $i => $arg)
+				{
+					// Ignore aliased selects
+					if (is_array($arg))
+					{
+						unset($args[$i]);
+					}
+					else
+					{
+						$args[$i]= $this->alias($arg);
+					}
+				}
+			}
+			
+			// Table alias
+			if ($method == 'from' || $method == 'join')
+			{
+				if (is_array($args[0]))
+				{
+					foreach($args as $index => $table)
+					{
+						$args[$i] = Model::factory($table)->_table;
+					}
+				}
+				else
+				{
+					$args[0] = Model::factory($args[0])->_table;
+				}
+			}
+			
+			// Join on
+			else if ($method == 'on')
+			{
+				$args[0] = $this->alias($args[0]);
+				$args[2] = $this->alias($args[2]);
+			}
+			
+			// Everything else
+			else if (in_array($method, self::$_alias))
+			{
+				$args[0] = $this->alias($args[0]);
+			}
+			
 			// Add pending database call which is executed after query type is determined
 			$this->_db_pending[] = array('name' => $method, 'args' => $args);
 
@@ -197,11 +249,11 @@ abstract class Jelly_Model
 		{
 			// Initialize the field with a copy of the model and column
 			$field->initialize($this, $column);
-
-			// Check to see if we can find a primary key for searching
+			
+			// See if we need to automatically find the primary key
 			if ($field->primary())
 			{
-				$this->_primary = $field->column();
+				$this->_primary_key = $column;
 			}
 		}
 	}
@@ -213,25 +265,25 @@ abstract class Jelly_Model
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function load($id = NULL, $limit = NULL)
+	public function load($where = NULL, $limit = NULL)
 	{
 		// Set the working query
-		$query = $this->_build(Database::SELECT)->_db_builder;
+		$query = $this->build(Database::SELECT);
 		$query->from($this->_table);
 		
 		// Apply the limit
-		if (is_int($id) && $limit === NULL)
+		if (is_int($where) && $limit === NULL)
 		{
-			$query->where($this->_primary, '=', $id);
+			$query->where($this->alias($this->_primary_key), '=', $where);
 			$limit = 1;
 		}
 		
 		// Simple where clause
-		else if (is_array($id))
+		else if (is_array($where))
 		{
-			foreach($id as $column => $value)
+			foreach($where as $column => $value)
 			{
-				$query->where($this->column($column), '=', $value);
+				$query->where($this->alias($column), '=', $value);
 			}
 		}
 		
@@ -243,18 +295,6 @@ abstract class Jelly_Model
 		
 		$table = $this->_table;
 		
-		// Create the columns to select based on the fields
-		foreach ($this->_map as $name => $field)
-		{
-			// Only load fields actually in the database
-			if (!$field->in_db())
-			{
-				continue;
-			}
-			
-			$query->select(array($this->column($name), $name));
-		}
-		
 		// Attempt to load it
 		if ($limit === 1)
 		{
@@ -264,10 +304,11 @@ abstract class Jelly_Model
 			if (count($result))
 			{
 				$values = $result->current();
+				
+				// If there was no select applied it was likely SELECT *, 
+				// so we need to alias the columns
+				$this->values($values, TRUE);
 			}
-			
-			// Set the values in the object
-			$this->values($values);
 		}
 		else
 		{
@@ -279,6 +320,20 @@ abstract class Jelly_Model
 			
 			return $query->as_object(get_class($this))->execute($this->_db);
 		}
+		
+		return $this;
+	}
+	
+	public function as_array($verbose = FALSE)
+	{
+		$result = array();
+		
+		foreach($this->_map as $column => $field)
+		{
+			$result[$column] = $field->get($verbose);
+		}
+		
+		return $result;
 	}
 	
 	/**
@@ -287,7 +342,7 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 **/
-	public function column($column, $table = NULL)
+	public function alias($column, $table = NULL)
 	{
 		if ($table == NULL) $table = $this->_table;
 		
@@ -306,11 +361,11 @@ abstract class Jelly_Model
 			list($table, $column) = explode('.', $column);
 		}
 		
-		if ($table == $this->_table)
+		if ($table == $this->_model || $table == $this->_table)
 		{
 			if (isset($this->_map[$column]))
 			{
-				return $table.'.'.$this->_map[$column]->column();	
+				return $this->table_name().'.'.$this->_map[$column]->column();	
 			}	
 		}
 		else
@@ -320,7 +375,7 @@ abstract class Jelly_Model
 			
 			if (isset($table->_map[$column]))
 			{
-				return $table->_table.'.'.$table->_map[$column]->column();
+				return $table->table_name().'.'.$table->_map[$column]->column();
 			}
 		}
 		
@@ -333,11 +388,16 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 **/
-	public function values(array $values)
+	public function values(array $values, $reverse = FALSE)
 	{
 		// Set the data
 		foreach ($this->_map as $column => $field)
 		{
+			if ($reverse)
+			{
+				$column = $field->column();
+			}
+			
 			// Ensure there's something to work with
 			if (!isset($values[$column]))
 			{
@@ -348,7 +408,63 @@ abstract class Jelly_Model
 			// has a reference to $this
 			$field->set($values[$column]);
 		}
+	}
+	
+	/**
+	 * Returns the model name
+	 *
+	 * @return string
+	 * @author Jonathan Geiger
+	 */
+	public function model_name()
+	{
+		return $this->_model;
 	}	
+	
+	/**
+	 * Returns the model's table name
+	 *
+	 * @return string
+	 * @author Jonathan Geiger
+	 */
+	public function table_name()
+	{
+		return $this->_table;
+	}
+	
+	/**
+	 * Returns the value of the primary key for the row
+	 *
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
+	public function id()
+	{
+		return $this->_map[$this->_primary_key]->get();
+	}
+	
+	/**
+	 * Returns the value of the model's primary value
+	 *
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
+	public function name()
+	{
+		return $this->_map[$this->_name_key]->get();
+	}
+	
+	/**
+	 * Returns the currently applied query builder
+	 *
+	 * @param string $type 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function build($type)
+	{
+		return $this->_build($type)->_db_builder;
+	}
 	
 	/**
 	 * Initializes the Database Builder to given query type
@@ -377,43 +493,7 @@ abstract class Jelly_Model
 			$name = $method['name'];
 			$args = $method['args'];
 
-			$this->_db_applied[$name] = $name;
-			
-			// Add support for column aliasing
-			// Get the edge-cases first
-			if ($name == 'select')
-			{				
-				$args[0] = $this->column($args[0]);
-			}
-			
-			// Table alias
-			if ($name == 'from' || $name == 'join')
-			{
-				if (is_array($args[0]))
-				{
-					foreach($args as $index => $table)
-					{
-						$args[$i] = Model::factory($table)->_table;
-					}
-				}
-				else
-				{
-					$args[0] = Model::factory($args[0])->_table;
-				}
-			}
-			
-			// Join on
-			else if ($name == 'on')
-			{
-				$args[0] = $this->column($args[0]);
-				$args[2] = $this->column($args[2]);
-			}
-			
-			// Everything else
-			else if (in_array($name, self::$_alias))
-			{
-				$args[0] = $this->column($args[0]);
-			}
+			$this->_db_applied[$name] = $args;
 
 			switch (count($args))
 			{
