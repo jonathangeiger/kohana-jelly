@@ -2,6 +2,8 @@
 
 class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
 {	
+	protected $in_db = TRUE;
+	
 	/**
 	 * Overrides the initialize to automatically provide the column name
 	 *
@@ -51,13 +53,30 @@ class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
 		if (!empty($this->value))
 		{
 			return Jelly::factory($this->foreign_model)
-					->load(array(
-						$this->foreign_column => $this->value
-					), 1);
+					->limit(1, TRUE)
+					->where($this->foreign_column, '=', $this->value);
 		}
 		else
 		{
 			return Jelly::factory($this->foreign_model);
+		}
+	}
+	
+	/**
+	 * Returns the relation's id
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function create()
+	{
+		if (is_object($this->value))
+		{
+			return $this->value->id();
+		}
+		else
+		{
+			return $this->value;
 		}
 	}
 }

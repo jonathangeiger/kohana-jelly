@@ -1,8 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 abstract class Jelly_Model
-{	
-		
+{			
 	/**
 	 * Factory for generating models
 	 *
@@ -287,6 +286,14 @@ abstract class Jelly_Model
 			}
 		}
 		
+		// limit() is overloaded so that if the second argument exists 
+		// the call will override what's passed here for $limit. This allows us
+		// to set a limit before load and have it load single rows directly into the object
+		if (isset($this->_db_applied['limit'][1]) && $this->_db_applied['limit'][0] == 1)
+		{
+			$limit = 1;
+		}
+		
 		// Apply the limit if we can
 		if ($limit !== NULL)
 		{
@@ -324,6 +331,113 @@ abstract class Jelly_Model
 		return $this;
 	}
 	
+	/**
+	 * Creates a new record based on the current model
+	 *
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 **/
+	public function create()
+	{
+		// Stuff that will be inserted
+		$values = array();
+		
+		// These will be processed later
+		$relations = array();
+		
+		// Validate
+		$data = $this->validate();
+		
+		// Run through the main table data
+		foreach($this->_map as $column => $field)
+		{
+			// Skip the primary key; it will be auto-incremented
+			if ($field->primary())
+			{
+				continue;
+			}
+			
+			// Only add actual columns
+			if ($field->in_db())
+			{	
+				if (isset($data[$column]))
+				{
+					$field->set($data[$column]);
+				}	
+					
+				$values[$field->column()] = $field->create();
+			}
+			else
+			{
+				$relations[$column] = $field;
+			}
+		}
+		
+		list($id) = DB::insert($this->_table)
+					->columns(array_keys($values))
+					->values($values)
+					->execute($this->_db);
+					
+		// Load the relations
+		foreach($relations as $column => $field)
+		{
+			if (isset($data[$column]))
+			{
+				$field->set($data[$column]);
+			}
+			
+			$field->create($id);
+		}
+					
+		$this->load($id);
+		
+		return $this;
+	}
+	
+	/**
+	 * Validates and filters the data
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function validate()
+	{
+		$data = Validate::factory($this->as_array());
+
+		foreach ($this->_map as $column => $field)
+		{
+			if (!$data->offsetExists($column))
+			{
+				// Do not add any rules for this field
+				continue;
+			}
+
+			$data->label($column, $field->label());
+
+			if ($field->filters())
+			{
+				$data->filters($column, $field->filters());
+			}
+
+			if ($field->rules())
+			{
+				$data->rules($column, $field->rules());
+			}
+
+			if ($field->callbacks())
+			{
+				$data->callbacks($column, $field->callbacks());
+			}
+		}
+
+		if (!$data->check())
+		{
+			throw new Validate_Exception($data);
+		}
+
+		return $data->as_array();
+	}
+	
 	public function as_array($verbose = FALSE)
 	{
 		$result = array();
@@ -344,7 +458,13 @@ abstract class Jelly_Model
 	 **/
 	public function alias($column, $table = NULL)
 	{
-		if ($table == NULL) $table = $this->_table;
+		if (empty($table))
+		{
+			if (isset($this->_map[$column]))
+			{
+				return $this->_map[$column]->column();
+			}
+		}
 		
 		// Save the original if we can't find the table
 		$original = $column;
@@ -370,12 +490,19 @@ abstract class Jelly_Model
 		}
 		else
 		{
-			// Find the actual table name
-			$table = Model::Factory($table);
-			
-			if (isset($table->_map[$column]))
+			if (Kohana::auto_load('model/'.$table))
 			{
-				return $table->table_name().'.'.$table->_map[$column]->column();
+				// Find the actual table name
+				$table = Model::Factory($table);
+
+				if (isset($table->_map[$column]))
+				{
+					return $table->table_name().'.'.$table->_map[$column]->column();
+				}
+				else
+				{
+					return $table->table_name().'.'.$column;
+				}
 			}
 		}
 		
@@ -408,6 +535,8 @@ abstract class Jelly_Model
 			// has a reference to $this
 			$field->set($values[$column]);
 		}
+		
+		return $this;
 	}
 	
 	/**
@@ -433,6 +562,28 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Returns the name of the primary key for the table
+	 *
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
+	public function primary_key()
+	{	
+		return $this->_primary_key;
+	}
+	
+	/**
+	 * Returns the name of the primary key for the table
+	 *
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
+	public function name_key()
+	{
+		return $this->_name_key;
+	}
+	
+	/**
 	 * Returns the value of the primary key for the row
 	 *
 	 * @return mixed
@@ -455,24 +606,12 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Returns the currently applied query builder
-	 *
-	 * @param string $type 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public function build($type)
-	{
-		return $this->_build($type)->_db_builder;
-	}
-	
-	/**
 	 * Initializes the Database Builder to given query type
 	 *
 	 * @param   int  Type of Database query
 	 * @return  ORM
 	 */
-	protected function _build($type)
+	public function build($type)
 	{
 		// Construct new builder object based on query type
 		switch ($type)
@@ -519,6 +658,19 @@ abstract class Jelly_Model
 			}
 		}
 
-		return $this;
+		return $this->_db_builder;
+	}
+	
+	/**
+	 * Resets the database builder
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	protected function reset_db()
+	{
+		$this->_db_builder = NULL;
+		$this->_db_applied = array();
+		$this->_db_pending = array();
 	}
 }

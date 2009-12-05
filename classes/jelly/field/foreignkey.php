@@ -2,6 +2,8 @@
 
 abstract class Jelly_Field_ForeignKey extends Jelly_Field
 {	
+	protected $in_db = FALSE;
+	
 	/**
 	 * @var string The name of the model that this field is referencing
 	 */

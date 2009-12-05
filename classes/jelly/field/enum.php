@@ -20,7 +20,7 @@ class Jelly_Field_Enum extends Jelly_Field
 	
 	public function set($value)
 	{
-		if (in_array($value, $choices))
+		if (in_array($value, $this->choices))
 		{
 			$this->value = $value;
 		}

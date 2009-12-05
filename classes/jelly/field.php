@@ -66,10 +66,18 @@ abstract class Jelly_Field
 	 **/
 	public function __construct($options = array())
 	{
-		// Just throw them into the class as public variables
-		foreach ($options as $name => $value)
+		// Assume it's the column name
+		if (is_string($options))
 		{
-			$this->$name = $value;
+			$this->column = $options;
+		}
+		else if (is_array($options))
+		{
+			// Just throw them into the class as public variables
+			foreach ($options as $name => $value)
+			{
+				$this->$name = $value;
+			}
 		}
 	}
 	
@@ -136,6 +144,20 @@ abstract class Jelly_Field
 	 * @author Jonathan Geiger
 	 **/
 	public function get()
+	{
+		return $this->value;
+	}
+	
+	/**
+	 * Called just before creation if the field is $in_db, and just after if it's not.
+	 * 
+	 * If $in_db, it is expected to return a value suitable for insertion 
+	 * into the database. If !$in_db, it is expected to return a status boolean.
+	 *
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
+	public function create() 
 	{
 		return $this->value;
 	}

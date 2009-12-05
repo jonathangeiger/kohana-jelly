@@ -36,7 +36,6 @@ class Jelly_Field_HasMany extends Jelly_Field_ForeignKey
 		
 		// Return a real object
 		return Jelly::factory($this->foreign_model)
-				->where($this->foreign_column, '=', $this->model->id())
-				->load();
+				->where($this->foreign_column, '=', $this->model->id());
 	}
 }
