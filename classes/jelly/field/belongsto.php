@@ -49,7 +49,7 @@ class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
 			}
 			else
 			{
-				$this->value = NULL;
+				$this->value = $this->default;
 			}
 		}
 		else

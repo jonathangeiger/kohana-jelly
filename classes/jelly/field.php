@@ -1,6 +1,5 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-
 abstract class Jelly_Field
 {
 	/**
@@ -39,9 +38,9 @@ abstract class Jelly_Field
 	protected $in_db = TRUE;
 	
 	/**
-	* @var bool Allow `empty()` values to be used. Default is `FALSE`.
+	* @var bool Default value
 	*/
-	protected $empty = FALSE;
+	protected $default = NULL;
 	
 	/**
 	* @var array {@link Kohana_Validate} filters for this field.

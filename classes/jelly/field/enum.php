@@ -26,7 +26,7 @@ class Jelly_Field_Enum extends Jelly_Field
 		}
 		else
 		{
-			$this->value = NULL;
+			$this->value = $this->default;
 		}
 	}
 }
