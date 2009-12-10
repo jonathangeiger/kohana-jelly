@@ -321,6 +321,31 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Count the number of records for the current query
+	 *
+	 * @param 	$where 	An associative array to use as the where clause
+	 * @return  $this
+	 */
+	public function count($where = NULL)
+	{
+		// Add the where
+		if (is_array($where))
+		{
+			foreach($where as $column => $value)
+			{
+				$this->where($column, '=', $value);
+			}
+		}
+		
+		$query = $this->build(Database::SELECT);
+	
+		return $query->select(array('COUNT("*")', 'total'))
+			->from($this->_table)
+			->execute($this->_db)
+			->get('total');
+	}
+	
+	/**
 	 * Loads a single row or multiple rows
 	 *
 	 * @param mixed an array or id to load 
@@ -329,14 +354,10 @@ abstract class Jelly_Model
 	 */
 	public function load($where = NULL, $limit = NULL)
 	{
-		// Set the working query
-		$query = $this->build(Database::SELECT);
-		$query->from($this->_table);
-		
 		// Apply the limit
 		if (is_int($where) && $limit === NULL)
 		{
-			$query->where($this->alias($this->_primary_key), '=', $where);
+			$this->where($this->_primary_key, '=', $where);
 			$limit = 1;
 		}
 		
@@ -345,7 +366,7 @@ abstract class Jelly_Model
 		{
 			foreach($where as $column => $value)
 			{
-				$query->where($this->alias($column), '=', $value);
+				$this->where($column, '=', $value);
 			}
 		}
 		
@@ -360,10 +381,14 @@ abstract class Jelly_Model
 		// Apply the limit if we can
 		if ($limit !== NULL)
 		{
-			$query->limit($limit);
+			$this->limit($limit);
 		}
 		
 		$table = $this->_table;
+		
+		// Set the working query
+		$query = $this->build(Database::SELECT);
+		$query->from($table);
 		
 		// Attempt to load it
 		if ($limit === 1)
