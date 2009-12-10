@@ -137,6 +137,35 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Expected to initialize $_map
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 **/
+	abstract protected function initialize();
+	
+	/**
+	 * Performs some default-settings on the map.
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	private function _map()
+	{
+		foreach ($this->_map as $column => $field)
+		{
+			// Initialize the field with a copy of the model and column
+			$field->initialize($this, $column);
+			
+			// See if we need to automatically find the primary key
+			if ($field->primary() && empty($this->_primary_key))
+			{
+				$this->_primary_key = $column;
+			}
+		}
+	}
+	
+	/**
 	 * Proxies to get for dynamic getting of properties
 	 *
 	 * @param string $name 
@@ -257,12 +286,12 @@ abstract class Jelly_Model
 				{
 					foreach($args as $index => $table)
 					{
-						$args[$i] = Model::factory($table)->_table;
+						$args[$i] = Jelly::factory($table)->_table;
 					}
 				}
 				else
 				{
-					$args[0] = Model::factory($args[0])->_table;
+					$args[0] = Jelly::factory($args[0])->_table;
 				}
 			}
 			
@@ -289,35 +318,6 @@ abstract class Jelly_Model
 		}
 		
 		return $this;
-	}
-	
-	/**
-	 * Expected to initialize $_map
-	 *
-	 * @return void
-	 * @author Jonathan Geiger
-	 **/
-	abstract protected function initialize();
-	
-	/**
-	 * Performs some default-settings on the map.
-	 *
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	private function _map()
-	{
-		foreach ($this->_map as $column => $field)
-		{
-			// Initialize the field with a copy of the model and column
-			$field->initialize($this, $column);
-			
-			// See if we need to automatically find the primary key
-			if ($field->primary())
-			{
-				$this->_primary_key = $column;
-			}
-		}
 	}
 	
 	/**
@@ -438,7 +438,7 @@ abstract class Jelly_Model
 						$this->set($column, $data[$column]);
 					}	
 
-					$values[$field->column()] = $field->save();
+					$values[$field->column()] = $field->save($this->_loaded);
 				}
 			}
 			else
@@ -450,10 +450,20 @@ abstract class Jelly_Model
 		// Check if we have a loaded object, in which case its an update
 		if ($this->_loaded)
 		{
-			list($id) = DB::update($this->_table)
-						->set($values)
-						->where($this->primary_key(), '=', $this->id())
-						->execute($this->_db);
+			DB::update($this->_table)
+				->set($values)
+				->where($this->primary_key(), '=', $this->id())
+				->execute($this->_db);
+				
+			// Has id changed? 
+			if (isset($values[$this->_primary_key]))
+			{
+				$id = $values[$this->_primary_key];
+			}
+			else
+			{
+				$id = $this->id();
+			}
 		}
 		else
 		{
@@ -589,7 +599,7 @@ abstract class Jelly_Model
 			if (Kohana::auto_load('model/'.$table))
 			{
 				// Find the actual table name
-				$table = Model::Factory($table);
+				$table = Jelly::Factory($table);
 
 				if (isset($table->_map[$column]))
 				{

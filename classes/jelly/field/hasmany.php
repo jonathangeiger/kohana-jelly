@@ -72,7 +72,7 @@ class Jelly_Field_HasMany extends Jelly_Field_ForeignKey
 				->where($this->foreign_column, '=', $this->model->id());
 	}
 	
-	public function save($id = NULL)
+	public function save($id)
 	{
 		
 	}

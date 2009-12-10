@@ -11,9 +11,9 @@ class Jelly_Field_Timestamp extends Jelly_Field
 		$this->value = strtotime($value);
 	}
 	
-	public function create()
+	public function save($loaded)
 	{
-		if ($this->auto_now_create)
+		if ((!$loaded && $this->auto_now_create) || ($loaded && $this->auto_now_update))
 		{
 			$this->value = time();
 			

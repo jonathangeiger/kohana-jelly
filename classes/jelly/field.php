@@ -160,7 +160,7 @@ abstract class Jelly_Field
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function save($id = NULL) 
+	public function save($loaded) 
 	{
 		return $this->value;
 	}
@@ -173,6 +173,8 @@ abstract class Jelly_Field
 	 **/
 	public function input()
 	{
+		return NULL; // Not yet implemented
+		
 		// Determine the view name, which matches the class name
 		$view = 'fields/' . str_replace('field_', '', strtolower(get_class($this)));
 		

@@ -15,7 +15,7 @@ class Jelly_Field_Boolean extends Jelly_Field
 		$this->value = (bool)$value;
 	}
 	
-	public function create()
+	public function save($loaded)
 	{
 		return ($this->value) ? $this->true_in_db : $this->false_in_db;
 	}
