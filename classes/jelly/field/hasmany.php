@@ -2,6 +2,8 @@
 
 class Jelly_Field_HasMany extends Jelly_Field_ForeignKey
 {	
+	protected $value = array();
+	
 	/**
 	 * Overrides the initialize to automatically provide the column name
 	 *
@@ -26,16 +28,52 @@ class Jelly_Field_HasMany extends Jelly_Field_ForeignKey
 		parent::initialize($model, $column);
 	}
 	
+	/**
+	 * Sets 
+	 *
+	 * @param string $value 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function set($value)
+	{
+		// Can be set in only one go
+		$this->value = array();
+		
+		// Handle Database Results
+		if (is_object($value))
+		{
+			foreach($value as $row)
+			{
+				$this->value[] = $row->id();
+			}
+		}
+		else
+		{
+			$this->value = (array)$value;
+		}
+	}
+	
+	/**
+	 * @param string $object 
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
 	public function get($object = TRUE)
 	{
 		// Only return the actual value
 		if (!$object)
 		{
-			return NULL;
+			return $this->value;
 		}
 		
 		// Return a real object
 		return Jelly::factory($this->foreign_model)
 				->where($this->foreign_column, '=', $this->model->id());
+	}
+	
+	public function save($id = NULL)
+	{
+		
 	}
 }

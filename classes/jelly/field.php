@@ -93,6 +93,9 @@ abstract class Jelly_Field
 		{
 			return $this->$method;
 		}
+		
+		throw new Kohana_Exception('Invalid method :method called in :class',
+			array(':method' => $method, ':class' => get_class($this->model)));
 	}
 	
 	/**
@@ -149,7 +152,7 @@ abstract class Jelly_Field
 	}
 	
 	/**
-	 * Called just before creation if the field is $in_db, and just after if it's not.
+	 * Called just before saving if the field is $in_db, and just after if it's not.
 	 * 
 	 * If $in_db, it is expected to return a value suitable for insertion 
 	 * into the database. If !$in_db, it is expected to return a status boolean.
@@ -157,7 +160,7 @@ abstract class Jelly_Field
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function create() 
+	public function save($id = NULL) 
 	{
 		return $this->value;
 	}

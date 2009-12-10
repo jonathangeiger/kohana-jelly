@@ -41,6 +41,26 @@ abstract class Jelly_Model
 	protected $_map = array();
 	
 	/**
+	 * @var array A cache of mapped values
+	 */
+	protected $_cache = array();
+	
+	/**
+	 * @var array Changed data
+	 */
+	protected $_changed = array();
+
+	/**
+	 * @var boolean Whether or not the model is loaded
+	 */
+	protected $_loaded = FALSE;
+	
+	/**
+	 * @var boolean Whether or not the model is loaded
+	 */
+	protected $_saved = FALSE;
+	
+	/**
 	 * @var array An array of ordering options for selects
 	 */
 	protected $_sorting = array();
@@ -49,7 +69,7 @@ abstract class Jelly_Model
 	 * @var array Data that is automatically loaded into the model on each instantiation
 	 */
 	protected $_preload_data = array();
-		
+
 	/**
 	 * @var string The database key to use for connection
 	 */
@@ -117,6 +137,18 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Proxies to get for dynamic getting of properties
+	 *
+	 * @param string $name 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function __get($name)
+	{
+		return $this->get($name, TRUE);
+	}
+	
+	/**
 	 * Gets the internally represented value from a field
 	 *
 	 * @param string $name 
@@ -124,16 +156,23 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function __get($name)
+	public function get($name, $verbose = TRUE)
 	{
 		if (isset($this->_map[$name]))
-		{
-			return $this->_map[$name]->get();
+		{			
+			// Check the cache
+			if (!isset($this->_cache[$name][$verbose]))
+			{
+				$this->_cache[$name][$verbose] = $this->_map[$name]->get($verbose);
+			}
+
+			// Fill the cache
+			return $this->_cache[$name][$verbose];
 		}
 	}
 	
 	/**
-	 * Sets values in the fields
+	 * Proxies to set for dynamic getting of properties
 	 *
 	 * @param string $name 
 	 * @param string $value 
@@ -146,13 +185,37 @@ abstract class Jelly_Model
 		if (is_array($this->_preload_data))
 		{
 			$this->_preload_data[$name] = $value;
+			$this->_loaded = TRUE;
 			return;
 		}
 		
+		$this->set($name, $value);
+	}
+	
+	/**
+	 * Sets values in the fields
+	 *
+	 * @param string $name 
+	 * @param string $value 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function set($name, $value)
+	{
 		// Normal, user-initiated set
 		if (isset($this->_map[$name]))
 		{
 			$this->_map[$name]->set($value);
+			
+			// Clear the cache if need be
+			if (isset($this->_cache[$name]))
+			{
+				unset($this->_cache[$name]);
+			}
+			
+			// Track changes
+			$this->_changed[$name] = TRUE;
+			$this->_saved = FALSE;
 		}
 	}
 	
@@ -218,14 +281,14 @@ abstract class Jelly_Model
 			
 			// Add pending database call which is executed after query type is determined
 			$this->_db_pending[] = array('name' => $method, 'args' => $args);
-
-			return $this;
 		}
 		else
 		{
 			throw new Kohana_Exception('Invalid method :method called in :class',
 				array(':method' => $method, ':class' => get_class($this)));
 		}
+		
+		return $this;
 	}
 	
 	/**
@@ -315,6 +378,12 @@ abstract class Jelly_Model
 				// If there was no select applied it was likely SELECT *, 
 				// so we need to alias the columns
 				$this->values($values, TRUE);
+				
+				// We're good!
+				$this->_loaded = TRUE;
+				$this->_cache = NULL;
+				$this->_changed = NULL;
+				$this->_saved = TRUE;
 			}
 		}
 		else
@@ -331,22 +400,24 @@ abstract class Jelly_Model
 		return $this;
 	}
 	
+	public function loaded()
+	{	
+		return $this->_loaded;
+	}
+	
 	/**
 	 * Creates a new record based on the current model
 	 *
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 **/
-	public function create()
+	public function save()
 	{
 		// Stuff that will be inserted
 		$values = array();
 		
 		// These will be processed later
 		$relations = array();
-		
-		// Validate
-		$data = $this->validate();
 		
 		// Run through the main table data
 		foreach($this->_map as $column => $field)
@@ -360,12 +431,15 @@ abstract class Jelly_Model
 			// Only add actual columns
 			if ($field->in_db())
 			{	
-				if (isset($data[$column]))
+				if (isset($this->_changed[$column]))
 				{
-					$field->set($data[$column]);
-				}	
-					
-				$values[$field->column()] = $field->create();
+					if (isset($data[$column]))
+					{
+						$this->set($column, $data[$column]);
+					}	
+
+					$values[$field->column()] = $field->save();
+				}
 			}
 			else
 			{
@@ -373,22 +447,37 @@ abstract class Jelly_Model
 			}
 		}
 		
-		list($id) = DB::insert($this->_table)
-					->columns(array_keys($values))
-					->values($values)
-					->execute($this->_db);
-					
+		// Check if we have a loaded object, in which case its an update
+		if ($this->_loaded)
+		{
+			list($id) = DB::update($this->_table)
+						->set($values)
+						->where($this->primary_key(), '=', $this->id())
+						->execute($this->_db);
+		}
+		else
+		{
+			list($id) = DB::insert($this->_table)
+						->columns(array_keys($values))
+						->values($values)
+						->execute($this->_db);
+		}
+		
 		// Load the relations
 		foreach($relations as $column => $field)
 		{
-			if (isset($data[$column]))
+			if (isset($this->_changed[$column]))
 			{
-				$field->set($data[$column]);
+				if (isset($data[$column]))
+				{
+					$field->set($data[$column]);
+				}
+		
+				$field->save($id);
 			}
-			
-			$field->create($id);
 		}
-					
+			
+		// Reload		
 		$this->load($id);
 		
 		return $this;
@@ -403,7 +492,7 @@ abstract class Jelly_Model
 	public function validate()
 	{
 		$data = Validate::factory($this->as_array());
-
+		
 		foreach ($this->_map as $column => $field)
 		{
 			if (!$data->offsetExists($column))
@@ -427,7 +516,7 @@ abstract class Jelly_Model
 			if ($field->callbacks())
 			{
 				$data->callbacks($column, $field->callbacks());
-			}
+			}			
 		}
 
 		if (!$data->check())
@@ -438,13 +527,20 @@ abstract class Jelly_Model
 		return $data->as_array();
 	}
 	
+	/**
+	 * Returns data as an array
+	 *
+	 * @param string $verbose 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
 	public function as_array($verbose = FALSE)
 	{
 		$result = array();
 		
 		foreach($this->_map as $column => $field)
 		{
-			$result[$column] = $field->get($verbose);
+			$result[$column] = $this->get($column, $verbose);
 		}
 		
 		return $result;
@@ -518,11 +614,15 @@ abstract class Jelly_Model
 	public function values(array $values, $reverse = FALSE)
 	{
 		// Set the data
-		foreach ($this->_map as $column => $field)
-		{
+		foreach ($this->_map as $alias => $field)
+		{			
 			if ($reverse)
 			{
 				$column = $field->column();
+			}
+			else
+			{
+				$column = $alias;
 			}
 			
 			// Ensure there's something to work with
@@ -530,10 +630,8 @@ abstract class Jelly_Model
 			{
 				continue;
 			}
-			
-			// Pass it off to the field object, which already 
-			// has a reference to $this
-			$field->set($values[$column]);
+						
+			$this->set($alias, $values[$column]);
 		}
 		
 		return $this;
