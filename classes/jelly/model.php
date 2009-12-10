@@ -477,7 +477,7 @@ abstract class Jelly_Model
 		{
 			DB::update($this->_table)
 				->set($values)
-				->where($this->primary_key(), '=', $this->id())
+				->where($this->alias($this->primary_key()), '=', $this->id())
 				->execute($this->_db);
 				
 			// Has id changed? 
@@ -670,6 +670,17 @@ abstract class Jelly_Model
 		}
 		
 		return $this;
+	}
+	
+	/**
+	 * Returns the db group
+	 *
+	 * @return string
+	 * @author Jonathan Geiger
+	 */
+	public function db()
+	{
+		return $this->_db;
 	}
 	
 	/**

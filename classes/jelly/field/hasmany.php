@@ -74,6 +74,18 @@ class Jelly_Field_HasMany extends Jelly_Field_ForeignKey
 	
 	public function save($id)
 	{
-		
+		// Empty relations
+		if ($this->value === NULL)
+		{
+			$model = Jelly::factory($this->foreign_model);
+			$alias = $model->alias($this->foreign_column);
+			$query = Jelly::factory($this->foreign_model)
+						->where($this->foreign_column, '=', $this->model->id())
+						->build(Database::UPDATE);
+				
+			$query
+				->set(array($alias => $this->default))
+				->execute($model->db());
+		}
 	}
 }
