@@ -90,7 +90,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 		else
 		{
 			// Check to see if this is a model
-			if (Kohana::auto_load('model/'.$this->through_model))
+			if (Kohana::auto_load('model/'.str_replace('_', '/', $this->through_model)))
 			{
 				$through = Jelly::factory($this->through_model);
 				$this->through_model = $through->table_name();

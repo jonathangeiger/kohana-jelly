@@ -621,7 +621,7 @@ abstract class Jelly_Model
 		}
 		else
 		{
-			if (Kohana::auto_load('model/'.$table))
+			if (Kohana::auto_load('model/'.str_replace('_', '/', $table)))
 			{
 				// Find the actual table name
 				$table = Jelly::Factory($table);
