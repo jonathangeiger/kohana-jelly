@@ -72,20 +72,36 @@ class Jelly_Field_HasMany extends Jelly_Field_ForeignKey
 				->where($this->foreign_column, '=', $this->model->id());
 	}
 	
+	/**
+	 * Saves has_many relations setting empty records to the default
+	 *
+	 * @param string $id 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
 	public function save($id)
 	{
-		// Empty relations
-		if ($this->value === NULL)
-		{
-			$model = Jelly::factory($this->foreign_model);
-			$alias = $model->alias($this->foreign_column);
-			$query = Jelly::factory($this->foreign_model)
-						->where($this->foreign_column, '=', $this->model->id())
-						->build(Database::UPDATE);
-				
-			$query
-				->set(array($alias => $this->default))
-				->execute($model->db());
+		// Empty relations to the default value
+		$model = Jelly::factory($this->foreign_model);
+		$alias = $model->alias($this->foreign_column);
+		$query = Jelly::factory($this->foreign_model)
+					->where($this->foreign_column, '=', $this->model->id())
+					->build(Database::UPDATE);
+		
+		// NULL them out
+		$query->set(array($alias => $this->default))
+			  ->execute($model->db());
+			
+		// Set the new relations
+		if (!empty($this->value) && is_array($this->value))
+		{			
+			// Update the ones in our list
+			$query = $model->end()->where($model->primary_key(), 'IN', $this->value)
+						   ->build(Database::UPDATE);
+						
+			// Set them to this object
+			$query->set(array($alias => $id))
+				  ->execute($model->db());
 		}
 	}
 }

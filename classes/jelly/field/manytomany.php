@@ -103,12 +103,31 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 		parent::initialize($model, $column);
 	}
 	
+	public function set($value)
+	{
+		// Can be set in only one go
+		$this->value = array();
+		
+		// Handle Database Results
+		if (is_object($value))
+		{
+			foreach($value as $row)
+			{
+				$this->value[] = $row->id();
+			}
+		}
+		else
+		{
+			$this->value = (array)$value;
+		}
+	}
+	
 	public function get($object = TRUE)
 	{
 		// Only return the actual value
 		if (!$object)
 		{
-			return NULL;
+			return $this->value;
 		}
 		
 		$foreign_model = Jelly::Factory($this->foreign_model);
@@ -121,5 +140,35 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 				
 		return $foreign_model
 				->where($this->foreign_column, 'IN', $in);
+	}
+	
+	public function save($id)
+	{
+		$in = DB::Select()
+				->select($this->through_column)
+				->from($this->through_model)
+				->where($this->model->alias($this->column), '=', $this->model->id())
+				->execute($this->model->db())
+				->as_array(NULL, $this->through_column);
+				
+		// Find old relationships that must be deleted
+		if ($old = array_diff($in, $this->value))
+		{
+			DB::delete($this->through_model)
+				->where($this->column, '=', $this->model->id())
+				->where($this->through_column, 'IN', $old)
+				->execute($this->model->db());
+		}
+
+		// Find new relationships that must be inserted
+		if ($new = array_diff($this->value, $in))
+		{
+			foreach ($new as $new_id)
+			{
+				DB::insert($this->through_model, array($this->column, $this->through_column))
+					->values(array($id, $new_id))
+					->execute($this->model->db());
+			}
+		}
 	}
 }

@@ -408,6 +408,8 @@ abstract class Jelly_Model
 				$this->_changed = NULL;
 				$this->_saved = TRUE;
 			}
+			
+			$result = $this;
 		}
 		else
 		{
@@ -417,12 +419,18 @@ abstract class Jelly_Model
 				$query->order_by($column, $direction);
 			}
 			
-			return $query->as_object(get_class($this))->execute($this->_db);
+			$result = $query->as_object(get_class($this))->execute($this->_db);
 		}
 		
-		return $this;
+		return $result;
 	}
 	
+	/**
+	 * Returns whether or not the model is loaded
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
 	public function loaded()
 	{	
 		return $this->_loaded;
@@ -434,7 +442,7 @@ abstract class Jelly_Model
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 **/
-	public function save()
+	public function save($save_related = TRUE)
 	{
 		// Stuff that will be inserted
 		$values = array();
@@ -445,12 +453,6 @@ abstract class Jelly_Model
 		// Run through the main table data
 		foreach($this->_map as $column => $field)
 		{
-			// Skip the primary key; it will be auto-incremented
-			if ($field->primary())
-			{
-				continue;
-			}
-			
 			// Only add actual columns
 			if ($field->in_db())
 			{	
@@ -470,22 +472,25 @@ abstract class Jelly_Model
 			}
 		}
 		
-		// Check if we have a loaded object, in which case its an update
+		// Set this just in case it doesn't change with the insert/update
+		$id = $this->id();
+		
+		// Check if we have a loaded object, in which case it's an update
 		if ($this->_loaded)
 		{
-			DB::update($this->_table)
-				->set($values)
-				->where($this->alias($this->primary_key()), '=', $this->id())
-				->execute($this->_db);
-				
-			// Has id changed? 
-			if (isset($values[$this->_primary_key]))
+			// Do we even have to update anything in the main table?
+			if ($values)
 			{
-				$id = $values[$this->_primary_key];
-			}
-			else
-			{
-				$id = $this->id();
+				DB::update($this->_table)
+					->set($values)
+					->where($this->alias($this->primary_key()), '=', $this->id())
+					->execute($this->_db);
+
+				// Has id changed? 
+				if (isset($values[$this->_primary_key]))
+				{
+					$id = $values[$this->_primary_key];
+				}
 			}
 		}
 		else
@@ -494,26 +499,46 @@ abstract class Jelly_Model
 						->columns(array_keys($values))
 						->values($values)
 						->execute($this->_db);
+						
+			// Update the primary key
+			$this->set($this->_primary_key, $id);
 		}
 		
-		// Load the relations
-		foreach($relations as $column => $field)
+		if ($save_related)
 		{
-			if (isset($this->_changed[$column]))
+			// Load the relations
+			foreach($relations as $column => $field)
 			{
-				if (isset($data[$column]))
+				if (isset($this->_changed[$column]))
 				{
-					$field->set($data[$column]);
+					if (isset($data[$column]))
+					{
+						$field->set($data[$column]);
+					}
+
+					$field->save($id);
 				}
-		
-				$field->save($id);
 			}
 		}
-			
-		// Reload		
-		$this->load($id);
+
+		// We're good!
+		$this->_loaded = TRUE;
+		$this->_cache = NULL;
+		$this->_changed = NULL;
+		$this->_saved = TRUE;
 		
 		return $this;
+	}
+	
+	/**
+	 * Whether or not the model is saved
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function saved()
+	{	
+		return $this->_loaded;
 	}
 	
 	/**
@@ -585,15 +610,10 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 **/
-	public function alias($column, $table = NULL)
-	{
-		if (empty($table))
-		{
-			if (isset($this->_map[$column]))
-			{
-				return $this->_map[$column]->column();
-			}
-		}
+	public function alias($column)
+	{		
+		// Default to this model
+		$table = NULL;
 		
 		// Save the original if we can't find the table
 		$original = $column;
@@ -610,7 +630,7 @@ abstract class Jelly_Model
 			list($table, $column) = explode('.', $column);
 		}
 		
-		if ($table == $this->_model || $table == $this->_table)
+		if ($table === NULL || $table == $this->_model || $table == $this->_table)
 		{
 			if (isset($this->_map[$column]))
 			{
@@ -809,10 +829,12 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	protected function reset_db()
+	public function end()
 	{
 		$this->_db_builder = NULL;
 		$this->_db_applied = array();
 		$this->_db_pending = array();
+		
+		return $this;
 	}
 }
