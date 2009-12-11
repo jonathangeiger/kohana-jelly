@@ -32,8 +32,8 @@ Class Jelly_BelongsTo extends PHPUnit_Framework_TestCase
 		$model->name = rand();
 		$model->category = 1;
 		$model->save();
-				
-		$this->assertEquals($model, Jelly::factory('post')->load($model->id));
+						
+		$this->assertEquals($model->id, Jelly::factory('post')->load($model->id)->id);
 	}
 	
 	public function testUpdate()

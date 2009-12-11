@@ -370,6 +370,10 @@ abstract class Jelly_Model
 			}
 		}
 		
+		// Set the working query
+		$query = $this->build(Database::SELECT);
+		$query->from($this->_table);
+		
 		// limit() is overloaded so that if the second argument exists 
 		// the call will override what's passed here for $limit. This allows us
 		// to set a limit before load and have it load single rows directly into the object
@@ -381,14 +385,8 @@ abstract class Jelly_Model
 		// Apply the limit if we can
 		if ($limit !== NULL)
 		{
-			$this->limit($limit);
+			$query->limit($limit);
 		}
-		
-		$table = $this->_table;
-		
-		// Set the working query
-		$query = $this->build(Database::SELECT);
-		$query->from($table);
 		
 		// Attempt to load it
 		if ($limit === 1)
