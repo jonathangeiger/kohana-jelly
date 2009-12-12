@@ -1,8 +1,21 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
+class Jelly_Field_BelongsTo extends Jelly_Field
 {	
-	protected $in_db = TRUE;
+	/**
+	 * @var boolean Defaults belongs_to's to in the database
+	 */
+	public $in_db = TRUE;
+	
+	/**
+	 * @var string The name of the foreign model to use. 
+	 */
+	public $foreign_model;
+	
+	/**
+	 * @var string The name of the foreign column to use. 
+	 */
+	public $foreign_column;
 	
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -14,17 +27,19 @@ class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
 	 */
 	public function initialize($model, $column)
 	{
-		// Check to see if we need to dynamically generate the column name
+		// Default to $column_id
 		if (empty($this->column))
 		{
 			$this->column = $column.'_id';
 		}
 		
+		// Default to the name of the column
 		if (empty($this->foreign_model))
 		{
 			$this->foreign_model = $column;
 		}
 		
+		// Default to 'id'
 		if (empty($this->foreign_column))
 		{
 			$this->foreign_column = 'id';
@@ -35,6 +50,8 @@ class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
 	}
 	
 	/**
+	 * Accepts another Jelly Model or the value of a primary key.
+	 * 
 	 * @param mixed An integer or another model for this to belong to 
 	 * @return void
 	 * @author Jonathan Geiger
@@ -43,7 +60,7 @@ class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
 	{
 		if (is_object($value))
 		{
-			if ($value->loaded())
+			if ($value->loaded() && $value->id())
 			{
 				$this->value = $value->id();
 			}
@@ -60,7 +77,7 @@ class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
 	
 	/**
 	 * @param boolean $object 
-	 * @return void
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function get($object = TRUE)

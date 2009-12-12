@@ -1,27 +1,16 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
+class Jelly_Field_ManyToMany extends Jelly_Field
 {	
 	/**
-	 * The column that represents this field's model's primary key in the 'through' or 'join' table
-	 *
-	 * @var string
-	 */
-	protected $column;
-	
-	/**
-	 * The column that represents the foreign model's primary key in the 'through' or 'join' table
+	 * The columns in the through table that this is referencing.
 	 * 
-	 * @var string
-	 */
-	protected $through_column;
-	
-	/**
-	 * The column that represents the foreign model's primary key
+	 * The first element is the column for this model, and the second
+	 * is the column for the foreign model.
 	 *
 	 * @var string
 	 */
-	protected $foreign_column;
+	public $through_columns = array();
 	
 	/**
 	 * The name of the model or table to go through. If empty it is 
@@ -33,14 +22,21 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 	 * 
 	 * @var string
 	 */
-	protected $through_model;
+	public $through_model;
+	
+	/**
+	 * The column that represents the foreign model's primary key
+	 *
+	 * @var string
+	 */
+	public $foreign_column;
 	
 	/**
 	 * The final foreign model's name.
 	 * 
 	 * @var string
 	 */
-	protected $foreign_model;
+	public $foreign_model;
 		
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -52,11 +48,6 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 	 */
 	public function initialize($model, $column)
 	{
-		if (empty($this->column))
-		{
-			$this->column = inflector::singular($model->model_name()).'_id';
-		}
-		
 		if (empty($this->foreign_model))
 		{
 			$this->foreign_model = inflector::singular($column);
@@ -67,10 +58,11 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 			$this->foreign_column = 'id';
 		}
 		
-		if (empty($this->through_column))
+		if (empty($this->through_columns))
 		{
-			$this->through_column = $this->foreign_model.'_id';
-		}
+			$this->through_columns[0] = inflector::singular($model->model_name()).'_id';
+			$this->through_columns[1] = inflector::singular($this->foreign_model).'_id';
+		}	
 		
 		if (empty($this->through_model))
 		{
@@ -87,19 +79,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 			// Bring them back together
 			$this->through_model = implode('_', $this->through_model);
 		}
-		else
-		{
-			// Check to see if this is a model
-			if (Kohana::auto_load('model/'.str_replace('_', '/', $this->through_model)))
-			{
-				$through = Jelly::factory($this->through_model);
-				$this->through_model = $through->table_name();
-				$this->column = $through->alias($this->column);
-				$this->through_column = $through->alias($this->through_column);
-			}
-		}
 		
-		// Column is set and won't be overridden
 		parent::initialize($model, $column);
 	}
 	
@@ -129,34 +109,29 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 		{
 			return $this->value;
 		}
-		
-		$foreign_model = Jelly::Factory($this->foreign_model);
-		
-		// Return a real object
-		$in = DB::Select()
-				->select($this->through_column)
-				->from($this->through_model)
-				->where($this->model->alias($this->column), '=', $this->model->id());
 				
-		return $foreign_model
-				->where($this->foreign_column, 'IN', $in);
+		return Jelly::factory($this->foreign_model)
+				->where($this->foreign_column, 'IN', $this->in());
 	}
 	
 	public function save($id)
 	{
-		$in = DB::Select()
-				->select($this->through_column)
-				->from($this->through_model)
-				->where($this->model->alias($this->column), '=', $this->model->id())
-				->execute($this->model->db())
-				->as_array(NULL, $this->through_column);
-				
+		// Find all current records so that we can calculate what's changed
+		$in = $this->in();
+		
+		// Alias tables and columns
+		$through_table = $this->model->alias(NULL, $this->through_model);
+		$through_columns = array(
+			$this->model->alias($this->through_columns[0]),
+			$this->model->alias($this->through_colums[1], $this->through_model),
+		);
+		
 		// Find old relationships that must be deleted
 		if ($old = array_diff($in, $this->value))
 		{
-			DB::delete($this->through_model)
-				->where($this->column, '=', $this->model->id())
-				->where($this->through_column, 'IN', $old)
+			DB::delete($through_table)
+				->where($through_columns[0], '=', $this->model->id())
+				->where($through_columns[1], 'IN', $old)
 				->execute($this->model->db());
 		}
 
@@ -165,10 +140,27 @@ class Jelly_Field_ManyToMany extends Jelly_Field_ForeignKey
 		{
 			foreach ($new as $new_id)
 			{
-				DB::insert($this->through_model, array($this->column, $this->through_column))
+				DB::insert($through_table, $through_columns)
 					->values(array($id, $new_id))
 					->execute($this->model->db());
 			}
 		}
+	}
+		
+	protected function in()
+	{
+		// Grab all of the actual columns
+		$through_table = $this->model->alias(NULL, $this->through_model);
+		$through_columns = array(
+			$this->model->alias($this->through_columns[0]),
+			$this->model->alias($this->through_colums[1], $this->through_model),
+		);
+		
+		return DB::Select()
+				->select($through_columns[1])
+				->from($through_table)
+				->where($through_columns[0], '=', $this->model->id())
+				->execute($this->model->db())
+				->as_array(NULL, $through_column[1]);
 	}
 }

@@ -2,5 +2,10 @@
 
 class Jelly_Field_Email extends Jelly_Field
 {
-	
+	/**
+	 * @var string Validate as an email
+	 */
+	public $rules = array(
+		'email' => NULL
+	);
 }

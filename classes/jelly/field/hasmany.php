@@ -1,8 +1,15 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_HasMany extends Jelly_Field_ForeignKey
+class Jelly_Field_HasMany extends Jelly_Field
 {	
-	protected $value = array();
+	/**
+	 * An array of IDs that have been set.
+	 * 
+	 * This is empty unless the value has been set manually
+	 *
+	 * @var string
+	 */
+	public $value = array();
 	
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -84,9 +91,8 @@ class Jelly_Field_HasMany extends Jelly_Field_ForeignKey
 		// Empty relations to the default value
 		$model = Jelly::factory($this->foreign_model);
 		$alias = $model->alias($this->foreign_column);
-		$query = Jelly::factory($this->foreign_model)
-					->where($this->foreign_column, '=', $this->model->id())
-					->build(Database::UPDATE);
+		$query = $model->where($this->foreign_column, '=', $this->model->id())
+					   ->build(Database::UPDATE);
 		
 		// NULL them out
 		$query->set(array($alias => $this->default))

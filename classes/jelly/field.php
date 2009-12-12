@@ -3,59 +3,59 @@
 abstract class Jelly_Field
 {
 	/**
-	 * @var object The model this field is related to
+	 * @var object The model this field is attached to
 	 */
-	protected $model;
+	public $model;
 	
 	/**
 	 * @var string The column's name in the database
 	 */
-	protected $column;
+	public $column;
 	
 	/**
 	 * @var mixed The internally represented value
 	 */
-	protected $value;
+	public $value;
 	
 	/**
 	 * @var string A pretty name for the field
 	 */
-	protected $label;
+	public $label;
 	
 	/**
 	* @var string Description of the field. Default is `''` (an empty string).
 	*/
-	protected $description = '';
+	public $description = '';
 	
 	/**
-	* @var bool A primary key field. Multiple primary keys (composite key) can be specified. Default is `FALSE`.
+	* @var bool A primary key field.
 	*/
-	protected $primary = FALSE;
+	public $primary = FALSE;
 	
 	/**
 	* @var bool The column is present in the database table. Default: TRUE
 	*/
-	protected $in_db = TRUE;
+	public $in_db = TRUE;
 	
 	/**
 	* @var bool Default value
 	*/
-	protected $default = NULL;
+	public $default = NULL;
 	
 	/**
 	* @var array {@link Kohana_Validate} filters for this field.
 	*/
-	protected $filters = array();
+	public $filters = array();
 
 	    /**
 	* @var array {@link Kohana_Validate} rules for this field.
 	*/
-	protected $rules = array();
+	public $rules = array();
 
 	    /**
 	* @var array {@link Kohana_Validate} callbacks for this field.
 	*/
-	protected $callbacks = array();
+	public $callbacks = array();
 	
 	/**
 	 * Sets all options
@@ -78,23 +78,6 @@ abstract class Jelly_Field
 				$this->$name = $value;
 			}
 		}
-	}
-	
-	/**
-	 * Retrieves protected properties as methods
-	 *
-	 * @return void
-	 * @author Jonathan Geiger
-	 **/
-	public function __call($method, $args)
-	{
-		if (isset($this->$method))
-		{
-			return $this->$method;
-		}
-		
-		throw new Kohana_Exception('Invalid method :method called in :class',
-			array(':method' => $method, ':class' => get_class($this->model)));
 	}
 	
 	/**
