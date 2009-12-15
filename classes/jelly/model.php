@@ -875,9 +875,15 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function execute($type, $as_object = TRUE)
+	public function execute($type = Database::SELECT, $as_object = TRUE)
 	{
 		$query = $this->build($type);
+		
+		// Have we got a from?
+		if (!isset($this->_db_applied['from']))
+		{
+			$query->from($this->_table);
+		}
 		
 		// As object or array?
 		if ($as_object)
