@@ -46,6 +46,11 @@ abstract class Jelly_Model
 	protected $_cache = array();
 	
 	/**
+	 * @var array Original data
+	 */
+	protected $_original = array();
+	
+	/**
 	 * @var array Changed data
 	 */
 	protected $_changed = array();
@@ -56,7 +61,7 @@ abstract class Jelly_Model
 	protected $_loaded = FALSE;
 	
 	/**
-	 * @var boolean Whether or not the model is loaded
+	 * @var boolean Whether or not the model is saved
 	 */
 	protected $_saved = FALSE;
 	
@@ -69,6 +74,11 @@ abstract class Jelly_Model
 	 * @var array Data that is automatically loaded into the model on each instantiation
 	 */
 	protected $_preload_data = array();
+	
+	/**
+	 * @var boolean Whether or not the model has been inited. A flag for mysql_fetch_object
+	 */
+	protected $_init = FALSE;
 
 	/**
 	 * @var string The database key to use for connection
@@ -119,39 +129,23 @@ abstract class Jelly_Model
 			$this->_table = inflector::plural($this->_model);
 		}
 		
-		// Call the main initialization routine, which expects 
-		// initialize() to set up the resource map
-		$this->initialize();
-		
-		// Map the map
-		$this->_map();
-		
-		// Add the values stored by __set
-		if (is_array($this->_preload_data) && !empty($this->_preload_data))
-		{
-			$this->values($this->_preload_data, TRUE);
-		}
-		
-		// Finished initialized
-		$this->_preload_data = NULL;
+		// And we're off
+		$this->_init();
 	}
-	
-	/**
-	 * Expected to initialize $_map
-	 *
-	 * @return void
-	 * @author Jonathan Geiger
-	 **/
-	abstract protected function initialize();
-	
+
 	/**
 	 * Performs some default-settings on the map.
 	 *
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	private function _map()
+	private function _init()
 	{
+		// Call the main initialization routine, which expects 
+		// initialize() to set up the resource map
+		$this->initialize();
+		
+		// Initialize all of the columns
 		foreach ($this->_map as $column => $field)
 		{
 			// Initialize the field with a copy of the model and column
@@ -163,7 +157,24 @@ abstract class Jelly_Model
 				$this->_primary_key = $column;
 			}
 		}
+		
+		// Add the values stored by __set
+		if (is_array($this->_preload_data) && !empty($this->_preload_data))
+		{
+			$this->values($this->_preload_data, TRUE);
+		}
+		
+		// Finished initialized
+		$this->_init = TRUE;	
 	}
+
+	/**
+	 * Expected to initialize $_map
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 **/
+	abstract protected function initialize();
 	
 	/**
 	 * Proxies to get for dynamic getting of properties
@@ -211,7 +222,7 @@ abstract class Jelly_Model
 	public function __set($name, $value)
 	{
 		// Being set by mysql_fetch_object, store the values for the constructor
-		if (is_array($this->_preload_data))
+		if ($this->_init === FALSE)
 		{
 			$this->_preload_data[$name] = $value;
 			$this->_loaded = TRUE;
@@ -267,20 +278,19 @@ abstract class Jelly_Model
 			{
 				foreach ($args as $i => $arg)
 				{
-					// Ignore aliased selects
 					if (is_array($arg))
 					{
-						unset($args[$i]);
+						$args[$i][0] = $this->alias($arg[0], NULL, TRUE);
 					}
 					else
 					{
-						$args[$i]= $this->alias($arg);
+						$args[$i]= $this->alias($arg, NULL, TRUE);
 					}
 				}
 			}
 			
 			// Table alias
-			if ($method == 'from' || $method == 'join')
+			else if ($method == 'from' || $method == 'join')
 			{
 				if (is_array($args[0]))
 				{
@@ -298,8 +308,8 @@ abstract class Jelly_Model
 			// Join on
 			else if ($method == 'on')
 			{
-				$args[0] = $this->alias($args[0]);
-				$args[2] = $this->alias($args[2]);
+				$args[0] = $this->alias($args[0], NULL, TRUE);
+				$args[2] = $this->alias($args[2], NULL, TRUE);
 			}
 			
 			// Everything else
@@ -538,7 +548,54 @@ abstract class Jelly_Model
 	 */
 	public function saved()
 	{	
-		return $this->_loaded;
+		return $this->_saved;
+	}
+	
+	/**
+	 * Deletes a single or multiple records
+	 * 
+	 * If we're loaded(), it just deletes this object, otherwise it deletes 
+	 * whatever the query matches. 
+	 *
+	 * @param $where A simple where statement
+	 * @return self
+	 * @author Jonathan Geiger
+	 **/
+	public function delete($where = NULL)
+	{
+		// Simple where clause
+		if (is_array($where))
+		{
+			foreach($where as $column => $value)
+			{
+				$this->where($column, '=', $value);
+			}
+		}
+		
+		// Are we loaded? Then we're just deleting this record
+		if ($this->_loaded)
+		{
+			$this->limit(1);
+			$this->where($this->_primary_key, '=', $this->id());
+		}
+		
+		// Set the working query
+		$query = $this->build(Database::DELETE);
+		$query->from($this->_table);
+		
+		// Here goes nothing
+		$query->execute($this->_db);
+		
+		// Clean up the object
+		$this->_loaded = FALSE;
+		$this->_saved = FALSE;
+		$this->_changed = array();
+		$this->_cache = NULL;
+		
+		// Re-initialize to an empty object
+		$this->_init();
+		
+		return $this;
 	}
 	
 	/**
@@ -630,7 +687,7 @@ abstract class Jelly_Model
 	 * @author Jonathan Geiger
 	 **/
 	public function alias($field = NULL, $model = NULL, $join = NULL)
-	{				
+	{						
 		// Default to this model
 		if ($model === NULL)
 		{
@@ -810,6 +867,29 @@ abstract class Jelly_Model
 	public function name()
 	{
 		return $this->_map[$this->_name_key]->get();
+	}
+	
+	/**
+	 * Returns the raw query builder query, executed.
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function execute($type, $as_object = TRUE)
+	{
+		$query = $this->build($type);
+		
+		// As object or array?
+		if ($as_object)
+		{
+			$query->as_object($as_object);
+		}
+		else
+		{
+			$query->as_array();
+		}
+		
+		return $query->execute($this->_db);
 	}
 	
 	/**
