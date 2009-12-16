@@ -631,7 +631,7 @@ abstract class Jelly_Model
 		}
 		
 		// Create the validation object
-		$data = Validation::factory($data);
+		$data = Validate::factory($data);
 		
 		// Loop through all columns, adding rules where data exists
 		foreach ($this->_map as $column => $field)
@@ -642,21 +642,21 @@ abstract class Jelly_Model
 				continue;
 			}
 
-			$data->label($column, $field->label());
+			$data->label($column, $field->label);
 
-			if ($field->filters())
+			if ($field->filters)
 			{
-				$data->filters($column, $field->filters());
+				$data->filters($column, $field->filters);
 			}
 
-			if ($field->rules())
+			if ($field->rules)
 			{
-				$data->rules($column, $field->rules());
+				$data->rules($column, $field->rules);
 			}
 
-			if ($field->callbacks())
+			if ($field->callbacks)
 			{
-				$data->callbacks($column, $field->callbacks());
+				$data->callbacks($column, $field->callbacks);
 			}			
 		}
 		
