@@ -98,6 +98,7 @@ abstract class Jelly_Model
 		'and_where_close', 'or_where_close', 'distinct', 'select', 'from', 'join', 'on', 'group_by',
 		'having', 'and_having', 'or_having', 'having_open', 'and_having_open', 'or_having_open',
 		'having_close', 'and_having_close', 'or_having_close', 'order_by', 'limit', 'offset', 'cached',
+		'table',
 	);
 	
 	/**
@@ -106,7 +107,7 @@ abstract class Jelly_Model
 	protected static $_alias = array
 	(
 		'where', 'and_where', 'or_where', 'select', 'from', 'join', 'on', 'group_by',
-		'having', 'and_having', 'or_having', 'order_by',
+		'having', 'and_having', 'or_having', 'order_by', 'table'
 	);
 	
 	/**
@@ -115,7 +116,7 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 **/
-	public function __construct()
+	public function __construct($id = NULL)
 	{
 		// Set the model if there is no default
 		if (!$this->_model)
@@ -131,6 +132,12 @@ abstract class Jelly_Model
 		
 		// And we're off
 		$this->_init();
+		
+		// Have an id? Attempt to load it
+		if (is_int($id))
+		{
+			$this->load($id);
+		}
 	}
 
 	/**
@@ -418,8 +425,8 @@ abstract class Jelly_Model
 				$this->_changed = NULL;
 				$this->_saved = TRUE;
 			}
-			
-			$result = $this;
+
+			return $this->end();
 		}
 		else
 		{
@@ -429,10 +436,8 @@ abstract class Jelly_Model
 				$query->order_by($this->alias($column), $direction);
 			}
 			
-			$result = $query->as_object(get_class($this))->execute($this->_db);
+			return $query->as_object(get_class($this))->execute($this->_db);
 		}
-		
-		return $result;
 	}
 	
 	/**
@@ -537,6 +542,9 @@ abstract class Jelly_Model
 		$this->_changed = NULL;
 		$this->_saved = TRUE;
 		
+		// Delete the last queries
+		$this->end();
+		
 		return $this;
 	}
 	
@@ -563,8 +571,14 @@ abstract class Jelly_Model
 	 **/
 	public function delete($where = NULL)
 	{
+		// Delete an id
+		if (is_int($where))
+		{
+			$this->where($this->_primary_key, '=', $where);
+		}
+		
 		// Simple where clause
-		if (is_array($where))
+		else if (is_array($where))
 		{
 			foreach($where as $column => $value)
 			{
@@ -575,13 +589,12 @@ abstract class Jelly_Model
 		// Are we loaded? Then we're just deleting this record
 		if ($this->_loaded)
 		{
-			$this->limit(1);
 			$this->where($this->_primary_key, '=', $this->id());
 		}
 		
 		// Set the working query
 		$query = $this->build(Database::DELETE);
-		$query->from($this->_table);
+		$query->table($this->_table);
 		
 		// Here goes nothing
 		$query->execute($this->_db);
@@ -930,7 +943,12 @@ abstract class Jelly_Model
 			$args = $method['args'];
 
 			$this->_db_applied[$name] = $args;
-
+			
+			if (!method_exists($this->_db_builder, $method['name']))
+			{
+				continue;
+			}
+			
 			switch (count($args))
 			{
 				case 0:
