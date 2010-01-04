@@ -109,7 +109,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		{
 			return $this->value;
 		}
-				
+
 		return Jelly::factory($this->foreign_model)
 				->where($this->foreign_column, 'IN', $this->in());
 	}
@@ -117,13 +117,13 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 	public function save($id)
 	{
 		// Find all current records so that we can calculate what's changed
-		$in = $this->in();
-		
+		$in = $this->in(TRUE);
+				
 		// Alias tables and columns
 		$through_table = $this->model->alias(NULL, $this->through_model);
 		$through_columns = array(
 			$this->model->alias($this->through_columns[0]),
-			$this->model->alias($this->through_colums[1], $this->through_model),
+			$this->model->alias($this->through_columns[1], $this->through_model),
 		);
 		
 		// Find old relationships that must be deleted
@@ -147,20 +147,30 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		}
 	}
 		
-	protected function in()
+	protected function in($as_array = FALSE)
 	{
 		// Grab all of the actual columns
 		$through_table = $this->model->alias(NULL, $this->through_model);
 		$through_columns = array(
 			$this->model->alias($this->through_columns[0]),
-			$this->model->alias($this->through_colums[1], $this->through_model),
+			$this->model->alias($this->through_columns[1], $this->through_model),
 		);
 		
-		return DB::Select()
-				->select($through_columns[1])
-				->from($through_table)
-				->where($through_columns[0], '=', $this->model->id())
-				->execute($this->model->db())
-				->as_array(NULL, $through_column[1]);
+		if (!$as_array)
+		{
+			return DB::Select()
+					->select($through_columns[1])
+					->from($through_table)
+					->where($through_columns[0], '=', $this->model->id());
+		}
+		else
+		{
+			return DB::Select()
+					->select($through_columns[1])
+					->from($through_table)
+					->where($through_columns[0], '=', $this->model->id())
+					->execute($this->model->db())
+					->as_array(NULL, $through_columns[1]);
+		}
 	}
 }
