@@ -14,15 +14,14 @@ class Jelly_Field_BelongsTo extends Jelly_Field_ForeignKey
 	 */
 	public function initialize($model, $column)
 	{
-		// Check to see if we need to dynamically generate the column name
-		if (empty($this->column))
-		{
-			$this->column = $column.'_id';
-		}
-		
 		if (empty($this->foreign_model))
 		{
 			$this->foreign_model = $column;
+		}
+		
+		if (empty($this->column))
+		{
+			$this->column = $this->foreign_model.'_id';
 		}
 		
 		if (empty($this->foreign_column))
