@@ -27,22 +27,14 @@ class Jelly_Field_BelongsTo extends Jelly_Field
 	 */
 	public function initialize($model, $column)
 	{
-<<<<<<< HEAD:classes/jelly/field/belongsto.php
+		// Default to the name of the column
 		if (empty($this->foreign_model))
-=======
-		// Default to $column_id
-		if (empty($this->column))
->>>>>>> 34bbf3505fa9b367d2b4ba56b117391c068c2c45:classes/jelly/field/belongsto.php
 		{
 			$this->foreign_model = $column;
 		}
 		
-<<<<<<< HEAD:classes/jelly/field/belongsto.php
+		// Default to foreign_model plus _id
 		if (empty($this->column))
-=======
-		// Default to the name of the column
-		if (empty($this->foreign_model))
->>>>>>> 34bbf3505fa9b367d2b4ba56b117391c068c2c45:classes/jelly/field/belongsto.php
 		{
 			$this->column = $this->foreign_model.'_id';
 		}
