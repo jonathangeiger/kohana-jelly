@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_HasMany extends Jelly_Field
+class Jelly_Field_HasOne extends Jelly_Field
 {	
 	/**
 	 * An array of IDs that have been set.
@@ -50,14 +50,11 @@ class Jelly_Field_HasMany extends Jelly_Field
 		// Handle Database Results
 		if (is_object($value))
 		{
-			foreach($value as $row)
-			{
-				$this->value[] = $row->id();
-			}
+			$this->value = $value->id();
 		}
 		else
 		{
-			$this->value = (array)$value;
+			$this->value = $value;
 		}
 	}
 	
@@ -76,6 +73,7 @@ class Jelly_Field_HasMany extends Jelly_Field
 		
 		// Return a real object
 		return Jelly::factory($this->foreign_model)
+				->limit(1, TRUE)
 				->where($this->foreign_column, '=', $this->model->id());
 	}
 	
@@ -99,10 +97,10 @@ class Jelly_Field_HasMany extends Jelly_Field
 			  ->execute($model->db());
 			
 		// Set the new relations
-		if (!empty($this->value) && is_array($this->value))
+		if (!empty($this->value))
 		{			
 			// Update the ones in our list
-			$query = $model->end()->where($model->primary_key(), 'IN', $this->value)
+			$query = $model->end()->where($model->primary_key(), '=', $this->value)
 						   ->build(Database::UPDATE);
 						
 			// Set them to this object

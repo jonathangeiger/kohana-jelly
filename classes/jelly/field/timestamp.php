@@ -2,15 +2,41 @@
 
 class Jelly_Field_Timestamp extends Jelly_Field
 {
-	protected $auto_now_create = FALSE;
-	protected $auto_now_update = FALSE;
-	protected $format = NULL;
+	/**
+	 * @var boolean Whether or not to automatically set now() on creation
+	 */
+	public $auto_now_create = FALSE;
 	
+	/**
+	 * @var boolean Whether or not to automatically set now() on update
+	 */
+	public $auto_now_update = FALSE;
+	
+	/**
+	 * @var string A date formula representing the time in the database
+	 */
+	public $format = NULL;
+	
+	/**
+	 * Converts the time to a UNIX timestamp
+	 *
+	 * @param string $value 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
 	public function set($value)
 	{
 		$this->value = strtotime($value);
 	}
 	
+	/**
+	 * Automatically creates or updates the time and 
+	 * converts it, if necessary
+	 *
+	 * @param string $loaded 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
 	public function save($loaded)
 	{
 		if ((!$loaded && $this->auto_now_create) || ($loaded && $this->auto_now_update))

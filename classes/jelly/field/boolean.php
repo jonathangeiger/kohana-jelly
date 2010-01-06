@@ -3,20 +3,40 @@
 class Jelly_Field_Boolean extends Jelly_Field
 {	
 	/**
-	 * Values for true and false in the database
+	 * How TRUE is represented in the database
 	 *
 	 * @var string
 	 */
-	protected $true_in_db = 1;
-	protected $false_in_db = 0;
+	protected $true = 1;
 	
+	/**
+	 * How FALSE is represented in the database
+	 *
+	 * @var string
+	 */
+	protected $false = 0;
+	
+	/**
+	 * Validates a boolean out of the value with filter_var
+	 *
+	 * @param mixed $value 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
 	public function set($value)
 	{
-		$this->value = (bool)$value;
+		$this->value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
 	}
 	
+	/**
+	 * Returns the value as it should be represented in the database
+	 *
+	 * @param string $loaded 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
 	public function save($loaded)
 	{
-		return ($this->value) ? $this->true_in_db : $this->false_in_db;
+		return ($this->value) ? $this->true : $this->false;
 	}
 }
