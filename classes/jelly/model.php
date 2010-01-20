@@ -41,6 +41,17 @@ abstract class Jelly_Model
 	protected $_map = array();
 	
 	/**
+	 * @var array An array mapping actual database columns 
+	 * 			  to their aliased name, for reverse lookups
+	 */
+	protected $_reverse_map = array();
+	
+	/**
+	 * @var array Unmapped data, that is still accessible
+	 */
+	protected $_unmapped = array();
+	
+	/**
 	 * @var array A cache of mapped values
 	 */
 	protected $_cache = array();
@@ -163,6 +174,9 @@ abstract class Jelly_Model
 			{
 				$this->_primary_key = $column;
 			}
+			
+			// Set the reverse map
+			$this->_reverse_map[$field->column] = $column;
 		}
 		
 		// Add the values stored by __set
@@ -216,6 +230,11 @@ abstract class Jelly_Model
 			// Fill the cache
 			return $this->_cache[$name][$verbose];
 		}
+		// Return unmapped data from custom queries
+		else if (isset($this->_unmapped[$name]))
+		{
+			return $this->_unmapped[$name];
+		}
 	}
 	
 	/**
@@ -263,6 +282,11 @@ abstract class Jelly_Model
 			// Track changes
 			$this->_changed[$name] = TRUE;
 			$this->_saved = FALSE;
+		}
+		// Allow setting unmapped data from custom queries
+		else
+		{
+			$this->_unmapped[$name] = $value;
 		}
 	}
 	
@@ -847,24 +871,18 @@ abstract class Jelly_Model
 	public function values(array $values, $reverse = FALSE)
 	{
 		// Set the data
-		foreach ($this->_map as $alias => $field)
+		foreach ($values as $column => $value)
 		{			
 			if ($reverse)
 			{
-				$column = $field->column;
+				$alias = (isset($this->_reverse_map[$column])) ? $this->_reverse_map[$column] : $column;
 			}
 			else
 			{
-				$column = $alias;
+				$alias = $column;
 			}
-			
-			// Ensure there's something to work with
-			if (!isset($values[$column]))
-			{
-				continue;
-			}
-						
-			$this->set($alias, $values[$column]);
+	
+			$this->set($alias, $value);
 		}
 		
 		return $this;
