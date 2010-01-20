@@ -737,7 +737,11 @@ abstract class Jelly_Model
 	 * @author Jonathan Geiger
 	 **/
 	public function alias($field = NULL, $model = NULL, $join = NULL)
-	{						
+	{	
+		// Save these in case we can't find anything
+		$original = func_get_args();
+		$found = FALSE;
+						
 		// Default to this model
 		if ($model === NULL)
 		{
@@ -759,6 +763,7 @@ abstract class Jelly_Model
 			if (isset($this->_map[$field]))
 			{
 				$field = $this->_map[$field]->column;	
+				$found = TRUE;
 			}	
 			
 			// Join is unset with both field and model provided, default to only providing the field
@@ -779,10 +784,12 @@ abstract class Jelly_Model
 				if (isset($model->_map[$field]))
 				{
 					$field = $model->_map[$field]->column;
+					$found = TRUE;
 				}
 				
 				// Set the model to the true table name
 				$model = $model->table_name();
+				$found = TRUE;
 			}
 			
 			// Join is unset but the model is outside this model, 
@@ -793,19 +800,40 @@ abstract class Jelly_Model
 			}
 		}
 		
-		if ($join && $field)
-		{
-			return $model.'.'.$field;
-		}
-		else
-		{
-			if ($field)
+		if ($found)
+		{	
+			if ($join && $field)
 			{
-				return $field;
+				return $model.'.'.$field;
 			}
 			else
 			{
-				return $model;
+				if ($field)
+				{
+					return $field;
+				}
+				else
+				{
+					return $model;
+				}
+			}
+		}
+		else
+		{
+			if (!empty($original[0]) && !empty($original[1]) && !empty($original[2]))
+			{
+				return $original[0].$original[1];
+			}
+			else
+			{
+				if ($original[0])
+				{
+					return $original[0];
+				}
+				else
+				{
+					return $original[1];
+				}
 			}
 		}
 	}
