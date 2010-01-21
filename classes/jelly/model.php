@@ -575,43 +575,6 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Updates multiple records.
-	 * 
-	 * This currently does NOT handle relationships. Only columns 
-	 * that are actually in the table can be updated.
-	 *
-	 * @param array $values An associative array of columns to update, along with the value
-	 * @return integer The number of rows affected
-	 * @author Expressway Video
-	 */
-	public function update($data)
-	{
-		$query = $this->build(Database::UPDATE);
-		$values = array();
-		
-		// Since we're out of the Jelly, we have to alias manually
-		foreach($data as $column => $value)
-		{
-			if (isset($this->_map[$column]) && $this->_map[$column]->in_db)
-			{
-				$field = $this->_map[$column];
-				
-				// We have to get a database value, so we get the old value, 
-				// set our value, then set the old value back. So what it's kind of hacky? 
-				$old = $field->get();
-				$field->set($value);
-				$value = $field->save(TRUE);
-				$field->set($old);
-				
-				// Set it with the aliased name
-				$values[$field->column] = $value;
-			}
-		}
-		
-		return $query->set($values)->execute($this->_db);
-	}
-	
-	/**
 	 * Deletes a single or multiple records
 	 * 
 	 * If we're loaded(), it just deletes this object, otherwise it deletes 
@@ -932,7 +895,7 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function execute($type = Database::SELECT, $as_object = TRUE)
+	public function execute($type = Database::SELECT, $data = NULL, $as_object = NULL)
 	{
 		$query = $this->build($type);
 		
@@ -942,11 +905,36 @@ abstract class Jelly_Model
 			$query->from($this->_table);
 		}
 		
-		// As object or array?
-		if ($as_object)
+		// Perform a little arg-munging since UPDATES accept a data parameter
+		if ($type === Database::UPDATE && is_array($data))
+		{
+			// Since we're out of the Jelly, we have to alias manually
+			foreach($data as $column => $value)
+			{
+				$query->value($this->alias($column), $value);
+			}
+		}
+		else
+		{
+			$as_object = $data;
+		}
+		
+		// Return a StdClass. Much faster
+		if ($as_object === NULL)
+		{
+			$query->as_object();
+		}
+		// Return as a Jelly, SLOW for large result sets
+		else if ($as_object === NULL)
+		{
+			$query->as_object(get_class($this));
+		}
+		// Allow custom classes
+		else if (is_string($as_object))
 		{
 			$query->as_object($as_object);
 		}
+		// Return as an array
 		else
 		{
 			$query->as_array();
