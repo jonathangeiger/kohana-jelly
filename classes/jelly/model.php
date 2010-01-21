@@ -39,13 +39,7 @@ abstract class Jelly_Model
 	 * @var array A map to the resource's data and how to process each column.
 	 */
 	protected $_map = array();
-	
-	/**
-	 * @var array An array mapping actual database columns 
-	 * 			  to their aliased name, for reverse lookups
-	 */
-	protected $_reverse_map = array();
-	
+
 	/**
 	 * @var array Unmapped data, that is still accessible
 	 */
@@ -174,9 +168,6 @@ abstract class Jelly_Model
 			{
 				$this->_primary_key = $column;
 			}
-			
-			// Set the reverse map
-			$this->_reverse_map[$field->column] = $column;
 		}
 		
 		// Add the values stored by __set
@@ -828,19 +819,31 @@ abstract class Jelly_Model
 	 **/
 	public function values(array $values, $reverse = FALSE)
 	{
-		// Set the data
-		foreach ($values as $column => $value)
-		{			
-			if ($reverse)
+		// We'll remove elements from this array when they've been found
+		$unmapped = $values;
+		
+		// Why this way? Because it allows the model to have 
+		// multiple fields that are based on the same column
+		foreach ($this->_map as $alias => $field)
+		{
+			$column = ($reverse) ? $field->column : $alias;
+			
+			// Remove found values from the unmapped
+			if (isset($unmapped[$column]))
 			{
-				$alias = (isset($this->_reverse_map[$column])) ? $this->_reverse_map[$column] : $column;
+				unset($unmapped[$column]);
 			}
-			else
+			
+			if (isset($values[$column]))
 			{
-				$alias = $column;
+				$this->set($alias, $values[$column]);
 			}
-	
-			$this->set($alias, $value);
+		}
+		
+		// Set any left over unmapped values
+		if ($unmapped)
+		{
+			$this->_unmapped = array_merge($this->_unmapped, $unmapped);
 		}
 		
 		return $this;
