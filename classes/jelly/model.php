@@ -905,12 +905,12 @@ abstract class Jelly_Model
 		$query = $this->build($type);
 		
 		// Have we got a from for SELECTS?
-		if ($type == Database::SELECT && !isset($this->_db_applied['from']))
+		if ($type === Database::SELECT && !isset($this->_db_applied['from']))
 		{
 			$query->from($this->_table);
 		}
 		// All other methods require table() to be set
-		else if (!isset($this->_db_applied['table']))
+		else if ($type !== Database::SELECT && !isset($this->_db_applied['table']))
 		{
 			$query->table($this->_table);
 		}
