@@ -757,8 +757,13 @@ abstract class Jelly_Model
 			{
 				$column = $model->_map[$field]->column;
 			}
+			// Test for *
+			else if ($field === '*')
+			{
+				$column = '*';
+			}
 		}
-		
+				
 		// Put it all back together
 		if ($join && $table && $column)
 		{
