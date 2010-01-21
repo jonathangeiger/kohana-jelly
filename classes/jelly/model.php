@@ -763,8 +763,8 @@ abstract class Jelly_Model
 	public function alias($field = NULL, $model = NULL, $join = NULL)
 	{	
 		// Save these in case we can't find anything
-		$original = func_get_args();
-		$found = FALSE;
+		$table = $model;
+		$column = $field;
 						
 		// Default to this model
 		if ($model === NULL)
@@ -777,88 +777,46 @@ abstract class Jelly_Model
 		{
 			list($model, $field) = explode('.', $field);
 		}
-						
-		// Column in this model
+		
+		// Attempt to find a valid model to work with
 		if ($model == $this->_model || $model == $this->_table)
 		{
-			$model = $this->_table;
-			
-			// Provide the aliased column
-			if (isset($this->_map[$field]))
-			{
-				$field = $this->_map[$field]->column;	
-				$found = TRUE;
-			}	
-			
-			// Join is unset with both field and model provided, default to only providing the field
-			if ($join === NULL)
-			{
-				$join = FALSE;
-			}
+			$model = $this;
 		}
-		
-		// Outside the model
-		else
+		else if (class_exists('Model_'.$model, FALSE) 
+				|| Kohana::find_file('classes', 'model/'.str_replace('_', '/', $model)))
 		{
-			if (Kohana::find_file('classes', 'model/'.str_replace('_', '/', $model)))
-			{
-				// Find the actual table name
-				$model = Jelly::Factory($model);
-
-				if (isset($model->_map[$field]))
-				{
-					$field = $model->_map[$field]->column;
-					$found = TRUE;
-				}
-				
-				// Set the model to the true table name
-				$model = $model->table_name();
-				$found = TRUE;
-			}
-			
-			// Join is unset but the model is outside this model, 
-			// default to joining table and field
-			if ($join === NULL)
-			{
-				$join = TRUE;
-			}
-		}
-		
-		if ($found)
-		{	
-			if ($join && $field)
-			{
-				return $model.'.'.$field;
-			}
-			else
-			{
-				if ($field)
-				{
-					return $field;
-				}
-				else
-				{
-					return $model;
-				}
-			}
+			$model = Jelly::factory($model);
 		}
 		else
 		{
-			if (!empty($original[0]) && !empty($original[1]) && !empty($original[2]))
+			$model = FALSE;
+		}
+		
+		// We can't do anything if we don't have a model
+		if ($model)
+		{
+			$table = $model->_table;
+			
+			// Search for a field
+			if ($field && isset($model->_map[$field]))
 			{
-				return $original[0].$original[1];
+				$column = $model->_map[$field]->column;
 			}
-			else
-			{
-				if ($original[0])
-				{
-					return $original[0];
-				}
-				else
-				{
-					return $original[1];
-				}
-			}
+		}
+		
+		// Put it all back together
+		if ($join && $table && $column)
+		{
+			return $table.'.'.$column;
+		}
+		else if ($column)
+		{
+			return $column;
+		}
+		else if ($table)
+		{
+			return $table;
 		}
 	}
 	
