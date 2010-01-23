@@ -173,4 +173,18 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 					->as_array(NULL, $through_columns[1]);
 		}
 	}
+	
+	/**
+	 * Adds the "ids" variable to the view data
+	 *
+	 * @param string $prefix 
+	 * @param string $data 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function input($prefix = 'jelly/field', $data = array())
+	{
+		$data['ids'] = $this->in(TRUE);
+		return parent::input($prefix, $data);
+	}
 }

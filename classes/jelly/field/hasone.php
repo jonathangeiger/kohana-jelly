@@ -3,13 +3,9 @@
 class Jelly_Field_HasOne extends Jelly_Field
 {	
 	/**
-	 * An array of IDs that have been set.
-	 * 
-	 * This is empty unless the value has been set manually
-	 *
-	 * @var string
+	 * @var string The value of the column
 	 */
-	public $value = array();
+	public $value = NULL;
 	
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -43,10 +39,7 @@ class Jelly_Field_HasOne extends Jelly_Field
 	 * @author Jonathan Geiger
 	 */
 	public function set($value)
-	{
-		// Can be set in only one go
-		$this->value = array();
-		
+	{		
 		// Handle Database Results
 		if (is_object($value))
 		{
@@ -107,5 +100,19 @@ class Jelly_Field_HasOne extends Jelly_Field
 			$query->set(array($alias => $id))
 				  ->execute($model->db());
 		}
+	}
+	
+	/**
+	 * Ads the id property to the outputted variables
+	 *
+	 * @param string $prefix 
+	 * @param string $data 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function input($prefix = 'jelly/field', $data = array())
+	{
+		$data['id'] = $this->get()->load()->id();
+		return parent::input($prefix, $data);
 	}
 }

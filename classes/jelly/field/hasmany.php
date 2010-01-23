@@ -110,4 +110,26 @@ class Jelly_Field_HasMany extends Jelly_Field
 				  ->execute($model->db());
 		}
 	}
+	
+	/**
+	 * Provides the input with the ids variable. An array of 
+	 * all the ID's in the foreign model that this record owns.
+	 * 
+	 * @param string $prefix 
+	 * @param string $data 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function input($prefix = 'jelly/field', $data = array())
+	{
+		$data['ids'] = array();
+			
+		// Grab the IDS
+		foreach ($this->get()->load() as $model)
+		{
+			$data['ids'][] = $model->id();
+		}
+		
+		return parent::input($prefix, $data);
+	}
 }

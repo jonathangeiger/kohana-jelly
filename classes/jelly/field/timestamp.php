@@ -18,6 +18,11 @@ class Jelly_Field_Timestamp extends Jelly_Field
 	public $format = NULL;
 	
 	/**
+	 * @var string A pretty format used for representing the date to users
+	 */
+	public $pretty_format = 'r';
+	
+	/**
 	 * Converts the time to a UNIX timestamp
 	 *
 	 * @param string $value 
@@ -26,7 +31,10 @@ class Jelly_Field_Timestamp extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		$this->value = strtotime($value);
+		if (FALSE === ($this->value = strtotime($value)))
+		{
+			$this->value = $value;
+		}
 	}
 	
 	/**

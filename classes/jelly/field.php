@@ -21,6 +21,11 @@ abstract class Jelly_Field
 	 * @var string A pretty name for the field
 	 */
 	public $label;
+
+	/**
+	 * @var string The field's name in the form
+	 */
+	public $name;
 	
 	/**
 	* @var string Description of the field. Default is `''` (an empty string).
@@ -96,6 +101,7 @@ abstract class Jelly_Field
 	{
 		// This will come in handy for setting complex relationships
 		$this->model = $model;
+		$this->name = $column;
 		
 		if (!$this->column)
 		{
@@ -150,18 +156,26 @@ abstract class Jelly_Field
 	/**
 	 * Displays the particular field as a form item
 	 *
+	 * @param string $prefix The prefix to put before the filename to be rendered
 	 * @return View
 	 * @author Jonathan Geiger
 	 **/
-	public function input()
+	public function input($prefix = 'jelly/field', $data = array())
 	{
-		return NULL; // Not yet implemented
-		
 		// Determine the view name, which matches the class name
-		$view = 'fields/' . str_replace('field_', '', strtolower(get_class($this)));
+		$file = strtolower(get_class($this));
+		
+		// Could be prefixed by Jelly_Field, or just Field_
+		$file = str_replace(array('jelly_field_', 'field_'), array('', ''), $file);
+		
+		// Allowing a prefix means inputs can be rendered from different paths
+		$view = $prefix.'/'.$file;
+		
+		// Grant acces to all of the vars plus the field object
+		$data = array_merge($data, get_object_vars($this), array('field' => $this));
 		
 		// By default, a view object only needs a few defaults to display it properly
-		return View::factory($view, get_object_vars($this));
+		return View::factory($view, $data);
 	}	
 	
 } // END abstract class Resource_Field
