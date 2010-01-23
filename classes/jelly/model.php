@@ -139,9 +139,9 @@ abstract class Jelly_Model
 		$this->_init();
 		
 		// Have an id? Attempt to load it
-		if (is_int($id))
+		if (is_int($id) || is_string($id))
 		{
-			$this->load($id);
+			$this->load($id, 1);
 		}
 	}
 
@@ -355,13 +355,17 @@ abstract class Jelly_Model
 	/**
 	 * Count the number of records for the current query
 	 *
-	 * @param 	$where 	An associative array to use as the where clause
+	 * @param   mixed  $where  An associative array to use as the where clause, or a primary key
 	 * @return  $this
 	 */
 	public function count($where = NULL)
 	{
+		if (is_int($where) || is_string($where))
+		{
+			$this->where($this->_primary_key, '=', $where);
+		}
 		// Add the where
-		if (is_array($where))
+		else if (is_array($where))
 		{
 			foreach($where as $column => $value)
 			{
@@ -380,14 +384,14 @@ abstract class Jelly_Model
 	/**
 	 * Loads a single row or multiple rows
 	 *
-	 * @param mixed an array or id to load 
+	 * @param  mixed  $where  an array or id to load 
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function load($where = NULL, $limit = NULL)
 	{
 		// Apply the limit
-		if (is_int($where) && $limit === NULL)
+		if (is_int($where) || is_string($where))
 		{
 			$this->where($this->_primary_key, '=', $where);
 			$limit = 1;
@@ -587,7 +591,7 @@ abstract class Jelly_Model
 	public function delete($where = NULL)
 	{
 		// Delete an id
-		if (is_int($where))
+		if (is_int($where) || is_string($where))
 		{
 			$this->where($this->_primary_key, '=', $where);
 		}
