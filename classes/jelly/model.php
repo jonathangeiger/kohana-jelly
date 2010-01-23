@@ -910,6 +910,31 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Returns a particular field
+	 *
+	 * @param string $name 
+	 * @return Jelly_Field
+	 * @author Jonathan Geiger
+	 */
+	public function field($name)
+	{
+		return isset($this->_map[$name]) ? $this->_map[$name] : NULL;
+	}
+	
+	/**
+	 * Returns a View object for the input
+	 *
+	 * @param string $name 
+	 * @param string $prefix 
+	 * @return View
+	 * @author Jonathan Geiger
+	 */
+	public function input($name, $prefix = 'jelly/field')
+	{
+		return isset($this->_map[$name]) ? $this->_map[$name]->input($prefix) : NULL;
+	}
+	
+	/**
 	 * Returns the raw query builder query, executed.
 	 *
 	 * @return void
