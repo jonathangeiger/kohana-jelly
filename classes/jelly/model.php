@@ -9,10 +9,10 @@ abstract class Jelly_Model
 	 * @return object_name
 	 * @author Jonathan Geiger
 	 */
-	public static function factory($model)
+	public static function factory($model, $id = NULL)
 	{
 		$class = "Model_".$model;
-		return new $class;
+		return new $class($id);
 	}
 	
 	/**
