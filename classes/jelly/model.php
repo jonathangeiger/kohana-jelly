@@ -895,6 +895,17 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Returns the model's field map
+	 *
+	 * @return array
+	 * @author Jonathan Geiger
+	 */
+	public function map()
+	{
+		return $this->_map;
+	}
+	
+	/**
 	 * Returns the raw query builder query, executed.
 	 *
 	 * @return void
