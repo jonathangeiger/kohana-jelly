@@ -3,18 +3,24 @@
 class Jelly_Field_Boolean extends Jelly_Field
 {	
 	/**
-	 * How TRUE is represented in the database
-	 *
-	 * @var string
+	 * @var mixed How TRUE is represented in the database
 	 */
-	protected $true = 1;
+	public $true = 1;
 	
 	/**
-	 * How FALSE is represented in the database
-	 *
-	 * @var string
+	 * @var string How TRUE is represented to users (mainly in forms)
 	 */
-	protected $false = 0;
+	public $pretty_true = "Yes";
+	
+	/**
+	 * @var stringHow FALSE is represented in the database
+	 */
+	public $false = 0;
+	
+	/**
+	 * @var string How FALSE is represented to users (mainly in forms)
+	 */
+	public $pretty_false = "No";
 	
 	/**
 	 * Validates a boolean out of the value with filter_var

@@ -7,7 +7,7 @@ class Jelly_Field_Enum extends Jelly_Field
 	 *
 	 * @var string
 	 */
-	protected $choices = array();
+	public $choices = array();
 	
 	/**
 	 * Ensures there is a choices array set
