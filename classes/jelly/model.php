@@ -121,7 +121,7 @@ abstract class Jelly_Model
 	 * @return void
 	 * @author Jonathan Geiger
 	 **/
-	public function __construct($id = NULL)
+	public function __construct($cond = NULL)
 	{
 		// Set the model if there is no default
 		if (!$this->_model)
@@ -139,9 +139,9 @@ abstract class Jelly_Model
 		$this->_init();
 		
 		// Have an id? Attempt to load it
-		if (is_int($id) || is_string($id))
+		if (is_int($cond) || is_string($cond) || is_array($cond))
 		{
-			$this->load($id, 1);
+			$this->load($cond, 1);
 		}
 	}
 
