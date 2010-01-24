@@ -146,6 +146,28 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 			}
 		}
 	}
+	
+	/**
+	 * Returns whether or not this field has another model
+	 *
+	 * @param string $model 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function has(array $ids)
+	{
+		$in = $this->in(TRUE);
+		
+		foreach ($ids as $id)
+		{
+			if (!in_array($id, $in))
+			{
+				return FALSE;
+			}
+		}
+		
+		return TRUE;
+	}
 		
 	protected function in($as_array = FALSE)
 	{

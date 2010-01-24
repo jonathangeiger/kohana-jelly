@@ -382,6 +382,56 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Returns whether or not that model is related to the 
+	 * $model specified. This only works with relationships
+	 * where the model "has" another model or models:
+	 * 
+	 * has_many, has_one, many_to_many
+	 *
+	 * @param string $alias 
+	 * @param string $model 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function has($alias, $models)
+	{
+		$ids = array();
+		
+		// Everything comes in as an array of ids, so we must convert things like
+		// has ('alias', 1), or has('alias', $some_jelly_model)
+		if (!is_array($models) && !$models instanceof Database_Result)
+		{
+			if (is_object($models))
+			{
+				$models = $models->id();
+			}
+			
+			$ids = array($models);
+		}
+		// Construct the primary keys of the models. That's all we'll need
+		else
+		{
+			foreach ($models as $model)
+			{
+				if (is_object($model))
+				{
+					$model = $model->id();
+				}
+				
+				$ids[] = $model;
+			}
+		}
+		
+		// Proxy to the field. It handles everything
+		if (isset($this->_map[$alias]) AND is_callable(array($this->_map[$alias], 'has')))
+		{
+			return $this->_map[$alias]->has($ids);
+		}
+		
+		return FALSE;
+	}
+	
+	/**
 	 * Loads a single row or multiple rows
 	 *
 	 * @param  mixed  $where  an array or id to load 
@@ -720,6 +770,12 @@ abstract class Jelly_Model
 	 **/
 	public function alias($field = NULL, $model = NULL, $join = NULL)
 	{	
+		if (strpos($field, '"') !== FALSE)
+		{
+			// A function. Just return it
+			return $field;
+		}
+		
 		// Save these in case we can't find anything
 		$table = $model;
 		$column = $field;

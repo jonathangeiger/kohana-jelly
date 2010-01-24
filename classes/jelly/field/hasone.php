@@ -103,6 +103,24 @@ class Jelly_Field_HasOne extends Jelly_Field
 	}
 	
 	/**
+	 * Returns whether or not this field has another model
+	 *
+	 * @param string $model 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function has(array $ids)
+	{
+		$model = Jelly::factory($this->foreign_model);
+		return (bool) $model
+			->select(array('COUNT("*")', 'records_found'))
+			->where($this->foreign_column, '=', $this->model->id())
+			->where($model->primary_key(), 'IN', $ids)
+			->execute()
+			->get('records_found');
+	}
+	
+	/**
 	 * Ads the id property to the outputted variables
 	 *
 	 * @param string $prefix 

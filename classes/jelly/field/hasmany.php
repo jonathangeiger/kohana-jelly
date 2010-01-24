@@ -112,6 +112,24 @@ class Jelly_Field_HasMany extends Jelly_Field
 	}
 	
 	/**
+	 * Returns whether or not this field has another model
+	 *
+	 * @param string $model 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function has(array $ids)
+	{
+		$model = Jelly::factory($this->foreign_model);
+		return (bool) $model
+			->select(array('COUNT("*")', 'records_found'))
+			->where($this->foreign_column, '=', $this->model->id())
+			->where($model->primary_key(), 'IN', $ids)
+			->execute()
+			->get('records_found');
+	}
+	
+	/**
 	 * Provides the input with the ids variable. An array of 
 	 * all the ID's in the foreign model that this record owns.
 	 * 
