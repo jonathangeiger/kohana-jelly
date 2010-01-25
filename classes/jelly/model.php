@@ -282,6 +282,30 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Isset magic method
+	 *
+	 * @param string $name 
+	 * @return boolean
+	 * @author Jonathan Geiger
+	 */
+	public function __isset($name)
+	{
+		return (isset($this->_map[$name]) || isset($this->_unmapped[$name]));
+	}
+	
+	/**
+	 * Unset magic method
+	 *
+	 * @param string $name 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function __unset($name)
+	{
+		unset($this->_map[$name], $this->_unmapped[$name]);
+	}
+	
+	/**
 	 * Handles pass-through to database methods. Calls to query methods
 	 * (query, get, insert, update) are not allowed. Query builder methods
 	 * are chainable.
