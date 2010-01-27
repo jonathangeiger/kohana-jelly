@@ -1,5 +1,16 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
+/**
+ * Jelly is a Kohana 3.0 ORM. It itself is a conceptual fork of Kohana's ORM 
+ * and Sprig. Some code and ideas are borrowed from both projects.
+ * 
+ * @author Jonathan Geiger
+ * @author Woody Gilk
+ * @link http://github.com/shadowhand/sprig/
+ * @author Kohana Team
+ * @link http://github.com/jheathco/kohana-orm
+ * @license http://kohanaphp.com/license.html
+ */
 abstract class Jelly_Model
 {			
 	/**
