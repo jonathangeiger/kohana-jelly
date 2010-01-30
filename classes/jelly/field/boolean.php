@@ -10,7 +10,7 @@ class Jelly_Field_Boolean extends Jelly_Field
 	/**
 	 * @var string How TRUE is represented to users (mainly in forms)
 	 */
-	public $pretty_true = "Yes";
+	public $pretty_true = __("Yes");
 	
 	/**
 	 * @var stringHow FALSE is represented in the database
@@ -20,7 +20,7 @@ class Jelly_Field_Boolean extends Jelly_Field
 	/**
 	 * @var string How FALSE is represented to users (mainly in forms)
 	 */
-	public $pretty_false = "No";
+	public $pretty_false = __("No");
 	
 	/**
 	 * Validates a boolean out of the value with filter_var
