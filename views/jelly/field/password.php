@@ -1,1 +1,1 @@
-<input type="password" name="<php echo $name ?>" value="" id="<php echo $name ?>">
+<input type="password" name="<?php echo $name ?>" value="" id="<?php echo $name ?>">
