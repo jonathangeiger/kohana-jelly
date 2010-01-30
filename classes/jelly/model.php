@@ -577,11 +577,6 @@ abstract class Jelly_Model
 			{	
 				if (isset($this->_changed[$column]))
 				{
-					if (isset($data[$column]))
-					{
-						$this->set($column, $data[$column]);
-					}	
-
 					$values[$field->column] = $field->save($this->_loaded);
 				}
 			}
@@ -630,11 +625,6 @@ abstract class Jelly_Model
 			{
 				if (isset($this->_changed[$column]))
 				{
-					if (isset($data[$column]))
-					{
-						$field->set($data[$column]);
-					}
-
 					$field->save($id);
 				}
 			}
