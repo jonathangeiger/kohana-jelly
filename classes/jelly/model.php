@@ -521,7 +521,7 @@ abstract class Jelly_Model
 		{
 			if ($join === NULL)
 			{
-				$joind = FALSE;
+				$join = FALSE;
 			}
 		}
 		
