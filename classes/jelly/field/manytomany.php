@@ -126,7 +126,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		// Grab all of the actual columns
 		$through_table = Jelly::model_alias($this->through_model);
 		$through_columns = array(
-			Jelly::field_alias($this->model.'.'.$this->through_columns[0], TRUE),
+			Jelly::field_alias($this->through_model.'.'.$this->through_columns[0], TRUE),
 			Jelly::field_alias($this->through_model.'.'.$this->through_columns[1], TRUE),
 		);
 		
@@ -145,7 +145,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 			foreach ($new as $new_id)
 			{
 				DB::insert($through_table, $through_columns)
-					->values(array($id, $new_id))
+					->values(array($model->id(), $new_id))
 					->execute($model->db());
 			}
 		}
@@ -178,8 +178,8 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		// Grab all of the actual columns
 		$through_table = Jelly::model_alias($this->through_model);
 		$through_columns = array(
-			Jelly::field_alias($this->through_model.'.'.$this->through_columns[0], TRUE),
-			Jelly::field_alias($this->through_model.'.'.$this->through_columns[1], TRUE),
+			Jelly::field_alias($this->through_model.'.'.$this->through_columns[0], FALSE),
+			Jelly::field_alias($this->through_model.'.'.$this->through_columns[1], FALSE),
 		);
 						
 		if (!$as_array)
