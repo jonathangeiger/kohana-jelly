@@ -60,7 +60,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		
 		if (empty($this->through_columns))
 		{
-			$this->through_columns[0] = inflector::singular($model->model_name()).'_id';
+			$this->through_columns[0] = inflector::singular($model).'_id';
 			$this->through_columns[1] = inflector::singular($this->foreign_model).'_id';
 		}	
 		
@@ -70,7 +70,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 			// sorted alphabetically and with an underscore separating them
 			$this->through_model = array(
 				inflector::plural($this->foreign_model), 
-				inflector::plural($model->model_name())
+				inflector::plural($model)
 			);
 			
 			// Sort
@@ -86,32 +86,34 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 	public function set($value)
 	{
 		// Can be set in only one go
-		$this->value = array();
+		$return = array();
 		
 		// Handle Database Results
 		if (is_object($value))
 		{
 			foreach($value as $row)
 			{
-				$this->value[] = $row->id();
+				$return[] = $row->id();
 			}
 		}
 		else
 		{
-			$this->value = (array)$value;
+			$return = (array)$value;
 		}
+		
+		return $return;
 	}
 	
-	public function get($object = TRUE)
+	public function get($model, $value)
 	{
 		// Only return the actual value
 		if (!$object)
 		{
-			return $this->value;
+			return $value;
 		}
 
 		return Jelly::factory($this->foreign_model)
-				->where($this->foreign_column, 'IN', $this->in());
+				->where($this->foreign_column, 'IN', $this->in($model));
 	}
 	
 	public function save($id)
@@ -154,9 +156,9 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function has(array $ids)
+	public function has($model, array $ids)
 	{
-		$in = $this->in(TRUE);
+		$in = $this->in($model, TRUE);
 		
 		foreach ($ids as $id)
 		{
@@ -169,13 +171,13 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		return TRUE;
 	}
 		
-	protected function in($as_array = FALSE)
+	protected function in($model, $as_array = FALSE)
 	{
 		// Grab all of the actual columns
-		$through_table = $this->model->alias(NULL, $this->through_model);
+		$through_table = Jelly::model_alias($this->through_model);
 		$through_columns = array(
-			$this->model->alias($this->through_columns[0]),
-			$this->model->alias($this->through_columns[1], $this->through_model),
+			Jelly::field_alias($this->model, $this->through_columns[0]),
+			Jelly::field_alias($this->through_model, $this->through_columns[1]),
 		);
 		
 		if (!$as_array)
@@ -183,15 +185,15 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 			return DB::Select()
 					->select($through_columns[1])
 					->from($through_table)
-					->where($through_columns[0], '=', $this->model->id());
+					->where($through_columns[0], '=', $model->id());
 		}
 		else
 		{
 			return DB::Select()
 					->select($through_columns[1])
 					->from($through_table)
-					->where($through_columns[0], '=', $this->model->id())
-					->execute($this->model->db())
+					->where($through_columns[0], '=', $model->id())
+					->execute($model->db())
 					->as_array(NULL, $through_columns[1]);
 		}
 	}
@@ -199,14 +201,14 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 	/**
 	 * Adds the "ids" variable to the view data
 	 *
-	 * @param string $prefix 
-	 * @param string $data 
+	 * @param string $prefix
+	 * @param string $data
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{
-		$data['ids'] = $this->in(TRUE);
+		$data['ids'] = $this->in($data['model'], TRUE);
 		return parent::input($prefix, $data);
 	}
 }

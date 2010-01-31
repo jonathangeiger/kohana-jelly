@@ -31,7 +31,7 @@ class Jelly_Field_Boolean extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		$this->value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+		return filter_var($value, FILTER_VALIDATE_BOOLEAN);
 	}
 	
 	/**
@@ -41,8 +41,8 @@ class Jelly_Field_Boolean extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function save($loaded)
+	public function save($model, $value)
 	{
-		return ($this->value) ? $this->true : $this->false;
+		return ($value) ? $this->true : $this->false;
 	}
 }

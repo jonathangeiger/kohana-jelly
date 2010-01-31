@@ -3,15 +3,6 @@
 class Jelly_Field_HasMany extends Jelly_Field
 {	
 	/**
-	 * An array of IDs that have been set.
-	 * 
-	 * This is empty unless the value has been set manually
-	 *
-	 * @var string
-	 */
-	public $value = array();
-	
-	/**
 	 * Overrides the initialize to automatically provide the column name
 	 *
 	 * @param string $model 
@@ -28,7 +19,7 @@ class Jelly_Field_HasMany extends Jelly_Field
 		
 		if (empty($this->foreign_column))
 		{
-			$this->foreign_column = $model->model_name().'_id';
+			$this->foreign_column = $model.'_id';
 		}
 		
 		// Column is set and won't be overridden
@@ -36,8 +27,6 @@ class Jelly_Field_HasMany extends Jelly_Field
 	}
 	
 	/**
-	 * Sets 
-	 *
 	 * @param string $value 
 	 * @return void
 	 * @author Jonathan Geiger
@@ -45,20 +34,22 @@ class Jelly_Field_HasMany extends Jelly_Field
 	public function set($value)
 	{
 		// Can be set in only one go
-		$this->value = array();
+		$return = array();
 		
 		// Handle Database Results
 		if (is_object($value))
 		{
 			foreach($value as $row)
 			{
-				$this->value[] = $row->id();
+				$return[] = $row->id();
 			}
 		}
 		else
 		{
-			$this->value = (array)$value;
+			$return = (array)$value;
 		}
+		
+		return $return;
 	}
 	
 	/**
@@ -66,17 +57,17 @@ class Jelly_Field_HasMany extends Jelly_Field
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function get($object = TRUE)
+	public function get($model, $value, $object = TRUE)
 	{
 		// Only return the actual value
 		if (!$object)
 		{
-			return $this->value;
+			return $value;
 		}
 		
 		// Return a real object
 		return Jelly::factory($this->foreign_model)
-				->where($this->foreign_column, '=', $this->model->id());
+				->where($this->foreign_column, '=', $model->id());
 	}
 	
 	/**
@@ -86,29 +77,29 @@ class Jelly_Field_HasMany extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function save($id)
+	public function save($model, $value)
 	{
-		// Empty relations to the default value
-		$model = Jelly::factory($this->foreign_model);
-		$alias = $model->alias($this->foreign_column);
-		$query = $model->where($this->foreign_column, '=', $this->model->id())
-					   ->build(Database::UPDATE);
+		$foreign = Jelly::Factory($this->foreign_model);
 		
-		// NULL them out
-		$query->set(array($alias => $this->default))
-			  ->execute($model->db());
-			
+		// Empty relations to the default value
+		$foreign
+			->where($this->foreign_column, '=', $model->id())
+			->execute(Database::UPDATE, array(
+				$this->foreign_column => $this->default
+			));
+						
 		// Set the new relations
-		if (!empty($this->value) && is_array($this->value))
+		if (!empty($value) && is_array($value))
 		{			
 			// Update the ones in our list
-			$query = $model->end()->where($model->primary_key(), 'IN', $this->value)
-						   ->build(Database::UPDATE);
-						
-			// Set them to this object
-			$query->set(array($alias => $id))
-				  ->execute($model->db());
+			$foreign
+				->where($foreign->primary_key(), 'IN', $value)
+				->execute(Database::UPDATE, array(
+					$this->foreign_column => $model->id()
+				));
 		}
+		
+		return $value;
 	}
 	
 	/**
@@ -118,36 +109,36 @@ class Jelly_Field_HasMany extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function has(array $ids)
+	public function has($model, array $ids)
 	{
 		$model = Jelly::factory($this->foreign_model);
 		return (bool) $model
 			->select(array('COUNT("*")', 'records_found'))
-			->where($this->foreign_column, '=', $this->model->id())
+			->where($this->foreign_column, '=', $model->id())
 			->where($model->primary_key(), 'IN', $ids)
 			->execute()
 			->get('records_found');
 	}
 	
 	/**
-	 * Provides the input with the ids variable. An array of 
-	 * all the ID's in the foreign model that this record owns.
-	 * 
-	 * @param string $prefix 
-	 * @param string $data 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
+	* Provides the input with the ids variable. An array of
+	* all the ID's in the foreign model that this record owns.
+	*
+	* @param string $prefix
+	* @param string $data
+	* @return void
+	* @author Jonathan Geiger
+	*/
 	public function input($prefix = 'jelly/field', $data = array())
 	{
 		$data['ids'] = array();
-			
+
 		// Grab the IDS
-		foreach ($this->get()->load() as $model)
+		foreach ($this->get()->load($data['model'], NULL) as $model)
 		{
 			$data['ids'][] = $model->id();
 		}
-		
+
 		return parent::input($prefix, $data);
 	}
 }

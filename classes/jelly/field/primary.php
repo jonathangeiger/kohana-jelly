@@ -18,11 +18,11 @@ class Jelly_Field_Primary extends Jelly_Field
 	{
 		if (is_numeric($value))
 		{
-			$this->value = (int)$value;
+			return (int)$value;
 		}
 		else
 		{
-			parent::set($value);
+			return (string)$value;
 		}
 	}
 }

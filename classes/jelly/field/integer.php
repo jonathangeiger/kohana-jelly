@@ -11,6 +11,6 @@ class Jelly_Field_Integer extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		$this->value = (int)$value;
+		return (int)$value;
 	}
 }

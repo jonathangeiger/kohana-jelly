@@ -16,11 +16,13 @@ class Jelly_Field_Float extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		$this->value = (float)$value;
+		$value = (float)$value;
 		
 		if ($this->places !== NULL)
 		{
-			$this->value = round($value, $this->places);
+			$value = round($value, $this->places);
 		}
+		
+		return $value;
 	}
 }

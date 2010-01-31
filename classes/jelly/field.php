@@ -1,9 +1,9 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 abstract class Jelly_Field
-{
+{	
 	/**
-	 * @var object The model this field is attached to
+	 * @var string The model's name
 	 */
 	public $model;
 	
@@ -11,11 +11,6 @@ abstract class Jelly_Field
 	 * @var string The column's name in the database
 	 */
 	public $column;
-	
-	/**
-	 * @var mixed The internally represented value
-	 */
-	public $value;
 	
 	/**
 	 * @var string A pretty name for the field
@@ -87,12 +82,7 @@ abstract class Jelly_Field
 	
 	/**
 	 * This is called after construction so that fields can finish 
-	 * constructing themselves with a copy of the model and column 
-	 * it represents.
-	 * 
-	 * Requiring all _map declarations to pass $this, and the column name 
-	 * to the constructor of each field is just repetitive. The application
-	 * can do this by itself, even if it is a bit unorthodox.
+	 * constructing themselves with a copy of the column it represents.
 	 *
 	 * @return void
 	 * @author Jonathan Geiger
@@ -101,6 +91,8 @@ abstract class Jelly_Field
 	{
 		// This will come in handy for setting complex relationships
 		$this->model = $model;
+		
+		// This is for naming form fields
 		$this->name = $column;
 		
 		if (!$this->column)
@@ -124,19 +116,21 @@ abstract class Jelly_Field
 	 **/
 	public function set($value)
 	{
-		$this->value = (string)$value;
+		return (string)$value;
 	}
 	
 	/**
 	 * Returns a particular value processed according 
 	 * to the class's standards.
 	 *
+	 * @param object $model A copy of the current model is always passed
+	 * @param mixed $value The value as it's currently set in the model
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 **/
-	public function get()
+	public function get($model, $value)
 	{
-		return $this->value;
+		return $value;
 	}
 	
 	/**
@@ -148,9 +142,9 @@ abstract class Jelly_Field
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function save($loaded) 
+	public function save($model, $value) 
 	{
-		return $this->value;
+		return $value;
 	}
 	
 	/**
@@ -160,7 +154,7 @@ abstract class Jelly_Field
 	 * @return View
 	 * @author Jonathan Geiger
 	 **/
-	public function input($prefix = 'jelly/field', $data = array())
+	public function input($prefix = NULL, $data = array())
 	{
 		// Determine the view name, which matches the class name
 		$file = strtolower(get_class($this));
@@ -172,7 +166,7 @@ abstract class Jelly_Field
 		$view = $prefix.'/'.$file;
 		
 		// Grant acces to all of the vars plus the field object
-		$data = array_merge($data, get_object_vars($this), array('field' => $this));
+		$data = array_merge(get_object_vars($this), $data, array('field' => $this));
 		
 		// By default, a view object only needs a few defaults to display it properly
 		return View::factory($view, $data);

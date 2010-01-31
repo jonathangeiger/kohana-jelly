@@ -62,17 +62,15 @@ class Jelly_Field_BelongsTo extends Jelly_Field
 		{
 			if ($value->loaded() && $value->id())
 			{
-				$this->value = $value->id();
+				$value = $value->id();
 			}
 			else
 			{
-				$this->value = $this->default;
+				$value = $this->default;
 			}
 		}
-		else
-		{
-			$this->value = $value;
-		}
+		
+		return $value;
 	}
 	
 	/**
@@ -80,17 +78,17 @@ class Jelly_Field_BelongsTo extends Jelly_Field
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function get($object = TRUE)
+	public function get($model, $value, $object = TRUE)
 	{
 		// Only return the actual value
 		if (!$object)
 		{
-			return $this->value;
+			return $value;
 		}
 		
 		// Return a real category object
 		return Jelly::factory($this->foreign_model)
 				->limit(1, TRUE)
-				->where($this->foreign_column, '=', $this->value);
+				->where($this->foreign_column, '=', $value);
 	}
 }

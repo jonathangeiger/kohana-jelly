@@ -3,11 +3,6 @@
 class Jelly_Field_HasOne extends Jelly_Field
 {	
 	/**
-	 * @var string The value of the column
-	 */
-	public $value = NULL;
-	
-	/**
 	 * Overrides the initialize to automatically provide the column name
 	 *
 	 * @param string $model 
@@ -24,7 +19,7 @@ class Jelly_Field_HasOne extends Jelly_Field
 		
 		if (empty($this->foreign_column))
 		{
-			$this->foreign_column = $model->model_name().'_id';
+			$this->foreign_column = $model.'_id';
 		}
 		
 		// Column is set and won't be overridden
@@ -32,22 +27,20 @@ class Jelly_Field_HasOne extends Jelly_Field
 	}
 	
 	/**
-	 * Sets 
-	 *
 	 * @param string $value 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
 	public function set($value)
-	{		
+	{
 		// Handle Database Results
 		if (is_object($value))
 		{
-			$this->value = $value->id();
+			return $value->id();
 		}
 		else
 		{
-			$this->value = $value;
+			return $value;
 		}
 	}
 	
@@ -56,18 +49,17 @@ class Jelly_Field_HasOne extends Jelly_Field
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function get($object = TRUE)
+	public function get($model, $value, $object = TRUE)
 	{
 		// Only return the actual value
 		if (!$object)
 		{
-			return $this->value;
+			return $value;
 		}
 		
 		// Return a real object
 		return Jelly::factory($this->foreign_model)
-				->limit(1, TRUE)
-				->where($this->foreign_column, '=', $this->model->id());
+				->where($this->foreign_column, '=', $model->id());
 	}
 	
 	/**
@@ -77,29 +69,29 @@ class Jelly_Field_HasOne extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function save($id)
+	public function save($model, $value)
 	{
-		// Empty relations to the default value
-		$model = Jelly::factory($this->foreign_model);
-		$alias = $model->alias($this->foreign_column);
-		$query = $model->where($this->foreign_column, '=', $this->model->id())
-					   ->build(Database::UPDATE);
+		$foreign = Jelly::Factory($this->foreign_model);
 		
-		// NULL them out
-		$query->set(array($alias => $this->default))
-			  ->execute($model->db());
-			
+		// Empty relations to the default value
+		$foreign
+			->where($this->foreign_column, '=', $model->id())
+			->execute(Database::UPDATE, array(
+				$this->foreign_column => $this->default
+			));
+						
 		// Set the new relations
-		if (!empty($this->value))
+		if (!empty($value))
 		{			
 			// Update the ones in our list
-			$query = $model->end()->where($model->primary_key(), '=', $this->value)
-						   ->build(Database::UPDATE);
-						
-			// Set them to this object
-			$query->set(array($alias => $id))
-				  ->execute($model->db());
+			$foreign
+				->where($foreign->primary_key(), '=', $value)
+				->execute(Database::UPDATE, array(
+					$this->foreign_column => $model->id()
+				));
 		}
+		
+		return $value;
 	}
 	
 	/**
@@ -109,28 +101,29 @@ class Jelly_Field_HasOne extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function has(array $ids)
+	public function has($model, $ids)
 	{
 		$model = Jelly::factory($this->foreign_model);
 		return (bool) $model
 			->select(array('COUNT("*")', 'records_found'))
-			->where($this->foreign_column, '=', $this->model->id())
+			->where($this->foreign_column, '=', $model->id())
 			->where($model->primary_key(), 'IN', $ids)
 			->execute()
 			->get('records_found');
 	}
 	
 	/**
-	 * Ads the id property to the outputted variables
+	 * Provides the input with the ids variable. An array of
+	 * all the ID's in the foreign model that this record owns.
 	 *
-	 * @param string $prefix 
-	 * @param string $data 
+	 * @param string $prefix
+	 * @param string $data
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{
-		$data['id'] = $this->get()->load()->id();
+		$data['id'] = $this->get($data['model'], NULL)->load()->id();
 		return parent::input($prefix, $data);
 	}
 }

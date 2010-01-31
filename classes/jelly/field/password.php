@@ -16,6 +16,6 @@ class Jelly_Field_Password extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		$this->value = call_user_func($this->hash_with, $value);
+		return call_user_func($this->hash_with, $value);
 	}
 }

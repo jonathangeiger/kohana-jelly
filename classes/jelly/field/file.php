@@ -23,39 +23,27 @@ class Jelly_Field_File extends Jelly_Field
 	}
 	
 	/**
-	 * Saves the value for later saving
-	 *
-	 * @param string $value 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public function set($value)
-	{
-		$this->value = $value;
-	}
-	
-	/**
 	 * Either uploads a file
 	 *
 	 * @param string $value 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function save($loaded)
+	public function save($model, $value)
 	{		
 		// Upload a file?
-		if (upload::valid($this->value))
+		if (upload::valid($value))
 		{
-			if (FALSE !== ($filename = upload::save($this->value, NULL, $this->path)))
+			if (FALSE !== ($filename = upload::save($value, NULL, $this->path)))
 			{
-				$this->value = $filename;
+				$value = $filename;
 			}
 			else
 			{
-				$this->value = $this->default;
+				$value = $this->default;
 			}
 		}
 		
-		return $this->value;
+		return $value;
 	}
 }

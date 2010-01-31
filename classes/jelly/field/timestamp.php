@@ -31,10 +31,12 @@ class Jelly_Field_Timestamp extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if (FALSE === ($this->value = strtotime($value)))
+		if (FALSE !== strtotime($value))
 		{
-			$this->value = $value;
+			return strtotime($value);
 		}
+		
+		return $value;
 	}
 	
 	/**
@@ -45,19 +47,19 @@ class Jelly_Field_Timestamp extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function save($loaded)
+	public function save($model, $value)
 	{
-		if ((!$loaded && $this->auto_now_create) || ($loaded && $this->auto_now_update))
+		if ((!$model->loaded() && $this->auto_now_create) || ($model->loaded() && $this->auto_now_update))
 		{
-			$this->value = time();
+			$value = time();
 			
 			// Convert if necessary
 			if ($this->format)
 			{
-				$this->value = date($this->format, $this->value);
+				$value = date($this->format, $value);
 			}
 		}
 		
-		return $this->value;
+		return $value;
 	}
 }

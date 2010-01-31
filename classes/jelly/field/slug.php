@@ -2,10 +2,6 @@
 
 class Jelly_Field_Slug extends Jelly_Field
 {
-	public $filters = array(
-		'Field_Slug::format' => NULL
-	);
-	
 	/**
 	 * Converts a slug to value valid for a URL.
 	 * 
@@ -15,15 +11,16 @@ class Jelly_Field_Slug extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public static function format($value)
+	public function set($value)
 	{
 		// Only allow slashes, dashes, and lowercase letters
-		$value = trim(strtolower($value));
-		$value = str_replace(' ', '-', $value);
-		$value = preg_replace('/[^a-z0-9-\/]/', '', $value);
+		$value = preg_replace('/[^a-z0-9-\/]/', '-', $value);
 		
 		// Strip multiple dashes
 		$value = preg_replace('/-{2,}/', '-', $value);
+		
+		// Trim an ending or starting dashes
+		$value = trim(strtolower($value), '-');
 		
 		return $value;
 	}

@@ -37,11 +37,11 @@ class Jelly_Field_Enum extends Jelly_Field
 	{
 		if (in_array($value, $this->choices))
 		{
-			$this->value = $value;
+			return $value;
 		}
 		else
 		{
-			$this->value = $this->default;
+			return $this->default;
 		}
 	}
 }

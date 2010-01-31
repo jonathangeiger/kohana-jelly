@@ -17,7 +17,7 @@ class Jelly_Field_Serialized extends Jelly_Field
 	 */
 	public function set($value)
 	{		
-		$this->value = @unserialize($value);
+	 	return @unserialize($value);
 	}
 	
 	/**
@@ -27,9 +27,9 @@ class Jelly_Field_Serialized extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function save($loaded)
+	public function save($model, $value)
 	{
-		return @serialize($this->value);
+		return @serialize($value);
 	}
 	
 } // End Sprig_Field
