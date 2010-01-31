@@ -106,7 +106,7 @@ abstract class Jelly_Model
 		{			
 			return $field;
 		}
-			
+
 		list($model, $column) = explode('.', $field);
 		
 		if (NULL !== ($meta = Jelly::meta($model)))
@@ -719,7 +719,7 @@ abstract class Jelly_Model
 		
 		// Run through the main table data
 		foreach($this->_fields as $column => $field)
-		{
+		{			
 			// Only add actual columns
 			if ($field->in_db)
 			{	
@@ -775,7 +775,7 @@ abstract class Jelly_Model
 		{
 			// Load the relations
 			foreach($relations as $column => $field)
-			{
+			{				
 				if (isset($this->_changed[$column]))
 				{
 					$this->_data[$column] = $field->save($this, $this->_changed[$column]);
@@ -1051,7 +1051,7 @@ abstract class Jelly_Model
 	 */
 	public function id()
 	{
-		return $this->_data[$this->_primary_key];
+		return $this->get($this->_primary_key);
 	}
 	
 	/**
@@ -1062,7 +1062,7 @@ abstract class Jelly_Model
 	 */
 	public function name()
 	{
-		return $this->_data[$this->_name_key];
+		return $this->get($this->_name_key);
 	}
 	
 	/**

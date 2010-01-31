@@ -2,6 +2,8 @@
 
 class Jelly_Field_HasMany extends Jelly_Field
 {	
+	public $in_db = FALSE;
+	
 	/**
 	 * Overrides the initialize to automatically provide the column name
 	 *

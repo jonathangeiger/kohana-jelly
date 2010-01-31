@@ -2,6 +2,8 @@
 
 class Jelly_Field_ManyToMany extends Jelly_Field
 {	
+	public $in_db = FALSE;
+	
 	/**
 	 * The columns in the through table that this is referencing.
 	 * 
@@ -104,7 +106,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		return $return;
 	}
 	
-	public function get($model, $value)
+	public function get($model, $value, $object = TRUE)
 	{
 		// Only return the actual value
 		if (!$object)
@@ -116,35 +118,35 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 				->where($this->foreign_column, 'IN', $this->in($model));
 	}
 	
-	public function save($id)
+	public function save($model, $value)
 	{
 		// Find all current records so that we can calculate what's changed
-		$in = $this->in(TRUE);
+		$in = $this->in($model, TRUE);
 				
-		// Alias tables and columns
-		$through_table = $this->model->alias(NULL, $this->through_model);
+		// Grab all of the actual columns
+		$through_table = Jelly::model_alias($this->through_model);
 		$through_columns = array(
-			$this->model->alias($this->through_columns[0]),
-			$this->model->alias($this->through_columns[1], $this->through_model),
+			Jelly::field_alias($this->model.'.'.$this->through_columns[0], TRUE),
+			Jelly::field_alias($this->through_model.'.'.$this->through_columns[1], TRUE),
 		);
 		
 		// Find old relationships that must be deleted
-		if ($old = array_diff($in, $this->value))
+		if ($old = array_diff($in, $value))
 		{
 			DB::delete($through_table)
-				->where($through_columns[0], '=', $this->model->id())
+				->where($through_columns[0], '=', $model->id())
 				->where($through_columns[1], 'IN', $old)
-				->execute($this->model->db());
+				->execute($model->db());
 		}
 
 		// Find new relationships that must be inserted
-		if ($new = array_diff($this->value, $in))
+		if ($new = array_diff($value, $in))
 		{
 			foreach ($new as $new_id)
 			{
 				DB::insert($through_table, $through_columns)
 					->values(array($id, $new_id))
-					->execute($this->model->db());
+					->execute($model->db());
 			}
 		}
 	}
@@ -176,10 +178,10 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		// Grab all of the actual columns
 		$through_table = Jelly::model_alias($this->through_model);
 		$through_columns = array(
-			Jelly::field_alias($this->model, $this->through_columns[0]),
-			Jelly::field_alias($this->through_model, $this->through_columns[1]),
+			Jelly::field_alias($this->through_model.'.'.$this->through_columns[0], TRUE),
+			Jelly::field_alias($this->through_model.'.'.$this->through_columns[1], TRUE),
 		);
-		
+						
 		if (!$as_array)
 		{
 			return DB::Select()
