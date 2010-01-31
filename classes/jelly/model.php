@@ -965,7 +965,7 @@ abstract class Jelly_Model
 		// Validate all data on insert
 		else
 		{
-			$data = $this->_data;
+			$data = $this->_changed + $this->_data;
 		}
 		
 		// Create the validation object
@@ -997,7 +997,7 @@ abstract class Jelly_Model
 				$data->callbacks($column, $field->callbacks);
 			}			
 		}
-		
+
 		if ($data->check())
 		{
 			// Insert filtered data back into the model
