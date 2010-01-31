@@ -17,21 +17,11 @@ abstract class Jelly_Model
 	 * @var array Contains all of the meta classes related to models
 	 */
 	protected static $_meta = array();
-	
+		
 	/**
-	 * @var array Contains the model_name => table_name mapping
+	 * @var array An array of default data to set for $_data in the model
 	 */
-	protected static $_models = array();
-	
-	/**
-	 * @var array Contains the table_name => model_name mapping
-	 */
-	protected static $_tables = array();
-	
-	/**
-	 * @var array An array of default keys to set for $_data in the model
-	 */
-	protected static $_keys = array();
+	protected static $_defaults = array();
 	
 	/**
 	 * @var array Callable database methods
@@ -55,76 +45,89 @@ abstract class Jelly_Model
 	);
 	
 	/**
-	 * Factory for generating models
+	 * Factory for generating models. Fields are initialized only 
+	 * on the first instantiation of the model, and never again.
 	 *
 	 * @param string $model 
-	 * @return object_name
+	 * @param mixed $id The id or where clause to load upon construction
+	 * @return Jelly
 	 * @author Jonathan Geiger
 	 */
 	public static function factory($model, $id = NULL)
 	{	
-		$model = strtolower($model);
 		$class = 'Model_'.$model;
-		
-		// Initialize only once
-		if (!isset(Jelly::$_meta[$model]))
-		{
-			Jelly::$_meta[$model] = $meta = new Jelly_Meta($model);
-
-			// Let the intialize() method overridde defaults
-			// $meta is an object and passed as a reference,
-			// so we don't need a return value
-			call_user_func(array($class, 'initialize'), $meta);
-			
-			// Initialize all of the fields
-			foreach($meta->fields as $column => $field)
-			{
-				$field->initialize($model, $column);
-				
-				// See if we need to add a primary key
-				if ($field->primary)
-				{
-					$meta->primary_key = $column;
-				}
-				
-				// When a model is constructed, it's $_data property is 
-				// set with an array of keys for the fields so it doesn't have
-				// to constantly check if the key exists
-				Jelly::$_keys[$model][$column] = NULL;
-			}
-		}
 		
 		return new $class($id);
 	}
 	
 	/**
-	 * Automatically loads a model, if it exists, into the meta table
+	 * Determines whether a valid jelly model with the name 
+	 * $model exists. If the model hasn't been registered, it will.
+	 *
+	 * @param string $model 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public static function exists($model)
+	{
+		return Jelly::register($model);
+	}
+
+	/**
+	 * Automatically loads a model, if it exists, into the meta table.
 	 *
 	 * @param string $model 
 	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
-	public static function exists($model)
+	protected static function register($model)
 	{
-		// Has it been loaded already?
-		if (class_exists('model_'.$model, FALSE))
+		$model = strtolower($model);
+		$class = 'model_'.$model;
+		
+		if (isset(Jelly::$_meta[$model]))
 		{
-			if (!isset(Jelly::$_meta[$model]))
+			return TRUE;
+		}
+		
+		// Can we find the class?
+		if (class_exists('model_'.$model, FALSE) || Kohana::auto_load('model_'.$model))
+		{
+			// Prevent accidentally trying to load ORM or Sprig models
+			if (!is_subclass_of($class, "Jelly"))
 			{
-				Jelly::factory($model);
+				return FALSE;
+			}
+		}
+		else
+		{
+			return FALSE;
+		}
+		
+		// Ensure it's loaded into the registry
+		Jelly::$_meta[$model] = $meta = new Jelly_Meta($model);
+
+		// Let the intialize() method override defaults.
+		call_user_func(array($class, 'initialize'), $meta);
+		
+		// Initialize all of the fields with their column and the model name
+		foreach($meta->fields as $column => $field)
+		{
+			$field->initialize($model, $column);
+			
+			// Ensure a default primary key is set
+			if (!$field->primary)
+			{
+				$meta->primary_key = $column;
 			}
 			
-			return TRUE;
+			// When a model is constructed, it's $_data property is 
+			// set with an array of keys for the fields so it doesn't have
+			// to constantly check if the key exists
+			Jelly::$_defaults[$model][$column] = $field->default;
 		}
 		
-		// See if we can locate it
-		if (Kohana::auto_load('model_'.$model))
-		{
-			Jelly::factory($model);
-			return TRUE;
-		}
-		
-		return FALSE;
+		return TRUE;
 	}
 	
 	/**
@@ -250,17 +253,17 @@ abstract class Jelly_Model
 	protected $_data = array();
 
 	/**
-	 * @var array Changed data set on the object
+	 * @var array Data that's changed since the object was loaded
 	 */
 	protected $_changed = array();
 	
 	/**
-	 * @var array A cache of the data gotten from the object
+	 * @var array A cache of the data gotten from the fields
 	 */
 	protected $_cache = array();
 	
 	/**
-	 * @var array Unmapped data, that is still accessible
+	 * @var array Unmapped data that is still accessible
 	 */
 	protected $_unmapped = array();
 
@@ -284,25 +287,39 @@ abstract class Jelly_Model
 	 */
 	protected $_loading = TRUE;
 
+	/**
+	 * @var array Applied query builder methods
+	 */
 	protected $_db_applied = array();
+	
+	/**
+	 * @var array Pending query builder methods
+	 */
 	protected $_db_pending = array();
-	protected $_db_reset   = TRUE;
+	
+	/**
+	 * @var object Current query builder
+	 */
 	protected $_db_builder;
 
 	/**
-	 * Calls initialize() and sets up the model
+	 * Constructor.
 	 *
-	 * @return void
-	 * @author Jonathan Geiger
+	 * @param   int|string|array  $cond  A primary key or where clause to use for auto loading a particular record
+	 * @return  void
+	 * @author  Jonathan Geiger
 	 **/
 	public function __construct($cond = NULL)
 	{
 		$model = $this->_model = strtolower(substr(get_class($this), 6));
 		
+		// Ensure the meta data has been loaded
+		Jelly::register($model);
+		
 		// Reset to an empty object
 		$this->reset();
 
-		// Add the values stored by __set
+		// Add the values stored by mysql_set_object
 		if (is_array($this->_preload_data) && !empty($this->_preload_data))
 		{
 			$this->values($this->_preload_data, TRUE);
@@ -332,12 +349,13 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Gets the internally represented value from a field
+	 * Gets the internally represented value from 
+	 * a field or unmapped column. This value is cached.
 	 *
-	 * @param string $name 
-	 * @param string $value 
-	 * @return void
-	 * @author Jonathan Geiger
+	 * @param   string   $name   The field's name
+	 * @param   boolean  $value  If FALSE, relationships won't be loaded
+	 * @return  mixed
+	 * @author  Jonathan Geiger
 	 */
 	public function get($name, $verbose = TRUE)
 	{
@@ -363,7 +381,7 @@ abstract class Jelly_Model
 	 * Proxies to set for dynamic getting of properties
 	 *
 	 * @param string $name 
-	 * @param string $value 
+	 * @param mixed $value 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
@@ -552,8 +570,9 @@ abstract class Jelly_Model
 	 * This is an internal method used for aliasing only things coming 
 	 * to the query builder, since they can come in so many formats.
 	 *
-	 * @param string $table 
-	 * @return void
+	 * @param  string   $field 
+	 * @param  boolean  $join
+	 * @return string
 	 * @author Jonathan Geiger
 	 */
 	protected function _qb_alias($field, $join = NULL)
@@ -590,7 +609,7 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Count the number of records for the current query
+	 * Count sthe number of records for the current query
 	 *
 	 * @param   mixed  $where  An associative array to use as the where clause, or a primary key
 	 * @return  $this
@@ -625,12 +644,12 @@ abstract class Jelly_Model
 	 * 
 	 * has_many, has_one, many_to_many
 	 *
-	 * @param string $alias 
-	 * @param string $model 
+	 * @param string $name 
+	 * @param mixed $models
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function has($alias, $models)
+	public function has($name, $models)
 	{
 		$ids = array();
 		
@@ -660,9 +679,9 @@ abstract class Jelly_Model
 		}
 		
 		// Proxy to the field. It handles everything
-		if (isset($this->_fields[$alias]) AND is_callable(array($this->_fields[$alias], 'has')))
+		if (isset($this->_fields[$name]) AND is_callable(array($this->_fields[$name], 'has')))
 		{
-			return $this->_fields[$alias]->has($ids);
+			return $this->_fields[$name]->has($model, $ids);
 		}
 		
 		return FALSE;
@@ -782,10 +801,10 @@ abstract class Jelly_Model
 				{
 					$this->_data[$column] = $values[$field->column] = $field->save($this, $this->_changed[$column]);
 				}
-				// Set default data
-				else if (empty($this->_data[$column]) && $field->primary)
+				// Set default data. Careful not to override unchanged data!
+				else if ($this->_data[$column] == Jelly::$_defaults[$this->_model][$column] && !$field->primary)
 				{
-					$this->_data[$column] = $values[$field->column] = $field->default;
+					$this->_data[$column] = $values[$field->column] = $field->save($this, $field->default);
 				}
 			}
 			else
@@ -919,13 +938,13 @@ abstract class Jelly_Model
 
 		// Reset all of the keys for the columns so we don't 
 		// have to check for them all of the time
-		$this->_data = Jelly::$_keys[$this->_model];
+		$this->_data = Jelly::$_defaults[$this->_model];
 		
 		// Reset the various states
 		$this->_loaded = $this->_saved = FALSE;
 		
 		// Clear the cache of values
-		$this->_data = $this->_cache = $this->_changed = array();
+		$this->_cache = $this->_changed = array();
 		
 		return $this;
 	}
@@ -1176,8 +1195,6 @@ abstract class Jelly_Model
 			{
 				$prefix = 'jelly/field';
 			}
-			
-			var_dump($this);
 			
 			// Ensure there is a default value. Some fields overridde this
 			$data['value'] = $this->get($name, FALSE);
