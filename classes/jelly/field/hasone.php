@@ -61,6 +61,7 @@ class Jelly_Field_HasOne extends Jelly_Field
 		
 		// Return a real object
 		return Jelly::factory($this->foreign_model)
+				->limit(1, TRUE)
 				->where($this->foreign_column, '=', $model->id());
 	}
 	
@@ -88,7 +89,7 @@ class Jelly_Field_HasOne extends Jelly_Field
 			// Update the ones in our list
 			$foreign
 				->end()
-				->where($foreign->primary_key(), '=', $value)
+				->where(Jelly_Meta::primary_key($foreign), '=', $value)
 				->execute(Database::UPDATE, array(
 					$this->foreign_column => $model->id()
 				));
@@ -110,7 +111,7 @@ class Jelly_Field_HasOne extends Jelly_Field
 		return (bool) $model
 			->select(array('COUNT("*")', 'records_found'))
 			->where($this->foreign_column, '=', $model->id())
-			->where($model->primary_key(), 'IN', $ids)
+			->where(Jelly_Meta::primary_key($model), 'IN', $ids)
 			->execute()
 			->get('records_found');
 	}

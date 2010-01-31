@@ -96,7 +96,7 @@ class Jelly_Field_HasMany extends Jelly_Field
 			// Update the ones in our list
 			$foreign
 				->end()
-				->where($foreign->primary_key(), 'IN', $value)
+				->where(Jelly_Meta::primary_key($foreign), 'IN', $value)
 				->execute(Database::UPDATE, array(
 					$this->foreign_column => $model->id()
 				));
@@ -118,7 +118,7 @@ class Jelly_Field_HasMany extends Jelly_Field
 		return (bool) $model
 			->select(array('COUNT("*")', 'records_found'))
 			->where($this->foreign_column, '=', $model->id())
-			->where($model->primary_key(), 'IN', $ids)
+			->where(Jelly_Meta::primary_key($model), 'IN', $ids)
 			->execute()
 			->get('records_found');
 	}
@@ -137,7 +137,7 @@ class Jelly_Field_HasMany extends Jelly_Field
 		$data['ids'] = array();
 
 		// Grab the IDS
-		foreach ($this->get()->load($data['model'], NULL) as $model)
+		foreach ($this->get($data['model'], NULL)->load() as $model)
 		{
 			$data['ids'][] = $model->id();
 		}

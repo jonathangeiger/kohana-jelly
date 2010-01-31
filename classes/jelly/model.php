@@ -45,33 +45,9 @@ abstract class Jelly_Model
 	 */
 	public static function factory($model, $id = NULL)
 	{	
-		$class = 'Model_'.$model;
+		$class = Jelly_Meta::class_name($model);
 		
 		return new $class($id);
-	}
-	
-	/**
-	 * Returns the metadata associated with a model
-	 *
-	 * @param string $model 
-	 * @param string $key 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public static function meta($model, $key = NULL)
-	{
-		if (FALSE !== ($meta = Jelly_Meta::get($model)))
-		{
-			// Return everything if no key is specified
-			if ($key !== NULL)
-			{
-				return $meta->$key;
-			}
-			else
-			{
-				return $meta;
-			}
-		}
 	}
 	
 	/**
@@ -83,7 +59,7 @@ abstract class Jelly_Model
 	 */
 	public static function model_alias($model)
 	{
-		if (FALSE !== ($meta = Jelly_Meta::get($model)))
+		if ($meta = Jelly_Meta::get($model))
 		{
 			return $meta->table;
 		}
@@ -109,7 +85,7 @@ abstract class Jelly_Model
 
 		list($model, $column) = explode('.', $field);
 		
-		if (NULL !== ($meta = Jelly::meta($model)))
+		if ($meta = Jelly_Meta::get($model))
 		{
 			if ($column != '*' && isset($meta->fields[$column]))
 			{
@@ -131,59 +107,14 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * @var string The database key to use for connection
-	 */
-	protected $_db;
-	
-	/**
-	 * @var string The table this model represents
-	 */
-	protected $_table;
-	
-	/**
-	 * @var string The name of the model
-	 */
-	protected $_model;
-	
-	/**
-	 * @var string The primary key
-	 */
-	protected $_primary_key;
-	
-	/**
-	 * @var string The title key
-	 */
-	protected $_name_key;
-	
-	/**
-	 * @var array An array of ordering options for selects
-	 */
-	protected $_sorting = array();
-	
-	/**
-	 * @var array A map to the resource's data and how to process each column.
-	 */
-	protected $_fields = array();
-	
-	/**
 	 * @var array The original data set on the object
 	 */
-	protected $_data = array();
+	protected $_original = array();
 	
-	/**
-	 * @var array The defaults coming from the field
-	 */
-	protected $_defaults = array();
-
 	/**
 	 * @var array Data that's changed since the object was loaded
 	 */
 	protected $_changed = array();
-	
-	/**
-	 * @var array A cache of the data gotten from the fields
-	 */
-	protected $_cache = array();
 	
 	/**
 	 * @var array Unmapped data that is still accessible
@@ -236,11 +167,9 @@ abstract class Jelly_Model
 	{
 		$model = $this->_model = strtolower(substr(get_class($this), 6));
 
-		// Copy over metadata from the meta object
-		foreach (Jelly_Meta::get($model) as $key => $value)
-		{
-			$this->{'_'.$key} = $value;
-		}
+		// Copy over the defaults into the original data. This also has 
+		// the added benefit of registering the model's metadata, if it does not exist yet
+		$this->_original = $this->meta('defaults');
 		
 		// Reset to an empty object
 		$this->reset();
@@ -285,7 +214,7 @@ abstract class Jelly_Model
 	 */
 	public function get($name, $verbose = TRUE)
 	{
-		if ($field = $this->field($name))
+		if ($field = Jelly_Meta::field($this, $name))
 		{			
 			// Return changed values first
 			if (isset($this->_changed[$name]))
@@ -294,7 +223,7 @@ abstract class Jelly_Model
 			}
 			else
 			{
-				return $field->get($this, $this->_data[$name], $verbose);
+				return $field->get($this, $this->_original[$name], $verbose);
 			}
 		}
 		// Return unmapped data from custom queries
@@ -335,13 +264,13 @@ abstract class Jelly_Model
 	public function set($name, $value)
 	{
 		// Normal, user-initiated set
-		if ($field = $this->field($name))
+		if ($field = Jelly_Meta::field($this, $name))
 		{			
 			// If we're intitially setting data on the object 
 			// that is coming from the database, it goes to $_data
 			if ($this->_loading === TRUE)
 			{
-				$this->_data[$name] = $field->set($value);
+				$this->_original[$name] = $field->set($value);
 			}
 			// Otherwise we're setting changes
 			else
@@ -366,7 +295,7 @@ abstract class Jelly_Model
 	 */
 	public function __isset($name)
 	{
-		return (isset($this->_data[$name]) || isset($this->_unmapped[$name]));
+		return (isset($this->_original[$name]) || isset($this->_unmapped[$name]));
 	}
 	
 	/**
@@ -380,7 +309,7 @@ abstract class Jelly_Model
 	{
 		// We don't want to unset the keys, because 
 		// they are assumed to exist. Just NULL them out.
-		$this->_data[$name] = NULL;
+		$this->_original[$name] = NULL;
 		
 		// This doesn't matter
 		unset($this->_unmapped[$name]);
@@ -465,10 +394,12 @@ abstract class Jelly_Model
 	 **/
 	public function alias($field = NULL, $join = NULL)
 	{	
+		$meta = $this->meta();
+		
 		// Return the model's alias if nothing is passed
 		if (!$field)
 		{
-			return $this->_table;
+			return $meta->table();
 		}
 		
 		// Split off the table name; we already know that
@@ -478,14 +409,14 @@ abstract class Jelly_Model
 		}
 		
 		// Check and concatenate
-		if (isset($this->_fields[$field]))
+		if (isset($meta->fields[$field]))
 		{
-			$field = $this->_fields[$field]->column;
+			$field = $meta->fields[$field]->column;
 		}
 		
 		if ($join)
 		{
-			return $this->_table.'.'.$field;
+			return $meta->table.'.'.$field;
 		}
 		else
 		{
@@ -529,10 +460,22 @@ abstract class Jelly_Model
 		// We just replace if with the current model's name
 		if ($model === NULL || $model == $this->_table)
 		{
-			$model = $this->_model;
+			$model = Jelly_Meta::model_name($this);
 		}
 		
 		return Jelly::field_alias($model.'.'.$field, $join);
+	}
+	
+	/**
+	 * Returns metadata for this particular object
+	 *
+	 * @param string $property 
+	 * @return object
+	 * @author Jonathan Geiger
+	 */
+	public function meta($property = NULL)
+	{
+		return Jelly_Meta::get($this, $property);
 	}
 	
 	/**
@@ -543,9 +486,11 @@ abstract class Jelly_Model
 	 */
 	public function count($where = NULL)
 	{
+		$meta = $this->meta();
+		
 		if (is_int($where) || is_string($where))
 		{
-			$this->where($this->_primary_key, '=', $where);
+			$this->where($meta->primary_key, '=', $where);
 		}
 		// Add the where
 		else if (is_array($where))
@@ -559,8 +504,8 @@ abstract class Jelly_Model
 		$query = $this->build(Database::SELECT);
 	
 		return $query->select(array('COUNT("*")', 'total'))
-			->from($this->_table)
-			->execute($this->_db)
+			->from($meta->table)
+			->execute($meta->db)
 			->get('total');
 	}
 	
@@ -605,10 +550,12 @@ abstract class Jelly_Model
 			}
 		}
 		
+		$fields = $this->meta()->fields;
+		
 		// Proxy to the field. It handles everything
-		if (isset($this->_fields[$name]) AND is_callable(array($this->_fields[$name], 'has')))
+		if (isset($fields[$name]) AND is_callable(array($fields[$name], 'has')))
 		{
-			return $this->_fields[$name]->has($model, $ids);
+			return $$fields[$name]->has($model, $ids);
 		}
 		
 		return FALSE;
@@ -623,10 +570,12 @@ abstract class Jelly_Model
 	 */
 	public function load($where = NULL, $limit = NULL)
 	{
+		$meta = $this->meta();
+		
 		// Apply the limit
 		if (is_int($where) || is_string($where))
 		{
-			$this->where($this->_primary_key, '=', $where);
+			$this->where($meta->primary_key, '=', $where);
 			$limit = 1;
 		}
 		
@@ -641,7 +590,7 @@ abstract class Jelly_Model
 		
 		// Set the working query
 		$query = $this->build(Database::SELECT);
-		$query->from($this->_table);
+		$query->from($meta->table);
 		
 		// limit() is overloaded so that if the second argument exists 
 		// the call will override what's passed here for $limit. This allows us
@@ -660,7 +609,7 @@ abstract class Jelly_Model
 		// We can load directly into the model
 		if ($limit === 1)
 		{
-			$result = $query->execute($this->_db);
+			$result = $query->execute($meta->db);
 			
 			// Ensure we have something
 			if (count($result))
@@ -684,12 +633,12 @@ abstract class Jelly_Model
 		else
 		{
 			// Apply sorting options
-			foreach($this->_sorting as $column => $direction)
+			foreach($meta->sorting as $column => $direction)
 			{
 				$query->order_by($this->alias($column), $direction);
 			}
 			
-			return $query->as_object(get_class($this))->execute($this->_db);
+			return $query->as_object(get_class($this))->execute($meta->db);
 		}
 	}
 	
@@ -712,6 +661,8 @@ abstract class Jelly_Model
 	 **/
 	public function save($save_related = TRUE)
 	{
+		$meta = $this->meta();
+		
 		// Stuff that will be inserted
 		$values = array();
 		
@@ -719,19 +670,19 @@ abstract class Jelly_Model
 		$relations = array();
 		
 		// Run through the main table data
-		foreach($this->_fields as $column => $field)
+		foreach($meta->fields as $column => $field)
 		{			
 			// Only add actual columns
 			if ($field->in_db)
 			{	
 				if (isset($this->_changed[$column]))
 				{
-					$this->_data[$column] = $values[$field->column] = $field->save($this, $this->_changed[$column]);
+					$this->_original[$column] = $values[$field->column] = $field->save($this, $this->_changed[$column]);
 				}
 				// Set default data. Careful not to override unchanged data!
-				else if ($this->_data[$column] == $this->_defaults[$column] && !$field->primary)
+				else if ($this->_original[$column] == $meta->defaults[$column] && !$field->primary)
 				{
-					$this->_data[$column] = $values[$field->column] = $field->save($this, $field->default);
+					$this->_original[$column] = $values[$field->column] = $field->save($this, $field->default);
 				}
 			}
 			else
@@ -749,28 +700,28 @@ abstract class Jelly_Model
 			// Do we even have to update anything in the main table?
 			if ($values)
 			{
-				DB::update($this->_table)
+				DB::update($meta->table)
 					->set($values)
-					->where($this->alias($this->primary_key()), '=', $this->id())
-					->execute($this->_db);
+					->where($this->alias($meta->primary_key), '=', $this->id())
+					->execute($meta->db);
 
 				// Has id changed? 
-				if (isset($values[$this->_primary_key]))
+				if (isset($values[$meta->primary_key]))
 				{
-					$id = $values[$this->_primary_key];
+					$id = $values[$meta->primary_key];
 				}
 			}
 		}
 		else
 		{
-			list($id) = DB::insert($this->_table)
+			list($id) = DB::insert($meta->table)
 						->columns(array_keys($values))
 						->values($values)
-						->execute($this->_db);
+						->execute($meta->db);
 		}
 		
 		// Update the primary key
-		$this->_data[$this->_primary_key] = $id;
+		$this->_original[$meta->primary_key] = $id;
 		
 		if ($save_related)
 		{
@@ -779,7 +730,7 @@ abstract class Jelly_Model
 			{				
 				if (isset($this->_changed[$column]))
 				{
-					$this->_data[$column] = $field->save($this, $this->_changed[$column]);
+					$this->_original[$column] = $field->save($this, $this->_changed[$column]);
 				}
 			}
 		}
@@ -817,10 +768,12 @@ abstract class Jelly_Model
 	 **/
 	public function delete($where = NULL)
 	{
+		$meta = $this->meta();
+		
 		// Delete an id
 		if (is_int($where) || is_string($where))
 		{
-			$this->where($this->_primary_key, '=', $where);
+			$this->where($meta->primary_key, '=', $where);
 		}
 		// Simple where clause
 		else if (is_array($where))
@@ -834,10 +787,10 @@ abstract class Jelly_Model
 		// Are we loaded? Then we're just deleting this record
 		if ($this->_loaded)
 		{
-			$this->where($this->_primary_key, '=', $this->id());
+			$this->where($meta->primary_key, '=', $this->id());
 		}
 		
-		// Here goes nothing
+		// Here goes nothing. NO LIMIT CLAUSE?!?!
 		$this->execute(Database::DELETE);
 		
 		// Re-initialize to an empty object
@@ -858,7 +811,7 @@ abstract class Jelly_Model
 		$this->end();
 
 		// Reset all of the data back to its default state
-		$this->_data = $this->_defaults;
+		$this->_original = $this->meta()->defaults;
 		
 		// Reset the various states
 		$this->_loaded = $this->_saved = FALSE;
@@ -885,14 +838,14 @@ abstract class Jelly_Model
 		// Validate all data on insert
 		else
 		{
-			$data = $this->_changed + $this->_data;
+			$data = $this->_changed + $this->_original;
 		}
 		
 		// Create the validation object
 		$data = Validate::factory($data);
 		
 		// Loop through all columns, adding rules where data exists
-		foreach ($this->_fields as $column => $field)
+		foreach ($this->meta()->fields as $column => $field)
 		{
 			// Do not add any rules for this field
 			if (!$data->offsetExists($column))
@@ -943,7 +896,7 @@ abstract class Jelly_Model
 	{
 		$result = array();
 		
-		foreach($this->_fields as $column => $field)
+		foreach($this->meta()->fields as $column => $field)
 		{
 			$result[$column] = $this->get($column, $verbose);
 		}
@@ -964,7 +917,7 @@ abstract class Jelly_Model
 		
 		// Why this way? Because it allows the model to have 
 		// multiple fields that are based on the same column
-		foreach ($this->_fields as $alias => $field)
+		foreach ($this->meta()->fields as $alias => $field)
 		{
 			$column = ($reverse) ? $field->column : $alias;
 			
@@ -990,61 +943,6 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Returns the db group
-	 *
-	 * @return string
-	 * @author Jonathan Geiger
-	 */
-	public function db()
-	{
-		return $this->_db;
-	}
-	
-	/**
-	 * Returns the model name
-	 *
-	 * @return string
-	 * @author Jonathan Geiger
-	 */
-	public function model_name()
-	{
-		return $this->_model;
-	}	
-	
-	/**
-	 * Returns the model's table name
-	 *
-	 * @return string
-	 * @author Jonathan Geiger
-	 */
-	public function table_name()
-	{
-		return $this->_table;
-	}
-	
-	/**
-	 * Returns the name of the primary key for the table
-	 *
-	 * @return mixed
-	 * @author Jonathan Geiger
-	 */
-	public function primary_key()
-	{	
-		return $this->_primary_key;
-	}
-	
-	/**
-	 * Returns the name of the primary key for the table
-	 *
-	 * @return mixed
-	 * @author Jonathan Geiger
-	 */
-	public function name_key()
-	{
-		return $this->_name_key;
-	}
-	
-	/**
 	 * Returns the value of the primary key for the row
 	 *
 	 * @return mixed
@@ -1052,7 +950,7 @@ abstract class Jelly_Model
 	 */
 	public function id()
 	{
-		return $this->get($this->_primary_key);
+		return $this->get($this->meta()->primary_key);
 	}
 	
 	/**
@@ -1063,30 +961,7 @@ abstract class Jelly_Model
 	 */
 	public function name()
 	{
-		return $this->get($this->_name_key);
-	}
-	
-	/**
-	 * Returns the model's field map
-	 *
-	 * @return array
-	 * @author Jonathan Geiger
-	 */
-	public function fields()
-	{
-		return $this->_fields;
-	}
-	
-	/**
-	 * Returns a particular field
-	 *
-	 * @param string $name 
-	 * @return Jelly_Field
-	 * @author Jonathan Geiger
-	 */
-	public function field($name)
-	{
-		return isset($this->_fields[$name]) ? $this->_fields[$name] : NULL;
+		return $this->get($this->meta()->primary_key);
 	}
 	
 	/**
@@ -1101,7 +976,7 @@ abstract class Jelly_Model
 	 */
 	public function input($name, $prefix = NULL, $data = array())
 	{
-		if (isset($this->_fields[$name]))
+		if (isset($this->meta()->fields[$name]))
 		{
 			// More data munging. But it makes the API so much more intuitive
 			if (is_array($prefix))
@@ -1133,16 +1008,17 @@ abstract class Jelly_Model
 	public function execute($type = Database::SELECT, $data = NULL, $as_object = NULL)
 	{
 		$query = $this->build($type);
+		$meta = $this->meta();
 		
 		// Have we got a from for SELECTS?
 		if ($type === Database::SELECT && !isset($this->_db_applied['from']))
 		{
-			$query->from($this->_table);
+			$query->from($meta->table);
 		}
 		// All other methods require table() to be set
 		else if ($type !== Database::SELECT && !isset($this->_db_applied['table']))
 		{
-			$query->table($this->_table);
+			$query->table($meta->table);
 		}
 		
 		// Perform a little arg-munging since UPDATES accept a data parameter
@@ -1175,7 +1051,7 @@ abstract class Jelly_Model
 			$query->as_array();
 		}
 		
-		return $query->execute($this->_db);
+		return $query->execute($meta->db);
 	}
 	
 	/**
@@ -1186,6 +1062,8 @@ abstract class Jelly_Model
 	 */
 	public function build($type)
 	{
+		$meta = $this->meta();
+		
 		// Construct new builder object based on query type
 		switch ($type)
 		{
@@ -1193,13 +1071,13 @@ abstract class Jelly_Model
 				$this->_db_builder = DB::select();
 				break;
 			case Database::UPDATE:
-				$this->_db_builder = DB::update($this->_table);
+				$this->_db_builder = DB::update($meta->table);
 				break;
 			case Database::INSERT:
-				$this->_db_builder = DB::insert($this->_table);
+				$this->_db_builder = DB::insert($meta->table);
 				break;
 			case Database::DELETE:
-				$this->_db_builder = DB::delete($this->_table);
+				$this->_db_builder = DB::delete($meta->table);
 				break;
 		}
 		
