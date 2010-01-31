@@ -95,6 +95,7 @@ class Jelly_Field_HasMany extends Jelly_Field
 		{			
 			// Update the ones in our list
 			$foreign
+				->end()
 				->where($foreign->primary_key(), 'IN', $value)
 				->execute(Database::UPDATE, array(
 					$this->foreign_column => $model->id()

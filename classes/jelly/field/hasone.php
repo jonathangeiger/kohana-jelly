@@ -87,6 +87,7 @@ class Jelly_Field_HasOne extends Jelly_Field
 		{			
 			// Update the ones in our list
 			$foreign
+				->end()
 				->where($foreign->primary_key(), '=', $value)
 				->execute(Database::UPDATE, array(
 					$this->foreign_column => $model->id()
