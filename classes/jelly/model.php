@@ -12,17 +12,7 @@
  * @license http://kohanaphp.com/license.html
  */
 abstract class Jelly_Model
-{			
-	/**
-	 * @var array Contains all of the meta classes related to models
-	 */
-	protected static $_meta = array();
-		
-	/**
-	 * @var array An array of default data to set for $_data in the model
-	 */
-	protected static $_defaults = array();
-	
+{				
 	/**
 	 * @var array Callable database methods
 	 */
@@ -61,76 +51,6 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Determines whether a valid jelly model with the name 
-	 * $model exists. If the model hasn't been registered, it will.
-	 *
-	 * @param string $model 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public static function exists($model)
-	{
-		return Jelly::register($model);
-	}
-
-	/**
-	 * Automatically loads a model, if it exists, into the meta table.
-	 *
-	 * @param string $model 
-	 * @return boolean
-	 * @author Jonathan Geiger
-	 */
-	protected static function register($model)
-	{
-		$model = strtolower($model);
-		$class = 'model_'.$model;
-		
-		if (isset(Jelly::$_meta[$model]))
-		{
-			return TRUE;
-		}
-		
-		// Can we find the class?
-		if (class_exists('model_'.$model, FALSE) || Kohana::auto_load('model_'.$model))
-		{
-			// Prevent accidentally trying to load ORM or Sprig models
-			if (!is_subclass_of($class, "Jelly"))
-			{
-				return FALSE;
-			}
-		}
-		else
-		{
-			return FALSE;
-		}
-		
-		// Ensure it's loaded into the registry
-		Jelly::$_meta[$model] = $meta = new Jelly_Meta($model);
-
-		// Let the intialize() method override defaults.
-		call_user_func(array($class, 'initialize'), $meta);
-		
-		// Initialize all of the fields with their column and the model name
-		foreach($meta->fields as $column => $field)
-		{
-			$field->initialize($model, $column);
-			
-			// Ensure a default primary key is set
-			if (!$field->primary)
-			{
-				$meta->primary_key = $column;
-			}
-			
-			// When a model is constructed, it's $_data property is 
-			// set with an array of keys for the fields so it doesn't have
-			// to constantly check if the key exists
-			Jelly::$_defaults[$model][$column] = $field->default;
-		}
-		
-		return TRUE;
-	}
-	
-	/**
 	 * Returns the metadata associated with a model
 	 *
 	 * @param string $model 
@@ -140,10 +60,8 @@ abstract class Jelly_Model
 	 */
 	public static function meta($model, $key = NULL)
 	{
-		if (Jelly::exists($model))
+		if (FALSE !== ($meta = Jelly_Meta::get($model)))
 		{
-			$meta = Jelly::$_meta[$model];
-			
 			// Return everything if no key is specified
 			if ($key !== NULL)
 			{
@@ -165,9 +83,9 @@ abstract class Jelly_Model
 	 */
 	public static function model_alias($model)
 	{
-		if (Jelly::exists($model))
+		if (FALSE !== ($meta = Jelly_Meta::get($model)))
 		{
-			return Jelly::$_meta[$model]->table;
+			return $meta->table;
 		}
 		
 		return $model;
@@ -251,6 +169,11 @@ abstract class Jelly_Model
 	 * @var array The original data set on the object
 	 */
 	protected $_data = array();
+	
+	/**
+	 * @var array The defaults coming from the field
+	 */
+	protected $_defaults = array();
 
 	/**
 	 * @var array Data that's changed since the object was loaded
@@ -312,9 +235,12 @@ abstract class Jelly_Model
 	public function __construct($cond = NULL)
 	{
 		$model = $this->_model = strtolower(substr(get_class($this), 6));
-		
-		// Ensure the meta data has been loaded
-		Jelly::register($model);
+
+		// Copy over metadata from the meta object
+		foreach (Jelly_Meta::get($model) as $key => $value)
+		{
+			$this->{'_'.$key} = $value;
+		}
 		
 		// Reset to an empty object
 		$this->reset();
@@ -802,7 +728,7 @@ abstract class Jelly_Model
 					$this->_data[$column] = $values[$field->column] = $field->save($this, $this->_changed[$column]);
 				}
 				// Set default data. Careful not to override unchanged data!
-				else if ($this->_data[$column] == Jelly::$_defaults[$this->_model][$column] && !$field->primary)
+				else if ($this->_data[$column] == $this->_defaults[$column] && !$field->primary)
 				{
 					$this->_data[$column] = $values[$field->column] = $field->save($this, $field->default);
 				}
@@ -930,15 +856,8 @@ abstract class Jelly_Model
 		// Reset all queries
 		$this->end();
 
-		// Copy over empty data from the meta object
-		foreach (Jelly::$_meta[$this->_model] as $key => $value)
-		{
-			$this->{'_'.$key} = $value;
-		}
-
-		// Reset all of the keys for the columns so we don't 
-		// have to check for them all of the time
-		$this->_data = Jelly::$_defaults[$this->_model];
+		// Reset all of the data back to its default state
+		$this->_data = $this->_defaults;
 		
 		// Reset the various states
 		$this->_loaded = $this->_saved = FALSE;
