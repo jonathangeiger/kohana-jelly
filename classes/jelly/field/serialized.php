@@ -18,8 +18,8 @@ class Jelly_Field_Serialized extends Jelly_Field
 	public function set($value)
 	{		
 	 	return @unserialize($value);
-	}
-	
+	} 
+		
 	/**
 	 * Saves the value as a serialized object
 	 *

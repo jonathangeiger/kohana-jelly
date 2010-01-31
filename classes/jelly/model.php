@@ -287,14 +287,15 @@ abstract class Jelly_Model
 	{
 		if ($field = $this->field($name))
 		{			
-			// Check the cache
-			if (!isset($this->_cache[$name][$verbose]))
+			// Return changed values first
+			if (isset($this->_changed[$name]))
 			{
-				$this->_cache[$name][$verbose] = $field->get($this, $this->_data[$name], $verbose);
+				return $field->get($this, $this->_changed[$name], $verbose);
 			}
-
-			// Fill the cache
-			return $this->_cache[$name][$verbose];
+			else
+			{
+				return $field->get($this, $this->_data[$name], $verbose);
+			}
 		}
 		// Return unmapped data from custom queries
 		else if (isset($this->_unmapped[$name]))
