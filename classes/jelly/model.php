@@ -37,6 +37,9 @@ abstract class Jelly_Model
 	/**
 	 * Factory for generating models. Fields are initialized only 
 	 * on the first instantiation of the model, and never again.
+	 * 
+	 * Model's do not have to be instantiated through here; they 
+	 * can be constructed directly.
 	 *
 	 * @param   mixed  $model  A model name or another Jelly to create
 	 * @param   mixed  $id     The id or where clause to load upon construction
@@ -101,10 +104,13 @@ abstract class Jelly_Model
 	protected $_db_builder;
 
 	/**
-	 * Constructor.
+	 * An optional conditional can be passed. If it is an integer 
+	 * or a string, it will be assumed to be a primary key and 
+	 * the record will be loaded automatically into the model.
+	 * If it is an associative array, it is used in constructing 
+	 * a where clause and the record is loaded automatically.
 	 *
-	 * @param   int|string|array  $cond  A primary key or where clause to use for auto loading a particular record
-	 * @return  void
+	 * @param   mixed  $cond  A primary key or where clause to use for auto-loading a particular record
 	 * @author  Jonathan Geiger
 	 **/
 	public function __construct($cond = NULL)
@@ -134,10 +140,11 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Proxies to get for dynamic getting of properties
+	 * Proxies to get()
 	 *
+	 * @see get()
 	 * @param string $name 
-	 * @return void
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function __get($name)
@@ -147,7 +154,7 @@ abstract class Jelly_Model
 	
 	/**
 	 * Gets the internally represented value from 
-	 * a field or unmapped column. This value is cached.
+	 * a field or unmapped column.
 	 *
 	 * @param   string   $name   The field's name
 	 * @param   boolean  $value  If FALSE, relationships won't be loaded
@@ -178,11 +185,12 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Proxies to set for dynamic getting of properties
+	 * Proxies to set()
 	 *
+	 * @see set()
 	 * @param string $name 
 	 * @param mixed $value 
-	 * @return void
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function __set($name, $value)
@@ -198,11 +206,14 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Sets values in the fields
+	 * Sets values in the fields. Everything passed to this 
+	 * is converted to an internally represented value.
+	 * 
+	 * The conversion is done in the field and returned.
 	 *
 	 * @param string $name 
 	 * @param string $value 
-	 * @return void
+	 * @return Jelly Returns $this
 	 * @author Jonathan Geiger
 	 */
 	public function set($name, $value)
@@ -229,10 +240,13 @@ abstract class Jelly_Model
 		{
 			$this->_unmapped[$name] = $value;
 		}
+		
+		return $this;
 	}
 	
 	/**
-	 * Isset magic method
+	 * Returns true if $name is a field of the 
+	 * model or an unmapped column.
 	 *
 	 * @param string $name 
 	 * @return boolean
@@ -244,7 +258,8 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Unset magic method
+	 * This doesn't unset fields. Rather, it sets them to 
+	 * their default value. Unmapped values are unset.
 	 *
 	 * @param string $name 
 	 * @return void
@@ -252,9 +267,12 @@ abstract class Jelly_Model
 	 */
 	public function __unset($name)
 	{
-		// We don't want to unset the keys, because 
-		// they are assumed to exist. Just NULL them out.
-		$this->_original[$name] = NULL;
+		if (isset($this->_original[$name]))
+		{
+			// We don't want to unset the keys, because 
+			// they are assumed to exist. Just NULL them out.
+			$this->_original[$name] = $this->meta()->defaults[$name];
+		}
 		
 		// This doesn't matter
 		unset($this->_unmapped[$name]);
@@ -267,7 +285,7 @@ abstract class Jelly_Model
 	 *
 	 * @param   string  method name
 	 * @param   array   method arguments
-	 * @return  mixed
+	 * @return  Jelly   Returns $this
 	 */
 	public function __call($method, array $args)
 	{
@@ -334,7 +352,12 @@ abstract class Jelly_Model
 	/**
 	 * Aliases a column that exists only in this model
 	 *
-	 * @return void
+	 * If $field is null, the model's table name is returned.
+	 * Otherwise, the normal rules apply.
+	 * 
+	 * @param  string   $field  The field's name
+	 * @param  boolean  $join   Whether or not to return the table and column joined
+	 * @return string
 	 * @author Jonathan Geiger
 	 **/
 	public function alias($field = NULL, $join = NULL)
@@ -344,7 +367,7 @@ abstract class Jelly_Model
 		// Return the model's alias if nothing is passed
 		if (!$field)
 		{
-			return $meta->table();
+			return $meta->table;
 		}
 		
 		// Split off the table name; we already know that
@@ -414,8 +437,8 @@ abstract class Jelly_Model
 	/**
 	 * Returns metadata for this particular object
 	 *
-	 * @param string $property 
-	 * @return object
+	 * @param  string $property 
+	 * @return Jelly_Meta
 	 * @author Jonathan Geiger
 	 */
 	public function meta($property = NULL)
@@ -424,10 +447,10 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Count sthe number of records for the current query
+	 * Counts the number of records for the current query
 	 *
 	 * @param   mixed  $where  An associative array to use as the where clause, or a primary key
-	 * @return  $this
+	 * @return  Jelly  Returns $this
 	 */
 	public function count($where = NULL)
 	{
@@ -463,7 +486,7 @@ abstract class Jelly_Model
 	 *
 	 * @param string $name 
 	 * @param mixed $models
-	 * @return void
+	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
 	public function has($name, $models)
@@ -500,7 +523,7 @@ abstract class Jelly_Model
 		// Proxy to the field. It handles everything
 		if (isset($fields[$name]) AND is_callable(array($fields[$name], 'has')))
 		{
-			return $$fields[$name]->has($model, $ids);
+			return $fields[$name]->has($model, $ids);
 		}
 		
 		return FALSE;
