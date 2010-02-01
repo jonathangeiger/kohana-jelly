@@ -631,6 +631,11 @@ abstract class Jelly_Model
 	{
 		$meta = $this->meta();
 		
+		if ($meta->validate_on_save)
+		{
+			$this->validate();
+		}
+		
 		// Stuff that will be inserted
 		$values = array();
 		
@@ -793,6 +798,7 @@ abstract class Jelly_Model
 	/**
 	 * Validates and filters the data
 	 *
+	 * @throws Validate_Exception
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
@@ -843,13 +849,10 @@ abstract class Jelly_Model
 		{
 			// Insert filtered data back into the model
 			$this->values($data->as_array());
-			
-			// Only === TRUE indicates success
-			return TRUE;
 		}
 		else
 		{
-			return $data;
+			throw new Validate_Exception($data);
 		}
 	}
 	
