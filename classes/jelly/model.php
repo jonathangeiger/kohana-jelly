@@ -38,10 +38,10 @@ abstract class Jelly_Model
 	 * Factory for generating models. Fields are initialized only 
 	 * on the first instantiation of the model, and never again.
 	 *
-	 * @param string $model 
-	 * @param mixed $id The id or where clause to load upon construction
-	 * @return Jelly
-	 * @author Jonathan Geiger
+	 * @param   mixed  $model  A model name or another Jelly to create
+	 * @param   mixed  $id     The id or where clause to load upon construction
+	 * @return  Jelly
+	 * @author  Jonathan Geiger
 	 */
 	public static function factory($model, $id = NULL)
 	{	
@@ -49,63 +49,7 @@ abstract class Jelly_Model
 		
 		return new $class($id);
 	}
-	
-	/**
-	 * Aliases a model to its table name
-	 *
-	 * @param string $model 
-	 * @return string
-	 * @author Jonathan Geiger
-	 */
-	public static function model_alias($model)
-	{
-		if ($meta = Jelly_Meta::get($model))
-		{
-			return $meta->table;
-		}
-		
-		return $model;
-	}
-	
-	/**
-	 * Aliases a field to its aliased name. The model will be aliased as well.
-	 *
-	 * @param string $field Should be in the format of model.field
-	 * @param boolean $join Whether or not to return the model and field joined by a '.'
-	 * @return string
-	 * @author Jonathan Geiger
-	 */
-	public static function field_alias($field, $join = FALSE)
-	{
-		// Can't find anything if we don't have a model
-		if (strpos($field, '.') === FALSE)
-		{			
-			return $field;
-		}
 
-		list($model, $column) = explode('.', $field);
-		
-		if ($meta = Jelly_Meta::get($model))
-		{
-			if ($column != '*' && isset($meta->fields[$column]))
-			{
-				$column = $meta->fields[$column]->column;
-			}
-			
-			// Ensure the model is aliased as well
-			$model = $meta->table;
-		}
-		
-		if ($join)
-		{
-			return $model.'.'.$column;
-		}
-		else
-		{
-			return $column;
-		}
-	}
-	
 	/**
 	 * @var array The original data set on the object
 	 */
@@ -132,7 +76,7 @@ abstract class Jelly_Model
 	protected $_saved = FALSE;
 	
 	/**
-	 * @var array Data set by mysql_fetch_object
+	 * @var array Data set by mysql_fetch_object. Daggers to ye who overwrites this.
 	 */
 	protected $_preload_data = array();
 	
@@ -464,7 +408,7 @@ abstract class Jelly_Model
 			$model = Jelly_Meta::model_name($this);
 		}
 		
-		return Jelly::field_alias($model.'.'.$field, $join);
+		return Jelly_Meta::column($model.'.'.$field, $join);
 	}
 	
 	/**

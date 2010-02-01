@@ -124,10 +124,10 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		$in = $this->in($model, TRUE);
 				
 		// Grab all of the actual columns
-		$through_table = Jelly::model_alias($this->through_model);
+		$through_table = Jelly_Meta::table($this->through_model);
 		$through_columns = array(
-			Jelly::field_alias($this->through_model.'.'.$this->through_columns[0], TRUE),
-			Jelly::field_alias($this->through_model.'.'.$this->through_columns[1], TRUE),
+			Jelly_Meta::column($this->through_model.'.'.$this->through_columns[0], TRUE),
+			Jelly_Meta::column($this->through_model.'.'.$this->through_columns[1], TRUE),
 		);
 		
 		// Find old relationships that must be deleted
@@ -176,10 +176,10 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 	protected function in($model, $as_array = FALSE)
 	{
 		// Grab all of the actual columns
-		$through_table = Jelly::model_alias($this->through_model);
+		$through_table = Jelly_Meta::table($this->through_model);
 		$through_columns = array(
-			Jelly::field_alias($this->through_model.'.'.$this->through_columns[0], FALSE),
-			Jelly::field_alias($this->through_model.'.'.$this->through_columns[1], FALSE),
+			Jelly_Meta::column($this->through_model.'.'.$this->through_columns[0], FALSE),
+			Jelly_Meta::column($this->through_model.'.'.$this->through_columns[1], FALSE),
 		);
 						
 		if (!$as_array)

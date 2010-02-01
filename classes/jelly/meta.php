@@ -116,11 +116,6 @@ class Jelly_Meta
 		{
 			return strtolower(get_class($model));
 		}
-		// Ignore other classes
-		else if (!is_string($model))
-		{
-			return FALSE;
-		}
 		else
 		{
 			return strtolower(Jelly_Meta::$_prefix.$model);
@@ -140,10 +135,6 @@ class Jelly_Meta
 		{
 			$model = get_class($model);
 		}
-		else if (!is_string($model))
-		{
-			return FALSE;
-		}
 		
 		$prefix_length = strlen(Jelly_Meta::$_prefix);
 		
@@ -155,6 +146,93 @@ class Jelly_Meta
 		
 		return strtolower($model);
 	}
+	
+	/**
+	 * Returns the table name of the model passed. If the model 
+	 * doesn't exist in the registry, the original value is returned.
+	 *
+	 * @param  mixed   $model  A model name or another Jelly
+	 * @return string
+	 * @author Jonathan Geiger
+	 */
+	public static function table($model)
+	{
+		if ($meta = Jelly_Meta::get($model))
+		{
+			return $meta->table;
+		}
+		
+		return $model;
+	}
+	
+	/**
+	 * Returns the column name for a particular field. This 
+	 * method can take arguments in three separate ways:
+	 * 
+	 * $model, $field [, $join = FALSE]
+	 * $model_name, $field [, $join = FALSE]
+	 * $model_plus_field [, $join = FALSE]
+	 * 
+	 * In the first case, $model is a Jelly model and $field is a string.
+	 * In the second case, $model is a string, and $field is a string.
+	 * In the third case, $model_plus_field is a string in the format of 'model.field'.
+	 * 
+	 * If the model cannot be found in the registry (or registered), the method will make
+	 * every reasonable attempt to return something valid. This allows you to pass
+	 * tables and fields and still expect something reasonable back.
+	 *
+	 * @param mixed $model
+	 * @param mixed $field
+	 * @param mixed $join
+	 * @return string
+	 * @author Jonathan Geiger
+	 */
+	public static function column($model, $field = FALSE, $join = FALSE)
+	{
+		// Accept either a jelly or a string in the format of model.field
+		if ($model instanceof Jelly || (is_string($model) && is_string($field)))
+		{			
+			$model = Jelly_Meta::model_name($model);
+			$column = $field;
+		}
+		else
+		{
+			// If the args are coming in without a Jelly, $model 
+			// must be in the format of model.field and $field is $
+			$join = $field;
+			$field = $model;
+			
+			// Can't find anything if we don't have a model
+			if (strpos($field, '.') === FALSE)
+			{			
+				return $field;
+			}
+
+			list($model, $column) = explode('.', $field);
+		}
+		
+		
+		if ($meta = Jelly_Meta::get($model))
+		{
+			if ($column != '*' && isset($meta->fields[$column]))
+			{
+				$column = $meta->fields[$column]->column;
+			}
+			
+			// Ensure the model is aliased as well
+			$model = $meta->table;
+		}
+		
+		if ($join)
+		{
+			return $model.'.'.$column;
+		}
+		else
+		{
+			return $column;
+		}
+	}
+	
 	
 	/**
 	 * @var string If this is FALSE, properties can still be set on it
