@@ -17,7 +17,12 @@ class Jelly_Field_Serialized extends Jelly_Field
 	 */
 	public function set($value)
 	{		
-	 	return @unserialize($value);
+	 	if ($return = @unserialize($value))
+		{
+			return $return;
+		}
+		
+		return $value;
 	} 
 		
 	/**

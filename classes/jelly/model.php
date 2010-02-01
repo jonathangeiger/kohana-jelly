@@ -961,7 +961,7 @@ abstract class Jelly_Model
 	 */
 	public function name()
 	{
-		return $this->get($this->meta()->primary_key);
+		return $this->get($this->meta()->name_key);
 	}
 	
 	/**

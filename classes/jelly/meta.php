@@ -114,7 +114,12 @@ class Jelly_Meta
 	{
 		if ($model instanceof Jelly)
 		{
-			return get_class($model);
+			return strtolower(get_class($model));
+		}
+		// Ignore other classes
+		else if (!is_string($model))
+		{
+			return FALSE;
 		}
 		else
 		{
@@ -134,6 +139,10 @@ class Jelly_Meta
 		if ($model instanceof Jelly)
 		{
 			$model = get_class($model);
+		}
+		else if (!is_string($model))
+		{
+			return FALSE;
 		}
 		
 		$prefix_length = strlen(Jelly_Meta::$_prefix);

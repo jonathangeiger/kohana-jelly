@@ -14,7 +14,7 @@ class Jelly_Field_Slug extends Jelly_Field
 	public function set($value)
 	{
 		// Only allow slashes, dashes, and lowercase letters
-		$value = preg_replace('/[^a-z0-9-\/]/', '-', $value);
+		$value = preg_replace('/[^a-z0-9-\/]/', '-', strtolower($value));
 		
 		// Strip multiple dashes
 		$value = preg_replace('/-{2,}/', '-', $value);

@@ -52,12 +52,12 @@ class Jelly_Field_Timestamp extends Jelly_Field
 		if ((!$model->loaded() && $this->auto_now_create) || ($model->loaded() && $this->auto_now_update))
 		{
 			$value = time();
-			
-			// Convert if necessary
-			if ($this->format)
-			{
-				$value = date($this->format, $value);
-			}
+		}
+		
+		// Convert if necessary
+		if ($this->format)
+		{
+			$value = date($this->format, $value);
 		}
 		
 		return $value;
