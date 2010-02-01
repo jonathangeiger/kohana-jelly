@@ -211,9 +211,11 @@ abstract class Jelly_Model
 	 * @author  Jonathan Geiger
 	 */
 	public function get($name, $verbose = TRUE)
-	{
-		if ($field = Jelly_Meta::field($this, $name))
-		{			
+	{		
+		if (isset($this->meta()->fields[$name]))
+		{		
+			$field = $this->meta()->fields[$name];
+				
 			// Return changed values first
 			if (isset($this->_changed[$name]))
 			{
@@ -261,9 +263,10 @@ abstract class Jelly_Model
 	 */
 	public function set($name, $value)
 	{
-		// Normal, user-initiated set
-		if ($field = Jelly_Meta::field($this, $name))
-		{			
+		if (isset($this->meta()->fields[$name]))
+		{		
+			$field = $this->meta()->fields[$name];
+					
 			// If we're intitially setting data on the object 
 			// that is coming from the database, it goes to $_data
 			if ($this->_loading === TRUE)

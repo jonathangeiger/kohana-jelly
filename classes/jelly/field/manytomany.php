@@ -136,7 +136,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 			DB::delete($through_table)
 				->where($through_columns[0], '=', $model->id())
 				->where($through_columns[1], 'IN', $old)
-				->execute(Jelly_Meta::db($model));
+				->execute(Jelly_Meta::get($model, 'db'));
 		}
 
 		// Find new relationships that must be inserted
@@ -146,7 +146,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 			{
 				DB::insert($through_table, $through_columns)
 					->values(array($model->id(), $new_id))
-					->execute(Jelly_Meta::db($model));
+					->execute(Jelly_Meta::get($model, 'db'));
 			}
 		}
 	}
@@ -195,7 +195,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 					->select($through_columns[1])
 					->from($through_table)
 					->where($through_columns[0], '=', $model->id())
-					->execute(Jelly_Meta::db($model))
+					->execute(Jelly_Meta::get($model, 'db'))
 					->as_array(NULL, $through_columns[1]);
 		}
 	}
