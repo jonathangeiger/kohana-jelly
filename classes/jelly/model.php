@@ -971,9 +971,20 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Returns the raw query builder query, executed.
-	 *
-	 * @return void
+	 * Returns the raw query builder query, executed. The args are 
+	 * slightly different depending on the $type to execute:
+	 * 
+	 * If the type is a Database::INSERT or Database::UPDATE, and the 
+	 * second argument is an array, the second argument is assumed to be 
+	 * the data to insert or update (the keys of the array will be aliased).
+	 * The third argument then becomes $as_object.
+	 * 
+	 * Otherwise, $as_object is the second argument.
+	 * 
+	 * @param const $type A Database constant type to use for the query
+	 * @param mixed $data Depends on the above documentation
+	 * @param mixed $as_object Depends on the above documentation
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function execute($type = Database::SELECT, $data = NULL, $as_object = NULL)
@@ -992,7 +1003,7 @@ abstract class Jelly_Model
 			$query->table($meta->table);
 		}
 		
-		// Perform a little arg-munging since UPDATES accept a data parameter
+		// Perform a little arg-munging since UPDATES and INSERTS accept a data parameter
 		if ($type === Database::UPDATE && is_array($data))
 		{
 			// Since we're out of the Jelly, we have to alias manually
@@ -1000,6 +1011,20 @@ abstract class Jelly_Model
 			{
 				$query->value($this->alias($column), $value);
 			}
+		}
+		else if ($type === Database::INSERT && is_array($data))
+		{
+			// Keys have to be manually aliased
+			$columns = array();
+			$values = array();
+			foreach ($data as $column => $value)
+			{
+				$columns[] = $this->alias($column);
+				$values[] = $value;
+			}
+			
+			$query->columns($columns);
+			$query->values($values);
 		}
 		else
 		{
