@@ -165,8 +165,6 @@ abstract class Jelly_Model
 	 **/
 	public function __construct($cond = NULL)
 	{
-		$model = $this->_model = strtolower(substr(get_class($this), 6));
-
 		// Copy over the defaults into the original data. This also has 
 		// the added benefit of registering the model's metadata, if it does not exist yet
 		$this->_original = $this->meta('defaults');
@@ -624,7 +622,7 @@ abstract class Jelly_Model
 				
 				// We're good!
 				$this->_loaded = $this->_saved = TRUE;
-				$this->_cache = $this->_changed = array();
+				$this->_changed = array();
 				$this->_loading = FALSE;
 			}
 
@@ -737,7 +735,7 @@ abstract class Jelly_Model
 
 		// We're good!
 		$this->_loaded = $this->_saved = TRUE;
-		$this->_changed = $this->_cache = array();
+		$this->_changed = array();
 		
 		// Delete the last queries
 		$this->end();
@@ -817,7 +815,7 @@ abstract class Jelly_Model
 		$this->_loaded = $this->_saved = FALSE;
 		
 		// Clear the cache of values
-		$this->_cache = $this->_changed = array();
+		$this->_changed = array();
 		
 		return $this;
 	}
