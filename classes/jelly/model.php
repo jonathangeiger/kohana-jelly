@@ -140,6 +140,17 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Displays the record's id
+	 *
+	 * @return string
+	 * @author Jonathan Geiger
+	 */
+	public function __toString()
+	{
+		return (string) $this->id();
+	}
+	
+	/**
 	 * Proxies to get()
 	 *
 	 * @see get()
