@@ -153,8 +153,8 @@ abstract class Jelly_Model
 	/**
 	 * Proxies to get()
 	 *
-	 * @see get()
-	 * @param string $name 
+	 * @see    get()
+	 * @param  string $name 
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
@@ -198,10 +198,10 @@ abstract class Jelly_Model
 	/**
 	 * Proxies to set()
 	 *
-	 * @see set()
-	 * @param string $name 
-	 * @param mixed $value 
-	 * @return mixed
+	 * @see    set()
+	 * @param  string $name 
+	 * @param  mixed $value 
+	 * @return void
 	 * @author Jonathan Geiger
 	 */
 	public function __set($name, $value)
@@ -222,9 +222,9 @@ abstract class Jelly_Model
 	 * 
 	 * The conversion is done in the field and returned.
 	 *
-	 * @param string $name 
-	 * @param string $value 
-	 * @return Jelly Returns $this
+	 * @param  string  $name 
+	 * @param  string  $value 
+	 * @return Jelly   Returns $this
 	 * @author Jonathan Geiger
 	 */
 	public function set($name, $value)
@@ -259,7 +259,7 @@ abstract class Jelly_Model
 	 * Returns true if $name is a field of the 
 	 * model or an unmapped column.
 	 *
-	 * @param string $name 
+	 * @param  string   $name 
 	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
@@ -272,7 +272,7 @@ abstract class Jelly_Model
 	 * This doesn't unset fields. Rather, it sets them to 
 	 * their default value. Unmapped values are unset.
 	 *
-	 * @param string $name 
+	 * @param  string $name 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
@@ -448,7 +448,7 @@ abstract class Jelly_Model
 	/**
 	 * Returns metadata for this particular object
 	 *
-	 * @param  string $property 
+	 * @param  string  $property 
 	 * @return Jelly_Meta
 	 * @author Jonathan Geiger
 	 */
@@ -495,8 +495,8 @@ abstract class Jelly_Model
 	 * 
 	 * has_many, has_one, many_to_many
 	 *
-	 * @param string $name 
-	 * @param mixed $models
+	 * @param  string   $name 
+	 * @param  mixed    $models
 	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
@@ -541,7 +541,13 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Loads a single row or multiple rows
+	 * Loads a single row or multiple rows. If $where is a string or integer
+	 * it is assumed that you are searching for the model's primary key. In
+	 * which case, $limit will be automatically set to 1 and the result
+	 * will be loaded into $this.
+	 * 
+	 * If $limit is 1 the result is always loaded into $this. Otherwise,
+	 * a database_result is returned.
 	 *
 	 * @param  mixed  $where  an array or id to load 
 	 * @return mixed
@@ -624,7 +630,7 @@ abstract class Jelly_Model
 	/**
 	 * Returns whether or not the model is loaded
 	 *
-	 * @return void
+	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
 	public function loaded()
@@ -633,9 +639,17 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Creates a new record based on the current model
+	 * Creates a new record based on the current model. If save related is TRUE
+	 * any changes made to relations will be updated as well.
+	 * 
+	 * Keep in mind, however, that only the relation to the other model will be saved,
+	 * and not the actual model that it is related to.
+	 * 
+	 * If the model's meta data is set to validate on save, then 
+	 * this could potentially throw a Validate_Exception.
 	 *
-	 * @return mixed
+	 * @param  bool   Whether or not to save related changes
+	 * @return Jelly  Returns $this
 	 * @author Jonathan Geiger
 	 **/
 	public function save($save_related = TRUE)
@@ -732,7 +746,7 @@ abstract class Jelly_Model
 	/**
 	 * Whether or not the model is saved
 	 *
-	 * @return void
+	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
 	public function saved()
@@ -746,8 +760,8 @@ abstract class Jelly_Model
 	 * If we're loaded(), it just deletes this object, otherwise it deletes 
 	 * whatever the query matches. 
 	 *
-	 * @param $where A simple where statement
-	 * @return self
+	 * @param  $where  A simple where statement
+	 * @return Jelly   Returns $this
 	 * @author Jonathan Geiger
 	 **/
 	public function delete($where = NULL)
@@ -784,7 +798,10 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Resets the model to an empty state
+	 * Resets the model to an empty state, as if you 
+	 * were constructing a brand new object.
+	 * 
+	 * All changes, queries, and other state is lost.
 	 *
 	 * @return void
 	 * @author Jonathan Geiger
@@ -868,9 +885,17 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Returns data as an array
-	 *
-	 * @param string $verbose 
+	 * Returns data as an array. If $verbose is TRUE, the actual relation
+	 * objects will be returned inside the array, otherwise, only the changes
+	 * made to those object will be returned. Ex:
+	 * 
+	 * // $verbose is FALSE, only the belongs_to id is returned
+	 * $post['category'] = 1;
+	 * 
+	 * // $verbose is TRUE, the Jelly is returned
+	 * $post['category'] = Loaded Jelly with the ID of 1
+	 * 
+	 * @param boolean  $verbose  
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
@@ -887,8 +912,12 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Sets an array of values based on their key
+	 * Sets an array of values based on their key, into the model.
+	 * 
+	 * Any values passed into this are counted as changes.
 	 *
+	 * @param  array  $values  The value to insert
+	 * @param  bool   $reverse  If TRUE, aliasing is applied to the array keys
 	 * @return void
 	 * @author Jonathan Geiger
 	 **/
@@ -950,10 +979,10 @@ abstract class Jelly_Model
 	 * Returns a view object the represents the field. If $prefix is an array,
 	 * it will be used for the data and $prefix will be set to the default.
 	 *
-	 * @param string $name The field to render
-	 * @param string|array $prefix 
-	 * @param string $data 
-	 * @return void
+	 * @param  string        $name    The field to render
+	 * @param  string|array  $prefix 
+	 * @param  string        $data 
+	 * @return View
 	 * @author Jonathan Geiger
 	 */
 	public function input($name, $prefix = NULL, $data = array())
@@ -1065,7 +1094,7 @@ abstract class Jelly_Model
 	 * Initializes the Database Builder to given query type
 	 *
 	 * @param   int  Type of Database query
-	 * @return  ORM
+	 * @return  Database_Query_Builder
 	 */
 	public function build($type)
 	{
@@ -1131,7 +1160,7 @@ abstract class Jelly_Model
 	/**
 	 * Resets the database builder
 	 *
-	 * @return void
+	 * @return Jelly  Returns $this
 	 * @author Jonathan Geiger
 	 */
 	public function end()
