@@ -174,12 +174,12 @@ abstract class Jelly_Model
 	 */
 	public function get($name, $verbose = TRUE)
 	{		
-		if (isset($this->meta()->fields[$name]))
+		if (array_key_exists($name, $this->meta()->fields))
 		{		
 			$field = $this->meta()->fields[$name];
 				
 			// Return changed values first
-			if (isset($this->_changed[$name]))
+			if (array_key_exists($name, $this->_changed))
 			{
 				return $field->get($this, $this->_changed[$name], $verbose);
 			}
@@ -229,7 +229,7 @@ abstract class Jelly_Model
 	 */
 	public function set($name, $value)
 	{
-		if (isset($this->meta()->fields[$name]))
+		if (array_key_exists($name, $this->meta()->fields))
 		{		
 			$field = $this->meta()->fields[$name];
 					
@@ -265,7 +265,7 @@ abstract class Jelly_Model
 	 */
 	public function __isset($name)
 	{
-		return (isset($this->_original[$name]) || isset($this->_unmapped[$name]));
+		return (array_key_exists($name, $this->_original) || array_key_exists($name, $this->_unmapped));
 	}
 	
 	/**
@@ -278,7 +278,7 @@ abstract class Jelly_Model
 	 */
 	public function __unset($name)
 	{
-		if (isset($this->_original[$name]))
+		if (array_key_exists($name, $this->_original))
 		{
 			// We don't want to unset the keys, because 
 			// they are assumed to exist. Just NULL them out.
@@ -388,7 +388,7 @@ abstract class Jelly_Model
 		}
 		
 		// Check and concatenate
-		if (isset($meta->fields[$field]))
+		if (array_key_exists($field, $meta->fields))
 		{
 			$field = $meta->fields[$field]->column;
 		}
@@ -673,7 +673,7 @@ abstract class Jelly_Model
 			// Only add actual columns
 			if ($field->in_db)
 			{	
-				if (isset($this->_changed[$column]))
+				if (array_key_exists($column, $this->_changed))
 				{
 					$this->_original[$column] = $values[$field->column] = $field->save($this, $this->_changed[$column]);
 				}
@@ -726,7 +726,7 @@ abstract class Jelly_Model
 			// Load the relations
 			foreach($relations as $column => $field)
 			{				
-				if (isset($this->_changed[$column]))
+				if (array_key_exists($column, $this->_changed))
 				{
 					$this->_original[$column] = $field->save($this, $this->_changed[$column]);
 				}
@@ -933,12 +933,12 @@ abstract class Jelly_Model
 			$column = ($reverse) ? $field->column : $alias;
 			
 			// Remove found values from the unmapped
-			if (isset($unmapped[$column]))
+			if (array_key_exists($column, $unmapped))
 			{
 				unset($unmapped[$column]);
 			}
 			
-			if (isset($values[$column]))
+			if (array_key_exists($column, $values))
 			{
 				$this->set($alias, $values[$column]);
 			}
