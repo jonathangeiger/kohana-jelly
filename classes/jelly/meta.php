@@ -91,7 +91,7 @@ class Jelly_Meta
 			$field->initialize($model, $column);
 			
 			// Ensure a default primary key is set
-			if ($field->primary)
+			if ($field->primary && empty($meta->primary_key))
 			{
 				$meta->primary_key = $column;
 			}
