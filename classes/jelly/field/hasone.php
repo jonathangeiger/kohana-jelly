@@ -51,14 +51,8 @@ class Jelly_Field_HasOne extends Jelly_Field
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
-	public function get($model, $value, $object = TRUE)
+	public function get($model, $value)
 	{
-		// Only return the actual value
-		if (!$object)
-		{
-			return $value;
-		}
-		
 		// Return a real object
 		return Jelly::factory($this->foreign_model)
 				->limit(1, TRUE)

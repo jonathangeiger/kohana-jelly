@@ -106,14 +106,8 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 		return $return;
 	}
 	
-	public function get($model, $value, $object = TRUE)
+	public function get($model, $value)
 	{
-		// Only return the actual value
-		if (!$object)
-		{
-			return $value;
-		}
-
 		return Jelly::factory($this->foreign_model)
 				->where($this->foreign_column, 'IN', $this->in($model));
 	}

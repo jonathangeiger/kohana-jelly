@@ -160,7 +160,7 @@ abstract class Jelly_Model
 	 */
 	public function __get($name)
 	{
-		return $this->get($name, TRUE);
+		return $this->get($name);
 	}
 	
 	/**
@@ -168,11 +168,10 @@ abstract class Jelly_Model
 	 * a field or unmapped column.
 	 *
 	 * @param   string   $name   The field's name
-	 * @param   boolean  $value  If FALSE, relationships won't be loaded
 	 * @return  mixed
 	 * @author  Jonathan Geiger
 	 */
-	public function get($name, $verbose = TRUE)
+	public function get($name)
 	{		
 		if (array_key_exists($name, $this->meta()->fields))
 		{		
@@ -181,12 +180,14 @@ abstract class Jelly_Model
 			// Return changed values first
 			if (array_key_exists($name, $this->_changed))
 			{
-				return $field->get($this, $this->_changed[$name], $verbose);
+				$value = $this->_changed[$name];
 			}
 			else
 			{
-				return $field->get($this, $this->_original[$name], $verbose);
+				$value = $this->_original[$name];
 			}
+			
+			return $field->get($this, $value);
 		}
 		// Return unmapped data from custom queries
 		else if (isset($this->_unmapped[$name]))
@@ -885,27 +886,27 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Returns data as an array. If $verbose is TRUE, the actual relation
-	 * objects will be returned inside the array, otherwise, only the changes
-	 * made to those object will be returned. Ex:
+	 * Returns data as an array. 
 	 * 
-	 * // $verbose is FALSE, only the belongs_to id is returned
-	 * $post['category'] = 1;
+	 * If $relations is TRUE, fields that are !in_db will be included in the result. 
+	 * Otherwise, they will not be.
 	 * 
-	 * // $verbose is TRUE, the Jelly is returned
-	 * $post['category'] = Loaded Jelly with the ID of 1
-	 * 
-	 * @param boolean  $verbose  
+	 * @param  boolean $relations
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function as_array($verbose = FALSE)
+	public function as_array($relations = FALSE)
 	{
 		$result = array();
 		
 		foreach($this->meta()->fields as $column => $field)
 		{
-			$result[$column] = $this->get($column, $verbose);
+			if (!$relations && !$field->in_db)
+			{
+				continue;
+			}
+			
+			$result[$column] = $this->get($column);
 		}
 		
 		return $result;
