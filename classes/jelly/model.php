@@ -163,28 +163,56 @@ abstract class Jelly_Model
 	 * @return  mixed
 	 * @author  Jonathan Geiger
 	 */
-	public function get($name)
-	{		
-		if (array_key_exists($name, $this->meta()->fields))
-		{		
-			$field = $this->meta()->fields[$name];
-				
-			// Return changed values first
-			if (array_key_exists($name, $this->_changed))
-			{
-				$value = $this->_changed[$name];
-			}
-			else
-			{
-				$value = $this->_original[$name];
-			}
-			
-			return $field->get($this, $value);
-		}
-		// Return unmapped data from custom queries
-		else if (isset($this->_unmapped[$name]))
+	public function get($name, $relations = FALSE)
+	{	
+		$meta = $this->meta();
+		
+		// Passing TRUE or an array of fields to get returns them as an array
+		if (is_array($name) || $name === TRUE)	
 		{
-			return $this->_unmapped[$name];
+			$fields = ($name === TRUE) ? array_keys($meta->fields) : $name;
+			$result = array();
+
+			foreach($fields as $field)
+			{
+				if (array_key_exists($field, $meta->fields))
+				{
+					// Relations only applies when $name is TRUE
+					if ($name === TRUE && !$relations && !$meta->fields[$field]->in_db)
+					{
+						continue;
+					}
+				}
+				
+
+				$result[$field] = $this->get($field);
+			}
+
+			return $result;
+		}
+		else 
+		{
+			if (array_key_exists($name, $this->meta()->fields))
+			{		
+				$field = $this->meta()->fields[$name];
+
+				// Return changed values first
+				if (array_key_exists($name, $this->_changed))
+				{
+					$value = $this->_changed[$name];
+				}
+				else
+				{
+					$value = $this->_original[$name];
+				}
+
+				return $field->get($this, $value);
+			}
+			// Return unmapped data from custom queries
+			else if (isset($this->_unmapped[$name]))
+			{
+				return $this->_unmapped[$name];
+			}
 		}
 	}
 	
@@ -903,39 +931,12 @@ abstract class Jelly_Model
 		if ($data->check())
 		{
 			// Insert filtered data back into the model
-			$this->values($data->as_array());
+			$this->set($data->as_array());
 		}
 		else
 		{
 			throw new Validate_Exception($data);
 		}
-	}
-	
-	/**
-	 * Returns data as an array. 
-	 * 
-	 * If $relations is TRUE, fields that are !in_db will be included in the result. 
-	 * Otherwise, they will not be.
-	 * 
-	 * @param  boolean $relations
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public function as_array($relations = FALSE)
-	{
-		$result = array();
-		
-		foreach($this->meta()->fields as $column => $field)
-		{
-			if (!$relations && !$field->in_db)
-			{
-				continue;
-			}
-			
-			$result[$column] = $this->get($column);
-		}
-		
-		return $result;
 	}
 
 	/**
