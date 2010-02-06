@@ -84,11 +84,6 @@ abstract class Jelly_Model
 	protected $_preload_data = array();
 	
 	/**
-	 * @var boolean Whether or not the model is loading original data
-	 */
-	protected $_loading = TRUE;
-
-	/**
 	 * @var array Applied query builder methods
 	 */
 	protected $_db_applied = array();
@@ -125,12 +120,9 @@ abstract class Jelly_Model
 		// Add the values stored by mysql_set_object
 		if (is_array($this->_preload_data) && !empty($this->_preload_data))
 		{
-			$this->values($this->_preload_data, TRUE);
+			$this->set($this->_preload_data, TRUE);
 			$this->_loaded = $this->_saved = TRUE;
 		}
-		
-		// Finished initialized
-		$this->_loading = FALSE;
 		
 		// Have an id? Attempt to load it
 		if (is_int($cond) || is_string($cond) || is_array($cond))
@@ -208,7 +200,7 @@ abstract class Jelly_Model
 	public function __set($name, $value)
 	{
 		// Being set by mysql_fetch_object, store the values for the constructor
-		if ($this->_loading)
+		if (empty($this->_original))
 		{
 			$this->_preload_data[$name] = $value;
 			return;
@@ -228,29 +220,68 @@ abstract class Jelly_Model
 	 * @return Jelly   Returns $this
 	 * @author Jonathan Geiger
 	 */
-	public function set($name, $value)
-	{
-		if (array_key_exists($name, $this->meta()->fields))
-		{		
-			$field = $this->meta()->fields[$name];
-					
-			// If we're intitially setting data on the object 
-			// that is coming from the database, it goes to $_data
-			if ($this->_loading === TRUE)
+	public function set($name, $value = FALSE)
+	{	
+		$meta = $this->meta();
+	
+		// Allow setting multiple values as an array
+		if (is_array($name))
+		{
+			$values = $name;
+			
+			// $value now corresponds to the location we're inserting to
+			// if FALSE, aliasing of columns is off, and the data is changed
+			// if TRUE, aliasing is on and the data is considered original
+			if ($value)
 			{
-				$this->_original[$name] = $field->set($value);
+				$write_to =& $this->_original;
+				$alias_columns = TRUE;
 			}
-			// Otherwise we're setting changes
 			else
 			{
-				$this->_changed[$name] = $field->set($value);
-				$this->_saved = FALSE;
+				$write_to =& $this->_changed;
+				$alias_columns = FALSE;
+			}
+			
+			// We'll remove elements from this array when they've been found
+			$unmapped = $values;
+
+			// Why this way? Because it allows the model to have 
+			// multiple fields that are based on the same column
+			foreach ($meta->fields as $alias => $field)
+			{
+				$column = ($alias_columns) ? $field->column : $alias;
+				
+				// Remove found values from the unmapped
+				if (array_key_exists($column, $unmapped))
+				{
+					unset($unmapped[$column]);
+				}
+
+				if (array_key_exists($column, $values))
+				{
+					$write_to[$alias] = $field->set($values[$column]);
+				}
+			}
+
+			// Set any left over unmapped values
+			if ($unmapped)
+			{
+				$this->_unmapped = array_merge($this->_unmapped, $unmapped);
 			}
 		}
-		// Allow setting unmapped data from custom queries
 		else
 		{
-			$this->_unmapped[$name] = $value;
+			if (array_key_exists($name, $meta->fields))
+			{		
+				$this->_changed[$name] = $meta->fields[$name]->set($value);
+				$this->_saved = FALSE;
+			}
+			// Allow setting unmapped data from custom queries
+			else
+			{
+				$this->_unmapped[$name] = $value;
+			}
 		}
 		
 		return $this;
@@ -600,13 +631,8 @@ abstract class Jelly_Model
 			// Ensure we have something
 			if (count($result))
 			{
-				$values = $result->current();
-				
-				// Set this flag so that the values are loaded into the correct place
-				$this->_loading = TRUE;
-				
-				// Insert the values, make sure to reverse alias them
-				$this->values($values, TRUE);
+				// Insert the original values
+				$this->set($result[0], TRUE);
 				
 				// We're good!
 				$this->_loaded = $this->_saved = TRUE;
@@ -911,49 +937,7 @@ abstract class Jelly_Model
 		
 		return $result;
 	}
-	
-	/**
-	 * Sets an array of values based on their key, into the model.
-	 * 
-	 * Any values passed into this are counted as changes.
-	 *
-	 * @param  array  $values  The value to insert
-	 * @param  bool   $reverse  If TRUE, aliasing is applied to the array keys
-	 * @return void
-	 * @author Jonathan Geiger
-	 **/
-	public function values(array $values, $reverse = FALSE)
-	{
-		// We'll remove elements from this array when they've been found
-		$unmapped = $values;
-		
-		// Why this way? Because it allows the model to have 
-		// multiple fields that are based on the same column
-		foreach ($this->meta()->fields as $alias => $field)
-		{
-			$column = ($reverse) ? $field->column : $alias;
-			
-			// Remove found values from the unmapped
-			if (array_key_exists($column, $unmapped))
-			{
-				unset($unmapped[$column]);
-			}
-			
-			if (array_key_exists($column, $values))
-			{
-				$this->set($alias, $values[$column]);
-			}
-		}
-		
-		// Set any left over unmapped values
-		if ($unmapped)
-		{
-			$this->_unmapped = array_merge($this->_unmapped, $unmapped);
-		}
-		
-		return $this;
-	}
-	
+
 	/**
 	 * Returns the value of the primary key for the row
 	 *
