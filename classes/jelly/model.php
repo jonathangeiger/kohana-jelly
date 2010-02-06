@@ -665,7 +665,6 @@ abstract class Jelly_Model
 				// We're good!
 				$this->_loaded = $this->_saved = TRUE;
 				$this->_changed = array();
-				$this->_loading = FALSE;
 			}
 
 			return $this->end();
