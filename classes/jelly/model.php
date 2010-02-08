@@ -1007,7 +1007,7 @@ abstract class Jelly_Model
 			$data['value'] = $this->get($name, FALSE);
 			$data['model'] = $this;
 			
-			return $this->_fields[$name]->input($prefix, $data);
+			return $this->meta()->fields[$name]->input($prefix, $data);
 		}
 	}
 	

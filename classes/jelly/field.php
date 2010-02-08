@@ -154,16 +154,10 @@ abstract class Jelly_Field
 	 * @return View
 	 * @author Jonathan Geiger
 	 **/
-	public function input($prefix = NULL, $data = array())
+	public function input($prefix = 'jelly/field', $data = array())
 	{
-		// Determine the view name, which matches the class name
-		$file = strtolower(get_class($this));
-		
-		// Could be prefixed by Jelly_Field, or just Field_
-		$file = str_replace(array('jelly_field_', 'field_'), array('', ''), $file);
-		
-		// Allowing a prefix means inputs can be rendered from different paths
-		$view = $prefix.'/'.$file;
+		// Get the view name
+		$view = $this->_input_view($prefix);
 		
 		// Grant acces to all of the vars plus the field object
 		$data = array_merge(get_object_vars($this), $data, array('field' => $this));
@@ -171,5 +165,39 @@ abstract class Jelly_Field
 		// By default, a view object only needs a few defaults to display it properly
 		return View::factory($view, $data);
 	}	
+	
+	/**
+	 * Used internally to allow fields to inherit input views from parent classes
+	 * 
+	 * @param	Jelly_Field	$class [optional]
+	 * @return	string
+	 */
+	protected function _input_view($prefix, $field_class = NULL)
+	{
+		if (is_null($field_class))
+		{
+			$field_class = get_class($this);
+		}
+		
+		// Determine the view name, which matches the class name
+		$file = strtolower($field_class);
+		
+		// Could be prefixed by Jelly_Field, or just Field_
+		$file = str_replace(array('jelly_field_', 'field_'), array('', ''), $file);
+		
+		// Allowing a prefix means inputs can be rendered from different paths
+		$view = $prefix.'/'.$file;
+		
+		// Check we can find a view for this field type, if not inherit view from parent
+		if ( ! Kohana::find_file('views', $view) 
+			// Don't try going beyond this base Jelly_Field class!
+			AND get_parent_class($this) !== __CLASS__)
+		{
+			return $this->_input_view($prefix, get_parent_class($field_class));
+		}
+		
+		// Either we've found a suitable view or there is no suitable one so just return what it should be
+		return $view;
+	}
 	
 } // END abstract class Resource_Field
