@@ -124,4 +124,14 @@ class Jelly_Field_HasOne extends Jelly_Field
 		$data['id'] = $this->get($data['model'], NULL)->load()->id();
 		return parent::input($prefix, $data);
 	}
+	
+	public function with($model)
+	{
+		$meta = Jelly_Meta::get($this->model);
+		$join_col1 = $meta->table.'.'.$meta->primary_key;
+		$join_col2 = $this->foreign_model.'.'.$this->foreign_column;
+		
+		$model
+			->on($join_col1, '=', $join_col2);
+	}
 }

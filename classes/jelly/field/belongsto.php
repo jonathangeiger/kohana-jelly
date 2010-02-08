@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_BelongsTo extends Jelly_Field
+class Jelly_Field_BelongsTo extends Jelly_Field 
 {	
 	/**
 	 * @var boolean Defaults belongs_to's to in the database
@@ -70,7 +70,7 @@ class Jelly_Field_BelongsTo extends Jelly_Field
 			}
 		}
 		
-		return $value;
+		return (is_numeric($value)) ? (int) $value : (string) $value;
 	}
 	
 	/**
@@ -84,5 +84,15 @@ class Jelly_Field_BelongsTo extends Jelly_Field
 		return Jelly::factory($this->foreign_model)
 				->limit(1, TRUE)
 				->where($this->foreign_column, '=', $value);
+	}
+	
+	public function with($model)
+	{
+		$join_col1 = Jelly_Meta::model_name($this->model).'.'.$this->column;
+		$join_col2 = $this->foreign_model.'.'.$this->foreign_column;
+		
+		$model
+			->join($this->foreign_model, 'LEFT')
+			->on($join_col1, '=', $join_col2);
 	}
 }

@@ -64,6 +64,11 @@ abstract class Jelly_Model
 	protected $_changed = array();
 	
 	/**
+	 * @var array Data that's already been retrieved is cached
+	 */
+	protected $_retrieved = array();
+	
+	/**
 	 * @var array Unmapped data that is still accessible
 	 */
 	protected $_unmapped = array();
@@ -82,6 +87,21 @@ abstract class Jelly_Model
 	 * @var array Data set by mysql_fetch_object. Daggers to ye who overwrites this.
 	 */
 	protected $_preload_data = array();
+	
+	/**
+	 * @var array With data
+	 */
+	protected $_with = array();
+	
+	/**
+	 * @var array Applied with associations
+	 */
+	protected $_with_applied = array();
+	
+	/**
+	 * @var array Incoming with results
+	 */
+	protected $_with_values = array();
 	
 	/**
 	 * @var array Applied query builder methods
@@ -120,8 +140,9 @@ abstract class Jelly_Model
 		// Add the values stored by mysql_set_object
 		if (is_array($this->_preload_data) && !empty($this->_preload_data))
 		{
-			$this->set($this->_preload_data, TRUE);
+			$this->set($this->_preload_data, TRUE, TRUE);
 			$this->_loaded = $this->_saved = TRUE;
+			$this->_preload_data = array();
 		}
 		
 		// Have an id? Attempt to load it
@@ -183,7 +204,6 @@ abstract class Jelly_Model
 						continue;
 					}
 				}
-				
 
 				$result[$field] = $this->get($field);
 			}
@@ -195,18 +215,36 @@ abstract class Jelly_Model
 			if (array_key_exists($name, $this->meta()->fields))
 			{		
 				$field = $this->meta()->fields[$name];
-
-				// Return changed values first
-				if (array_key_exists($name, $this->_changed))
+				
+				// Search for already retrieved values first
+				if (!array_key_exists($name, $this->_retrieved))
 				{
-					$value = $this->_changed[$name];
-				}
-				else
-				{
-					$value = $this->_original[$name];
+					// Does it exist as a with?
+					if (array_key_exists($name, $this->_with_values))
+					{
+						$model = Jelly::Factory($name);
+						$model->set($this->_with_values[$name], FALSE, TRUE);
+						$model->_loaded = TRUE;
+						$model->_saved = TRUE;
+						$this->_retrieved[$name] = $model;
+					}
+					else
+					{
+						// Return changed values first
+						if (array_key_exists($name, $this->_changed))
+						{
+							$value = $this->_changed[$name];
+						}
+						else
+						{
+							$value = $this->_original[$name];
+						}
+						
+						$this->_retrieved[$name] = $field->get($this, $value);
+					}
 				}
 
-				return $field->get($this, $value);
+				return $this->_retrieved[$name];
 			}
 			// Return unmapped data from custom queries
 			else if (isset($this->_unmapped[$name]))
@@ -248,67 +286,74 @@ abstract class Jelly_Model
 	 * @return Jelly   Returns $this
 	 * @author Jonathan Geiger
 	 */
-	public function set($name, $value = FALSE)
+	public function set($values, $alias = FALSE, $original = FALSE)
 	{	
 		$meta = $this->meta();
-	
-		// Allow setting multiple values as an array
-		if (is_array($name))
+		
+		// Accept set('name', 'value');
+		if (!is_array($values))
 		{
-			$values = $name;
-			
-			// $value now corresponds to the location we're inserting to
-			// if FALSE, aliasing of columns is off, and the data is changed
-			// if TRUE, aliasing is on and the data is considered original
-			if ($value)
-			{
-				$write_to =& $this->_original;
-				$alias_columns = TRUE;
-			}
-			else
-			{
-				$write_to =& $this->_changed;
-				$alias_columns = FALSE;
-			}
-			
-			// We'll remove elements from this array when they've been found
-			$unmapped = $values;
-
-			// Why this way? Because it allows the model to have 
-			// multiple fields that are based on the same column
-			foreach ($meta->fields as $alias => $field)
-			{
-				$column = ($alias_columns) ? $field->column : $alias;
-				
-				// Remove found values from the unmapped
-				if (array_key_exists($column, $unmapped))
-				{
-					unset($unmapped[$column]);
-				}
-
-				if (array_key_exists($column, $values))
-				{
-					$write_to[$alias] = $field->set($values[$column]);
-				}
-			}
-
-			// Set any left over unmapped values
-			if ($unmapped)
-			{
-				$this->_unmapped = array_merge($this->_unmapped, $unmapped);
-			}
+			$values = array($values => $alias);
+			$alias = FALSE;
+		}
+		
+		// Determine where to write the data to, changed or original
+		if ($original)
+		{
+			$data_location =& $this->_original;
 		}
 		else
 		{
-			if (array_key_exists($name, $meta->fields))
-			{		
-				$this->_changed[$name] = $meta->fields[$name]->set($value);
-				$this->_saved = FALSE;
+			$data_location =& $this->_changed;
+		}
+
+		// Why this way? Because it allows the model to have 
+		// multiple fields that are based on the same column
+		foreach($values as $key => $value)
+		{
+			// Key is coming from a with statement
+			if (FALSE !== strpos($key, ':'))
+			{
+				$targets = explode(':', $key, 2);
+				$relationship = array_shift($targets);
+								
+				if (!array_key_exists($relationship, $this->_with_values))
+				{
+					$this->_with_values[$relationship] = array();
+				}
+				
+				$this->_with_values[$relationship][implode(':', $targets)] = $value;
 			}
-			// Allow setting unmapped data from custom queries
+			// Key is coming from a database result
+			else if ($alias && !empty($meta->columns[$key]))
+			{
+				// Contains an array of fields that the column is mapped to
+				// This allows multiple fields to get data from the same column
+				foreach ($meta->columns[$key] as $field)
+				{
+					$data_location[$field] = $meta->fields[$field]->set($value);
+					
+					// Invalidate the cache
+					if (array_key_exists($field, $this->_retrieved))
+					{
+						unset($this->_retrieved[$field]);
+					}
+				}
+			}
+			// Standard setting of a field 
+			else if (!$alias && array_key_exists($key, $meta->fields))
+			{
+				$data_location[$key] = $meta->fields[$key]->set($value);
+				
+				// Invalidate the cache
+				if (array_key_exists($key, $this->_retrieved))
+				{
+					unset($this->_retrieved[$key]);
+				}
+			}
 			else
 			{
-				$this->_unmapped[$name] = $value;
+				$this->_unmapped[$key] = $value;
 			}
 		}
 		
@@ -386,26 +431,26 @@ abstract class Jelly_Model
 				{
 					foreach($args[0] as $i => $table)
 					{
-						$args[0][$i] = Jelly::model_alias($table);
+						$args[0][$i] = Jelly_Meta::table($table);
 					}
 				}
 				else
 				{
-					$args[0] = Jelly::model_alias($args[0]);
+					$args[0] = Jelly_Meta::table($args[0]);
 				}
 			}
 			
 			// Join on
 			else if ($method == 'on')
 			{
-				$args[0] = $this->_qb_alias($args[0],TRUE);
+				$args[0] = $this->_qb_alias($args[0], TRUE);
 				$args[2] = $this->_qb_alias($args[2], TRUE);
 			}
 			
 			// Everything else
 			else if (in_array($method, self::$_alias))
 			{
-				$args[0] = $this->_qb_alias($args[0]);
+				$args[0] = $this->_qb_alias($args[0], TRUE);
 			}
 			
 			// Add pending database call which is executed after query type is determined
@@ -515,6 +560,81 @@ abstract class Jelly_Model
 	public function meta($property = NULL)
 	{
 		return Jelly_Meta::get($this, $property);
+	}
+	
+	/**
+	 * Allows joining 1:1 relationships in a single query.
+	 *
+	 * @param string $alias 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function with($relationship)
+	{
+		$meta = $this->meta();
+		
+		// Make sure we select for this object, since * will not be applied
+		if (empty($this->_with_applied))
+		{
+			$this->select('*');
+		}
+		
+		// Allow unlimited args
+		foreach ((array)$relationship as $with)
+		{
+			// Skip already applied paths
+			if (isset($this->_with_applied[$with]))
+			{
+				continue;
+			}
+			
+			$relations = explode(':', $with);
+			$child = array_pop($relations);
+			$parent = array_pop($relations);
+
+			// Parent is $this if it's empty
+			if (!$parent)
+			{
+				$parent = Jelly_Meta::model_name($this);
+			}
+			else
+			{
+				if (!array_key_exists($parent, $this->_with_applied))
+				{
+					$this->with($parent);
+				}
+			}
+			
+			// Ensure the field is "withable"
+			$parent_meta = Jelly_Meta::get($parent);
+			$parent_fields = $parent_meta->fields;
+			
+			if (!isset($parent_fields[$child]) || !is_callable(array($parent_fields[$child], 'with')))
+			{
+				continue;
+			}
+			
+			$field = $parent_fields[$child];
+			
+			// With will be applied. Make note of it
+			$this->_with_applied[$with] = TRUE;
+			
+			// Alias all of the fields for the model we're referencing
+			$child_fields = Jelly_meta::get($field->foreign_model)->fields;
+			
+			foreach ($child_fields as $alias => $field)
+			{
+				if ($field->in_db)
+				{
+					$this->select(array($child.'.'.$alias, $with.':'.$alias));
+				}
+			}
+			
+			// Proxy to the field to finish the join
+			$parent_fields[$child]->with($this);
+		}
+
+		return $this;
 	}
 	
 	/**
@@ -660,7 +780,7 @@ abstract class Jelly_Model
 			if (count($result))
 			{
 				// Insert the original values
-				$this->set($result[0], TRUE);
+				$this->set($result[0], TRUE, TRUE);
 				
 				// We're good!
 				$this->_loaded = $this->_saved = TRUE;
