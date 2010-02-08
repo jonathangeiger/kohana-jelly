@@ -314,7 +314,7 @@ abstract class Jelly_Model
 			// Key is coming from a with statement
 			if (FALSE !== strpos($key, ':'))
 			{
-				$targets = explode(':', $key, 2);
+				$targets = explode(':', ltrim($key, ':'), 2);
 				$relationship = array_shift($targets);
 								
 				if (!array_key_exists($relationship, $this->_with_values))
@@ -429,10 +429,7 @@ abstract class Jelly_Model
 			{
 				if (is_array($args[0]))
 				{
-					foreach($args[0] as $i => $table)
-					{
-						$args[0][$i] = Jelly_Meta::table($table);
-					}
+					$args[0][0] = Jelly_Meta::table($args[0][0]);
 				}
 				else
 				{
@@ -521,6 +518,15 @@ abstract class Jelly_Model
 	{
 		$model = NULL;
 		
+		// This allows with() to work properly with aliasing
+		if (strpos($field, ':') !== FALSE)
+		{			
+			$paths = explode(':', $field);
+			list($model, $field) = explode('.', array_pop($paths));
+			
+			return implode(':', $paths).':'.$model.'.'.Jelly_Meta::column($model, $field, FALSE);
+		}
+		
 		if (strpos($field, '.') !== FALSE)
 		{			
 			list($model, $field) = explode('.', $field);
@@ -580,58 +586,69 @@ abstract class Jelly_Model
 		}
 		
 		// Allow unlimited args
-		foreach ((array)$relationship as $with)
+		foreach ((array)$relationship as $target_path)
 		{
 			// Skip already applied paths
-			if (isset($this->_with_applied[$with]))
+			if (isset($this->_with_applied[$target_path]))
 			{
 				continue;
 			}
 			
-			$relations = explode(':', $with);
-			$child = array_pop($relations);
+			$relations = explode(':', $target_path);
+			$target = array_pop($relations);
 			$parent = array_pop($relations);
-
+			
+			// Add the model back on so we can get to the path without the final field
+			$relations[] = $parent;
+			$parent_path = implode(":", $relations);
+			
 			// Parent is $this if it's empty
-			if (!$parent)
+			if (!$parent_path)
 			{
 				$parent = Jelly_Meta::model_name($this);
+				$parent_path = $parent;
 			}
 			else
 			{
-				if (!array_key_exists($parent, $this->_with_applied))
+				if (!array_key_exists($parent_path, $this->_with_applied))
 				{
-					$this->with($parent);
+					$this->with($parent_path);
 				}
 			}
-			
+
 			// Ensure the field is "withable"
 			$parent_meta = Jelly_Meta::get($parent);
 			$parent_fields = $parent_meta->fields;
 			
-			if (!isset($parent_fields[$child]) || !is_callable(array($parent_fields[$child], 'with')))
+			if (!$parent_meta || !isset($parent_fields[$target]) || !is_callable(array($parent_fields[$target], 'with')))
 			{
 				continue;
 			}
 			
-			$field = $parent_fields[$child];
-			
 			// With will be applied. Make note of it
-			$this->_with_applied[$with] = TRUE;
+			$this->_with_applied[$target_path] = TRUE;
+			
+			// We only apply : to the front if the path is aliased
+			if (!empty($this->_with_applied[$parent_path]))
+			{
+				$parent_path = ':'.$parent_path;
+			}
+			
+			// This always needs : in front of iot
+			$target_path = ':'.$target_path;
 			
 			// Alias all of the fields for the model we're referencing
-			$child_fields = Jelly_meta::get($field->foreign_model)->fields;
-			
-			foreach ($child_fields as $alias => $field)
+			foreach (Jelly_Meta::get($parent_fields[$target]->foreign_model)->fields as $alias => $field)
 			{
 				if ($field->in_db)
 				{
-					$this->select(array($child.'.'.$alias, $with.':'.$alias));
+					// We have to manually alias, since the path does not necessarily correspond to the path
+					$this->select(array($target_path.'.'.$field->column, $target_path.':'.$field->column));
 				}
 			}
 			
-			// Proxy to the field to finish the join
-			$parent_fields[$child]->with($this);
+			// Let the field finish the join
+			$parent_fields[$target]->with($this, $target, $target_path, $parent_path);
 		}
 
 		return $this;
