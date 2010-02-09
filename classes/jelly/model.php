@@ -199,7 +199,7 @@ abstract class Jelly_Model
 				if (array_key_exists($field, $meta->fields))
 				{
 					// Relations only applies when $name is TRUE
-					if ($name === TRUE && !$relations && !$meta->fields[$field]->in_db)
+					if ($name === TRUE && !$relations && $meta->fields[$field] instanceof Jelly_Field_Relationship)
 					{
 						continue;
 					}
