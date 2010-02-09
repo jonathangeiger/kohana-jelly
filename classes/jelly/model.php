@@ -96,11 +96,6 @@ abstract class Jelly_Model
 	/**
 	 * @var array Applied with associations
 	 */
-	protected $_with = array();
-	
-	/**
-	 * @var array Applied with associations
-	 */
 	protected $_with_applied = array();
 	
 	/**
