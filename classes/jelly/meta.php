@@ -98,6 +98,14 @@ class Jelly_Meta
 			
 			// Set the defaults so they're actually persistent
 			$meta->defaults[$column] = $field->default;
+			
+			// Set the columns, so that we can access reverse database results properly
+			if (!array_key_exists($field->column, $meta->columns))
+			{
+				$meta->columns[$field->column] = array();
+			}
+			
+			$meta->columns[$field->column][] = $column;
 		}
 		
 		return TRUE;
@@ -270,9 +278,14 @@ class Jelly_Meta
 	protected $validate_on_save = TRUE;
 	
 	/**
-	 * @var array A map to the resource's data and how to process each column.
+	 * @var array A map to the resource's fields and how to process each column.
 	 */
 	protected $fields = array();
+	
+	/**
+	 * @var array A list of columns and how they relate to fields
+	 */
+	private $columns = array();
 	
 	/**
 	 * @var array Default data for each field

@@ -64,6 +64,11 @@ abstract class Jelly_Model
 	protected $_changed = array();
 	
 	/**
+	 * @var array Data that's already been retrieved is cached
+	 */
+	protected $_retrieved = array();
+	
+	/**
 	 * @var array Unmapped data that is still accessible
 	 */
 	protected $_unmapped = array();
@@ -84,9 +89,19 @@ abstract class Jelly_Model
 	protected $_preload_data = array();
 	
 	/**
-	 * @var boolean Whether or not the model is loading original data
+	 * @var array With data
 	 */
-	protected $_loading = TRUE;
+	protected $_with = array();
+	
+	/**
+	 * @var array Applied with associations
+	 */
+	protected $_with_applied = array();
+	
+	/**
+	 * @var array Incoming with results
+	 */
+	protected $_with_values = array();
 
 	/**
 	 * @var array Applied query builder methods
@@ -125,8 +140,9 @@ abstract class Jelly_Model
 		// Add the values stored by mysql_set_object
 		if (is_array($this->_preload_data) && !empty($this->_preload_data))
 		{
-			$this->values($this->_preload_data, TRUE);
+			$this->set($this->_preload_data, TRUE, TRUE);
 			$this->_loaded = $this->_saved = TRUE;
+			$this->_preload_data = array();
 		}
 		
 		// Finished initialized
@@ -171,28 +187,73 @@ abstract class Jelly_Model
 	 * @return  mixed
 	 * @author  Jonathan Geiger
 	 */
-	public function get($name)
-	{		
-		if (array_key_exists($name, $this->meta()->fields))
-		{		
-			$field = $this->meta()->fields[$name];
-				
-			// Return changed values first
-			if (array_key_exists($name, $this->_changed))
-			{
-				$value = $this->_changed[$name];
-			}
-			else
-			{
-				$value = $this->_original[$name];
-			}
-			
-			return $field->get($this, $value);
-		}
-		// Return unmapped data from custom queries
-		else if (isset($this->_unmapped[$name]))
+	public function get($name, $relations = FALSE)
+	{	
+		$meta = $this->meta();
+		
+		// Passing TRUE or an array of fields to get returns them as an array
+		if (is_array($name) || $name === TRUE)	
 		{
-			return $this->_unmapped[$name];
+			$fields = ($name === TRUE) ? array_keys($meta->fields) : $name;
+			$result = array();
+
+			foreach($fields as $field)
+			{
+				if (array_key_exists($field, $meta->fields))
+				{
+					// Relations only applies when $name is TRUE
+					if ($name === TRUE && !$relations && !$meta->fields[$field]->in_db)
+					{
+						continue;
+					}
+				}
+
+				$result[$field] = $this->get($field);
+			}
+
+			return $result;
+		}
+		else 
+		{
+			if (array_key_exists($name, $this->meta()->fields))
+			{		
+				$field = $this->meta()->fields[$name];
+				
+				// Search for already retrieved values first
+				if (!array_key_exists($name, $this->_retrieved))
+				{
+					// Does it exist as a with?
+					if (array_key_exists($name, $this->_with_values))
+					{
+						$model = Jelly::Factory($name);
+						$model->set($this->_with_values[$name], FALSE, TRUE);
+						$model->_loaded = TRUE;
+						$model->_saved = TRUE;
+						$this->_retrieved[$name] = $model;
+					}
+					else
+					{
+						// Return changed values first
+						if (array_key_exists($name, $this->_changed))
+						{
+							$value = $this->_changed[$name];
+						}
+						else
+						{
+							$value = $this->_original[$name];
+						}
+						
+						$this->_retrieved[$name] = $field->get($this, $value);
+					}
+				}
+
+				return $this->_retrieved[$name];
+			}
+			// Return unmapped data from custom queries
+			else if (isset($this->_unmapped[$name]))
+			{
+				return $this->_unmapped[$name];
+			}
 		}
 	}
 	
@@ -208,7 +269,7 @@ abstract class Jelly_Model
 	public function __set($name, $value)
 	{
 		// Being set by mysql_fetch_object, store the values for the constructor
-		if ($this->_loading)
+		if (empty($this->_original))
 		{
 			$this->_preload_data[$name] = $value;
 			return;
@@ -228,29 +289,75 @@ abstract class Jelly_Model
 	 * @return Jelly   Returns $this
 	 * @author Jonathan Geiger
 	 */
-	public function set($name, $value)
+	public function set($values, $alias = FALSE, $original = FALSE)
 	{
-		if (array_key_exists($name, $this->meta()->fields))
-		{		
-			$field = $this->meta()->fields[$name];
-					
-			// If we're intitially setting data on the object 
-			// that is coming from the database, it goes to $_data
-			if ($this->_loading === TRUE)
-			{
-				$this->_original[$name] = $field->set($value);
-			}
-			// Otherwise we're setting changes
-			else
-			{
-				$this->_changed[$name] = $field->set($value);
-				$this->_saved = FALSE;
-			}
+		$meta = $this->meta();
+		
+		// Accept set('name', 'value');
+		if (!is_array($values))
+		{
+			$values = array($values => $alias);
+			$alias = FALSE;
 		}
-		// Allow setting unmapped data from custom queries
+		
+		// Determine where to write the data to, changed or original
+		if ($original)
+		{
+			$data_location =& $this->_original;
+		}
 		else
 		{
-			$this->_unmapped[$name] = $value;
+			$data_location =& $this->_changed;
+		}
+
+		// Why this way? Because it allows the model to have 
+		// multiple fields that are based on the same column
+		foreach($values as $key => $value)
+		{
+			// Key is coming from a with statement
+			if (FALSE !== strpos($key, ':'))
+			{
+				$targets = explode(':', ltrim($key, ':'), 2);
+				$relationship = array_shift($targets);
+								
+				if (!array_key_exists($relationship, $this->_with_values))
+				{
+					$this->_with_values[$relationship] = array();
+				}
+				
+				$this->_with_values[$relationship][implode(':', $targets)] = $value;
+			}
+			// Key is coming from a database result
+			else if ($alias && !empty($meta->columns[$key]))
+			{
+				// Contains an array of fields that the column is mapped to
+				// This allows multiple fields to get data from the same column
+				foreach ($meta->columns[$key] as $field)
+				{
+					$data_location[$field] = $meta->fields[$field]->set($value);
+					
+					// Invalidate the cache
+					if (array_key_exists($field, $this->_retrieved))
+					{
+						unset($this->_retrieved[$field]);
+					}
+				}
+			}
+			// Standard setting of a field 
+			else if (!$alias && array_key_exists($key, $meta->fields))
+			{
+				$data_location[$key] = $meta->fields[$key]->set($value);
+				
+				// Invalidate the cache
+				if (array_key_exists($key, $this->_retrieved))
+				{
+					unset($this->_retrieved[$key]);
+				}
+			}
+			else
+			{
+				$this->_unmapped[$key] = $value;
+			}
 		}
 		
 		return $this;
@@ -325,10 +432,7 @@ abstract class Jelly_Model
 			{
 				if (is_array($args[0]))
 				{
-					foreach($args[0] as $i => $table)
-					{
-						$args[0][$i] = Jelly::model_alias($table);
-					}
+					$args[0][0] = Jelly_Meta::table($args[0][0]);
 				}
 				else
 				{
@@ -602,16 +706,12 @@ abstract class Jelly_Model
 			{
 				$values = $result->current();
 				
-				// Set this flag so that the values are loaded into the correct place
-				$this->_loading = TRUE;
-				
-				// Insert the values, make sure to reverse alias them
-				$this->values($values, TRUE);
+				// Insert the original values
+				$this->set($result[0], TRUE, TRUE);
 				
 				// We're good!
 				$this->_loaded = $this->_saved = TRUE;
 				$this->_changed = array();
-				$this->_loading = FALSE;
 			}
 
 			return $this->end();
@@ -877,81 +977,12 @@ abstract class Jelly_Model
 		if ($data->check())
 		{
 			// Insert filtered data back into the model
-			$this->values($data->as_array());
+			$this->set($data->as_array());
 		}
 		else
 		{
 			throw new Validate_Exception($data);
 		}
-	}
-	
-	/**
-	 * Returns data as an array. 
-	 * 
-	 * If $relations is TRUE, fields that are !in_db will be included in the result. 
-	 * Otherwise, they will not be.
-	 * 
-	 * @param  boolean $relations
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public function as_array($relations = FALSE)
-	{
-		$result = array();
-		
-		foreach($this->meta()->fields as $column => $field)
-		{
-			if (!$relations && !$field->in_db)
-			{
-				continue;
-			}
-			
-			$result[$column] = $this->get($column);
-		}
-		
-		return $result;
-	}
-	
-	/**
-	 * Sets an array of values based on their key, into the model.
-	 * 
-	 * Any values passed into this are counted as changes.
-	 *
-	 * @param  array  $values  The value to insert
-	 * @param  bool   $reverse  If TRUE, aliasing is applied to the array keys
-	 * @return void
-	 * @author Jonathan Geiger
-	 **/
-	public function values(array $values, $reverse = FALSE)
-	{
-		// We'll remove elements from this array when they've been found
-		$unmapped = $values;
-		
-		// Why this way? Because it allows the model to have 
-		// multiple fields that are based on the same column
-		foreach ($this->meta()->fields as $alias => $field)
-		{
-			$column = ($reverse) ? $field->column : $alias;
-			
-			// Remove found values from the unmapped
-			if (array_key_exists($column, $unmapped))
-			{
-				unset($unmapped[$column]);
-			}
-			
-			if (array_key_exists($column, $values))
-			{
-				$this->set($alias, $values[$column]);
-			}
-		}
-		
-		// Set any left over unmapped values
-		if ($unmapped)
-		{
-			$this->_unmapped = array_merge($this->_unmapped, $unmapped);
-		}
-		
-		return $this;
 	}
 	
 	/**
