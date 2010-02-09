@@ -885,7 +885,7 @@ abstract class Jelly_Model
 					$this->_original[$column] = $values[$field->column] = $field->save($this, $field->default);
 				}
 			}
-			else
+			else if ($field instanceof Jelly_Field_Relationship)
 			{
 				$relations[$column] = $field;
 			}
