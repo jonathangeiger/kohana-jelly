@@ -278,7 +278,7 @@ class Jelly_Meta
 	protected $validate_on_save = TRUE;
 	
 	/**
-	 * @var array A map to the resource's data and how to process each column.
+	 * @var array A map to the resource's fields and how to process each column.
 	 */
 	protected $fields = array();
 	

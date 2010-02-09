@@ -96,13 +96,18 @@ abstract class Jelly_Model
 	/**
 	 * @var array Applied with associations
 	 */
+	protected $_with = array();
+	
+	/**
+	 * @var array Applied with associations
+	 */
 	protected $_with_applied = array();
 	
 	/**
 	 * @var array Incoming with results
 	 */
 	protected $_with_values = array();
-	
+
 	/**
 	 * @var array Applied query builder methods
 	 */
@@ -287,7 +292,7 @@ abstract class Jelly_Model
 	 * @author Jonathan Geiger
 	 */
 	public function set($values, $alias = FALSE, $original = FALSE)
-	{	
+	{
 		$meta = $this->meta();
 		
 		// Accept set('name', 'value');
@@ -1128,7 +1133,7 @@ abstract class Jelly_Model
 			$data['value'] = $this->get($name, FALSE);
 			$data['model'] = $this;
 			
-			return $this->_fields[$name]->input($prefix, $data);
+			return $this->meta()->fields[$name]->input($prefix, $data);
 		}
 	}
 	
