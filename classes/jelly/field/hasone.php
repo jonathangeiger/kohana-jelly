@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_HasOne extends Jelly_Field
+class Jelly_Field_HasOne extends Jelly_Field implements Jelly_Field_Relationship, Jelly_Field_Joinable
 {	
 	public $in_db = FALSE;
 	
@@ -99,13 +99,18 @@ class Jelly_Field_HasOne extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function has($model, $ids)
+	public function has($model, $id)
 	{
-		$model = Jelly::factory($this->foreign_model);
-		return (bool) $model
+		if (is_array($id))
+		{
+			$id = current($id);
+		}
+		
+		$foreign = Jelly::factory($this->foreign_model);
+		return (bool) $foreign
 			->select(array('COUNT("*")', 'records_found'))
 			->where($this->foreign_column, '=', $model->id())
-			->where(Jelly_Meta::get($model, 'primary_key'), 'IN', $ids)
+			->where($foreign->meta()->primary_key, '=', $id)
 			->execute()
 			->get('records_found');
 	}

@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_ManyToMany extends Jelly_Field
+class Jelly_Field_ManyToMany extends Jelly_Field implements Jelly_Field_Relationship
 {	
 	public $in_db = FALSE;
 	
@@ -152,7 +152,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function has($model, array $ids)
+	public function has($model, $ids)
 	{
 		$in = $this->in($model, TRUE);
 		

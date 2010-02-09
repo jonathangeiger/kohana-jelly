@@ -518,6 +518,13 @@ abstract class Jelly_Model
 	{
 		$model = NULL;
 		
+		// Check for functions
+		if (strpos($field, '"') !== FALSE)
+		{
+			// Quote the column in FUNC("ident") identifiers
+			return preg_replace('/"(.+?)"/e', '"\\"".$this->_qb_alias("$1")."\\""', $field);
+		}
+		
 		// This allows with() to work properly with aliasing
 		if (strpos($field, ':') !== FALSE)
 		{			
@@ -617,10 +624,14 @@ abstract class Jelly_Model
 			}
 
 			// Ensure the field is "withable"
-			$parent_meta = Jelly_Meta::get($parent);
+			if (FALSE == ($parent_meta = Jelly_Meta::get($parent)))
+			{
+				continue;
+			}
+			
 			$parent_fields = $parent_meta->fields;
 			
-			if (!$parent_meta || !isset($parent_fields[$target]) || !is_callable(array($parent_fields[$target], 'with')))
+			if (!isset($parent_fields[$target]) || !($parent_fields[$target] instanceof Jelly_Field_Joinable))
 			{
 				continue;
 			}
@@ -729,9 +740,9 @@ abstract class Jelly_Model
 		$fields = $this->meta()->fields;
 		
 		// Proxy to the field. It handles everything
-		if (isset($fields[$name]) AND is_callable(array($fields[$name], 'has')))
+		if (isset($fields[$name]) AND $fields[$name] instanceof Jelly_Field_Relationship)
 		{
-			return $fields[$name]->has($model, $ids);
+			return $fields[$name]->has($this, $ids);
 		}
 		
 		return FALSE;

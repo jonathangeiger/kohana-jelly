@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_BelongsTo extends Jelly_Field 
+class Jelly_Field_BelongsTo extends Jelly_Field implements Jelly_Field_Relationship, Jelly_Field_Joinable
 {	
 	/**
 	 * @var boolean Defaults belongs_to's to in the database
@@ -84,6 +84,11 @@ class Jelly_Field_BelongsTo extends Jelly_Field
 		return Jelly::factory($this->foreign_model)
 				->limit(1, TRUE)
 				->where($this->foreign_column, '=', $value);
+	}
+	
+	public function has($model, $id)
+	{
+		return FALSE;
 	}
 	
 	public function with($model, $relation, $target_path, $parent_path)
