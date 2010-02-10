@@ -172,8 +172,48 @@ abstract class Jelly_Model
 	 * @author Jonathan Geiger
 	 */
 	public function __get($name)
-	{
-		return $this->get($name);
+	{	
+		$meta = $this->meta();
+		
+		if (isset($meta->fields[$name]))
+		{
+			if (!array_key_exists($name, $this->_retrieved))
+			{
+				$field = $meta->fields[$name];
+				
+				// Changes trump with() and original values
+				if (array_key_exists($name, $this->_changed))
+				{	
+					$value = $field->get($this, $this->_changed[$name]);
+				}
+				else if (array_key_exists($name, $this->_with_values))
+				{
+					$model = Jelly::Factory($name);
+					$model->set($this->_with_values[$name], FALSE, TRUE);
+					$model->_loaded = TRUE;
+					$model->_saved = TRUE;
+					$value = $model;
+				}
+				else
+				{
+					$value = $field->get($this, $this->_original[$name]);
+				}
+
+				// Auto-load relations
+				if ($value instanceof Jelly && !$value->loaded())
+				{
+					$value->load();
+				}
+
+				$this->_retrieved[$name] = $value;
+			}
+			
+			return $this->_retrieved[$name];
+		}
+		else if (isset($this->_unmapped[$name]))
+		{
+			return $this->_unmapped[$name];
+		}
 	}
 	
 	/**
@@ -215,36 +255,11 @@ abstract class Jelly_Model
 			if (array_key_exists($name, $this->meta()->fields))
 			{		
 				$field = $this->meta()->fields[$name];
+				$value = $this->_original[$name];	
 				
-				// Search for already retrieved values first
-				if (!array_key_exists($name, $this->_retrieved))
-				{
-					// Does it exist as a with?
-					if (array_key_exists($name, $this->_with_values))
-					{
-						$model = Jelly::Factory($name);
-						$model->set($this->_with_values[$name], FALSE, TRUE);
-						$model->_loaded = TRUE;
-						$model->_saved = TRUE;
-						$this->_retrieved[$name] = $model;
-					}
-					else
-					{
-						// Return changed values first
-						if (array_key_exists($name, $this->_changed))
-						{
-							$value = $this->_changed[$name];
-						}
-						else
-						{
-							$value = $this->_original[$name];
-						}
-						
-						$this->_retrieved[$name] = $field->get($this, $value);
-					}
-				}
-
-				return $this->_retrieved[$name];
+				var_dump($value);
+				
+				return $field->get($this, $value);
 			}
 			// Return unmapped data from custom queries
 			else if (isset($this->_unmapped[$name]))
