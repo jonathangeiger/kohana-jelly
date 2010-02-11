@@ -404,7 +404,7 @@ abstract class Jelly_Model
 		}
 		
 		// This doesn't matter
-		unset($this->_unmapped[$name]);
+		unset($this->_changed[$name], $this->_retrieved[$name], $this->_unmapped[$name]);
 	}
 	
 	/**
