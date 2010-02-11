@@ -257,8 +257,6 @@ abstract class Jelly_Model
 				$field = $this->meta()->fields[$name];
 				$value = $this->_original[$name];	
 				
-				var_dump($value);
-				
 				return $field->get($this, $value);
 			}
 			// Return unmapped data from custom queries
