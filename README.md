@@ -1,0 +1,1 @@
+Jelly is a nice little ORM for Kohana. It is currently unstable and not ready for production. That said, [work is being done](http://github.com/jonathangeiger/jelly-tests) on unit testing the module, stabilizing the API, and adding features such as lazy-loading and composite keys.
