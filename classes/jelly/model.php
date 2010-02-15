@@ -175,45 +175,20 @@ abstract class Jelly_Model
 	{	
 		$meta = $this->meta();
 		
-		if (isset($meta->fields[$name]))
+		if (!array_key_exists($name, $this->_retrieved))
 		{
-			if (!array_key_exists($name, $this->_retrieved))
+			$value = $this->get($name);
+			
+			// Auto-load relations
+			if ($value instanceof Jelly && !$value->loaded())
 			{
-				$field = $meta->fields[$name];
-				
-				// Changes trump with() and original values
-				if (array_key_exists($name, $this->_changed))
-				{	
-					$value = $field->get($this, $this->_changed[$name]);
-				}
-				else if (array_key_exists($name, $this->_with_values))
-				{
-					$model = Jelly::Factory($name);
-					$model->set($this->_with_values[$name], FALSE, TRUE);
-					$model->_loaded = TRUE;
-					$model->_saved = TRUE;
-					$value = $model;
-				}
-				else
-				{
-					$value = $field->get($this, $this->_original[$name]);
-				}
-
-				// Auto-load relations
-				if ($value instanceof Jelly && !$value->loaded())
-				{
-					$value->load();
-				}
-
-				$this->_retrieved[$name] = $value;
+				$value->load();
 			}
 			
-			return $this->_retrieved[$name];
+			$this->_retrieved[$name] = $value;
 		}
-		else if (isset($this->_unmapped[$name]))
-		{
-			return $this->_unmapped[$name];
-		}
+		
+		return $this->_retrieved[$name];
 	}
 	
 	/**
@@ -224,7 +199,7 @@ abstract class Jelly_Model
 	 * @return  mixed
 	 * @author  Jonathan Geiger
 	 */
-	public function get($name, $relations = FALSE)
+	public function get($name, $changed = TRUE, $relations = FALSE)
 	{	
 		$meta = $this->meta();
 		
@@ -245,19 +220,36 @@ abstract class Jelly_Model
 					}
 				}
 
-				$result[$field] = $this->get($field);
+				$result[$field] = $this->get($field, $changed);
 			}
 
 			return $result;
 		}
 		else 
 		{
-			if (array_key_exists($name, $this->meta()->fields))
-			{		
-				$field = $this->meta()->fields[$name];
-				$value = $this->_original[$name];	
+			if (array_key_exists($name, $meta->fields))
+			{	
+				$field = $meta->fields[$name];
 				
-				return $field->get($this, $value);
+				// Changes trump with() and original values
+				if ($changed && array_key_exists($name, $this->_changed))
+				{	
+					$value = $field->get($this, $this->_changed[$name]);
+				}
+				else if ($changed && array_key_exists($name, $this->_with_values))
+				{
+					$model = Jelly::Factory($name);
+					$model->set($this->_with_values[$name], FALSE, TRUE);
+					$model->_loaded = TRUE;
+					$model->_saved = TRUE;
+					$value = $model;
+				}
+				else
+				{
+					$value = $field->get($this, $this->_original[$name]);
+				}
+				
+				return $value;
 			}
 			// Return unmapped data from custom queries
 			else if (isset($this->_unmapped[$name]))
