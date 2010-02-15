@@ -182,10 +182,12 @@ abstract class Jelly_Model
 			// Auto-load relations
 			if ($value instanceof Jelly && !$value->loaded())
 			{
-				$value->load();
+				$this->_retrieved[$name] = $value->load();
 			}
-			
-			$this->_retrieved[$name] = $value;
+			else
+			{
+				$this->_retrieved[$name] = $value;
+			}
 		}
 		
 		return $this->_retrieved[$name];
@@ -194,12 +196,14 @@ abstract class Jelly_Model
 	/**
 	 * Gets the internally represented value from 
 	 * a field or unmapped column.
+	 * 
+	 * If an array or TRUE is passed for $name, an array of fields will be returned.
 	 *
-	 * @param   string   $name   The field's name
+	 * @param   mixed   $name   The field's name
 	 * @return  mixed
 	 * @author  Jonathan Geiger
 	 */
-	public function get($name, $changed = TRUE, $relations = FALSE)
+	public function get($name, $changed = TRUE)
 	{	
 		$meta = $this->meta();
 		
@@ -211,16 +215,14 @@ abstract class Jelly_Model
 
 			foreach($fields as $field)
 			{
-				if (array_key_exists($field, $meta->fields))
+				if ($changed)
 				{
-					// Relations only applies when $name is TRUE
-					if ($name === TRUE && !$relations && $meta->fields[$field] instanceof Jelly_Field_Relationship)
-					{
-						continue;
-					}
+					$result[$field] = $this->__get($field);
 				}
-
-				$result[$field] = $this->get($field, $changed);
+				else
+				{
+					$result[$field] = $this->get($field, FALSE);
+				}
 			}
 
 			return $result;
@@ -240,8 +242,14 @@ abstract class Jelly_Model
 				{
 					$model = Jelly::Factory($name);
 					$model->set($this->_with_values[$name], FALSE, TRUE);
-					$model->_loaded = TRUE;
-					$model->_saved = TRUE;
+					
+					// Try and verify that it's actually loaded
+					if ($model->id())
+					{
+						$model->_loaded = TRUE;
+						$model->_saved = TRUE;
+					}
+					
 					$value = $model;
 				}
 				else
@@ -636,7 +644,8 @@ abstract class Jelly_Model
 			
 			$parent_fields = $parent_meta->fields;
 			
-			if (!isset($parent_fields[$target]) || !($parent_fields[$target] instanceof Jelly_Field_Joinable))
+			if (!isset($parent_fields[$target]) || 
+				!($parent_fields[$target] instanceof Jelly_Field_Interface_Joinable))
 			{
 				continue;
 			}
@@ -650,16 +659,16 @@ abstract class Jelly_Model
 				$parent_path = ':'.$parent_path;
 			}
 			
-			// This always needs : in front of iot
+			// This always needs : in front of it
 			$target_path = ':'.$target_path;
 			
 			// Alias all of the fields for the model we're referencing
-			foreach (Jelly_Meta::get($parent_fields[$target]->foreign_model)->fields as $alias => $field)
+			foreach (Jelly_Meta::get($parent_fields[$target]->foreign['model'])->fields as $alias => $field)
 			{
 				if ($field->in_db)
 				{
 					// We have to manually alias, since the path does not necessarily correspond to the path
-					$this->select(array($target_path.'.'.$field->column, $target_path.':'.$field->column));
+					$this->select(array($target_path.'.'.$field->column, $target_path.':'.$alias));
 				}
 			}
 			
@@ -713,13 +722,22 @@ abstract class Jelly_Model
 	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
-	public function has($name, $models)
+	public function has($name, $models, $changed = TRUE)
 	{
+		$fields = $this->meta()->fields;
+		
+		// Don't continue without know the field actually exists
+		if (!isset($fields[$name]))
+		{
+			return FALSE;
+		}
+		
+		$field = $fields[$name];
 		$ids = array();
 		
 		// Everything comes in as an array of ids, so we must convert things like
 		// has ('alias', 1), or has('alias', $some_jelly_model)
-		if (!is_array($models) && !$models instanceof Database_Result)
+		if (!is_array($models) && !$models instanceof Iterator)
 		{
 			if (is_object($models))
 			{
@@ -742,12 +760,10 @@ abstract class Jelly_Model
 			}
 		}
 		
-		$fields = $this->meta()->fields;
-		
 		// Proxy to the field. It handles everything
-		if (isset($fields[$name]) AND $fields[$name] instanceof Jelly_Field_Relationship)
+		if ($field instanceof Jelly_Field_Interface_Haveable)
 		{
-			return $fields[$name]->has($this, $ids);
+			return $field->has($this, $ids);
 		}
 		
 		return FALSE;
@@ -890,7 +906,7 @@ abstract class Jelly_Model
 					$this->_original[$column] = $values[$field->column] = $field->save($this, $field->default);
 				}
 			}
-			else if ($field instanceof Jelly_Field_Relationship)
+			else if ($field instanceof Jelly_Field_Interface_Saveable)
 			{
 				$relations[$column] = $field;
 			}
@@ -1306,6 +1322,7 @@ abstract class Jelly_Model
 		$this->_db_builder = NULL;
 		$this->_db_applied = array();
 		$this->_db_pending = array();
+		$this->_with_applied = array();
 		
 		return $this;
 	}

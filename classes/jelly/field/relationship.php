@@ -1,11 +1,24 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Declares a relationship field, which has special characteristics in the mode.
+ * An abstract class that is useful for identifying which 
+ * fields that are relationships.
  *
  * @package jelly
  */
-interface Jelly_Field_Relationship
+abstract class Jelly_Field_Relationship extends Jelly_Field
 {	
-	public function has($model, $ids);
+	/**
+	 * Most relationship are in fact not part of the model's table
+	 *
+	 * @var string
+	 */
+	public $in_db = FALSE;
+	
+	/**
+	 * Generally contains details of the field's relationship
+	 *
+	 * @var string
+	 */
+	public $foreign = array();
 }
