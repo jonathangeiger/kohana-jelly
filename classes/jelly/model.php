@@ -529,6 +529,12 @@ abstract class Jelly_Model
 			}
 		}
 		
+		// Anything to load with?
+		if ($meta->load_with)
+		{
+			$this->with($meta->load_with);
+		}
+
 		// Set the working query
 		$query = $this->build(Database::SELECT);
 		$query->from($meta->table);
