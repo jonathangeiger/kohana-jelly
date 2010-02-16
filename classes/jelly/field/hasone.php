@@ -1,40 +1,14 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_HasOne extends Jelly_Field
-{	
-	public $in_db = FALSE;
-	
-	/**
-	 * Overrides the initialize to automatically provide the column name
-	 *
-	 * @param string $model 
-	 * @param string $column 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public function initialize($model, $column)
-	{
-		if (empty($this->foreign_model))
-		{
-			$this->foreign_model = inflector::singular($column);
-		}
-		
-		if (empty($this->foreign_column))
-		{
-			$this->foreign_column = $model.'_id';
-		}
-		
-		// Column is set and won't be overridden
-		parent::initialize($model, $column);
-	}
-	
+class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Interface_Joinable
+{		
 	/**
 	 * @param string $value 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
 	public function set($value)
-	{
+	{	
 		// Handle Database Results
 		if (is_object($value))
 		{
@@ -54,42 +28,9 @@ class Jelly_Field_HasOne extends Jelly_Field
 	public function get($model, $value)
 	{
 		// Return a real object
-		return Jelly::factory($this->foreign_model)
+		return Jelly::factory($this->foreign['model'])
 				->limit(1, TRUE)
-				->where($this->foreign_column, '=', $model->id());
-	}
-	
-	/**
-	 * Saves has_many relations setting empty records to the default
-	 *
-	 * @param string $id 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public function save($model, $value)
-	{
-		$foreign = Jelly::Factory($this->foreign_model);
-		
-		// Empty relations to the default value
-		$foreign
-			->where($this->foreign_column, '=', $model->id())
-			->execute(Database::UPDATE, array(
-				$this->foreign_column => $this->default
-			));
-						
-		// Set the new relations
-		if (!empty($value))
-		{			
-			// Update the ones in our list
-			$foreign
-				->end()
-				->where(Jelly_Meta::get($foreign, 'primary_key'), '=', $value)
-				->execute(Database::UPDATE, array(
-					$this->foreign_column => $model->id()
-				));
-		}
-		
-		return $value;
+				->where($this->through['column'], '=', $model->id());
 	}
 	
 	/**
@@ -99,15 +40,15 @@ class Jelly_Field_HasOne extends Jelly_Field
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function has($model, $ids)
+	public function has($model, $id)
 	{
-		$model = Jelly::factory($this->foreign_model);
-		return (bool) $model
-			->select(array('COUNT("*")', 'records_found'))
-			->where($this->foreign_column, '=', $model->id())
-			->where(Jelly_Meta::get($model, 'primary_key'), 'IN', $ids)
-			->execute()
-			->get('records_found');
+		// Only accept the first record
+		if (is_array($id))
+		{
+			$id = array(current($id));
+		}
+		
+		return parent::has($model, $id);
 	}
 	
 	/**
@@ -123,5 +64,31 @@ class Jelly_Field_HasOne extends Jelly_Field
 	{
 		$data['id'] = $this->get($data['model'], NULL)->load()->id();
 		return parent::input($prefix, $data);
+	}
+	
+	/**
+	 * Implementation of Jelly_Field_Interface_Joinable
+	 *
+	 * @param  Jelly  $model 
+	 * @param  string $relation 
+	 * @param  string $target_path 
+	 * @param  string $parent_path 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function with($model, $relation, $target_path, $parent_path)
+	{
+		$meta = Jelly_meta::get($this->foreign['model']);
+		
+		// Fields have to be aliased since we don't necessarily know the model from the path
+		$parent_column = Jelly_Meta::column($this->foreign['model'], $meta->primary_key, FALSE);
+		$target_column = Jelly_Meta::column($this->model, $this->through['column'], FALSE);
+		
+		$join_col1 = $parent_path.'.'.$parent_column;
+		$join_col2 = $target_path.'.'.$target_column;
+				
+		$model
+			->join(array($relation, $target_path), 'LEFT')
+			->on($join_col1, '=', $join_col2);
 	}
 }

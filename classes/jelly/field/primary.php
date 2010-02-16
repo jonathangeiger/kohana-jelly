@@ -10,8 +10,8 @@ class Jelly_Field_Primary extends Jelly_Field
 	/**
 	 * Converts numeric IDs to ints
 	 *
-	 * @param string $value 
-	 * @return void
+	 * @param  mixed $value 
+	 * @return int|string
 	 * @author Jonathan Geiger
 	 */
 	public function set($value)

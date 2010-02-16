@@ -273,6 +273,11 @@ class Jelly_Meta
 	protected $sorting = array();
 	
 	/**
+	 * @var array An array of options to pass to with for every load()
+	 */
+	protected $load_with = array();
+	
+	/**
 	 * @var boolean Whether or not to validate before save()ing
 	 */
 	protected $validate_on_save = TRUE;

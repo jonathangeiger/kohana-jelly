@@ -20,7 +20,7 @@ class Jelly_Field_Slug extends Field_String
 		$value = preg_replace('/-{2,}/', '-', $value);
 		
 		// Trim an ending or starting dashes
-		$value = trim(strtolower($value), '-');
+		$value = trim($value, '-');
 		
 		return $value;
 	}

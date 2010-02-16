@@ -5,10 +5,14 @@
  * and Sprig. Some code and ideas are borrowed from both projects.
  * 
  * @author Jonathan Geiger
+ * @author Paul Banks
+ * 
  * @author Woody Gilk
  * @link http://github.com/shadowhand/sprig/
+ * 
  * @author Kohana Team
  * @link http://github.com/jheathco/kohana-orm
+ * 
  * @license http://kohanaphp.com/license.html
  */
 abstract class Jelly_Model
@@ -84,7 +88,7 @@ abstract class Jelly_Model
 	protected $_saved = FALSE;
 	
 	/**
-	 * @var array Data set by mysql_fetch_object. Daggers to ye who overwrites this.
+	 * @var array Data set by mysql_fetch_object. Daggers to ye who overloads this.
 	 */
 	protected $_preload_data = array();
 	
@@ -145,9 +149,6 @@ abstract class Jelly_Model
 			$this->_preload_data = array();
 		}
 		
-		// Finished initialized
-		$this->_loading = FALSE;
-		
 		// Have an id? Attempt to load it
 		if (is_int($cond) || is_string($cond) || is_array($cond))
 		{
@@ -167,7 +168,12 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Proxies to get()
+	 * Returns field values as members of the object. 
+	 * 
+	 * A few things to note:
+	 * 
+	 *  - Values that are returned are cached (unlike get()) until they are changed
+	 *  - Relations are automatically load()ed
 	 *
 	 * @see    get()
 	 * @param  string $name 
@@ -175,19 +181,39 @@ abstract class Jelly_Model
 	 * @author Jonathan Geiger
 	 */
 	public function __get($name)
-	{
-		return $this->get($name);
+	{	
+		$meta = $this->meta();
+		
+		if (!array_key_exists($name, $this->_retrieved))
+		{
+			$value = $this->get($name);
+			
+			// Auto-load relations
+			if ($value instanceof Jelly && !$value->loaded())
+			{
+				$this->_retrieved[$name] = $value->load();
+			}
+			else
+			{
+				$this->_retrieved[$name] = $value;
+			}
+		}
+		
+		return $this->_retrieved[$name];
 	}
 	
 	/**
-	 * Gets the internally represented value from 
-	 * a field or unmapped column.
+	 * Gets the internally represented value from a field or unmapped column.
+	 * 
+	 * If an array or TRUE is passed for $name, an array of fields will be returned.
+	 * If $changed is FALSE, only original data for the field will be returned.
 	 *
-	 * @param   string   $name   The field's name
+	 * @param   array|int|boolean $name     The field's name
+	 * @param   boolean           $changed
 	 * @return  mixed
 	 * @author  Jonathan Geiger
 	 */
-	public function get($name, $relations = FALSE)
+	public function get($name, $changed = TRUE)
 	{	
 		$meta = $this->meta();
 		
@@ -199,55 +225,49 @@ abstract class Jelly_Model
 
 			foreach($fields as $field)
 			{
-				if (array_key_exists($field, $meta->fields))
+				if ($changed)
 				{
-					// Relations only applies when $name is TRUE
-					if ($name === TRUE && !$relations && !$meta->fields[$field]->in_db)
-					{
-						continue;
-					}
+					$result[$field] = $this->__get($field);
 				}
-
-				$result[$field] = $this->get($field);
+				else
+				{
+					$result[$field] = $this->get($field, FALSE);
+				}
 			}
 
 			return $result;
 		}
 		else 
 		{
-			if (array_key_exists($name, $this->meta()->fields))
-			{		
-				$field = $this->meta()->fields[$name];
+			if (array_key_exists($name, $meta->fields))
+			{	
+				$field = $meta->fields[$name];
 				
-				// Search for already retrieved values first
-				if (!array_key_exists($name, $this->_retrieved))
+				// Changes trump with() and original values
+				if ($changed && array_key_exists($name, $this->_changed))
+				{	
+					$value = $field->get($this, $this->_changed[$name]);
+				}
+				else if ($changed && array_key_exists($name, $this->_with_values))
 				{
-					// Does it exist as a with?
-					if (array_key_exists($name, $this->_with_values))
+					$model = Jelly::Factory($name);
+					$model->set($this->_with_values[$name], FALSE, TRUE);
+					
+					// Try and verify that it's actually loaded
+					if ($model->id())
 					{
-						$model = Jelly::Factory($name);
-						$model->set($this->_with_values[$name], FALSE, TRUE);
 						$model->_loaded = TRUE;
 						$model->_saved = TRUE;
-						$this->_retrieved[$name] = $model;
 					}
-					else
-					{
-						// Return changed values first
-						if (array_key_exists($name, $this->_changed))
-						{
-							$value = $this->_changed[$name];
-						}
-						else
-						{
-							$value = $this->_original[$name];
-						}
-						
-						$this->_retrieved[$name] = $field->get($this, $value);
-					}
+					
+					$value = $model;
 				}
-
-				return $this->_retrieved[$name];
+				else
+				{
+					$value = $field->get($this, $this->_original[$name]);
+				}
+				
+				return $value;
 			}
 			// Return unmapped data from custom queries
 			else if (isset($this->_unmapped[$name]))
@@ -258,7 +278,9 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Proxies to set()
+	 * Allows members to be set on the object.
+	 * 
+	 * Under the hood, this is just proxying to set()
 	 *
 	 * @see    set()
 	 * @param  string $name 
@@ -283,6 +305,13 @@ abstract class Jelly_Model
 	 * is converted to an internally represented value.
 	 * 
 	 * The conversion is done in the field and returned.
+	 * 
+	 * A few things to note:
+	 * 
+	 *  - If $values is a string, $alias will be used as the value 
+	 *    and $alias will be set to False.
+	 *  - If $original is TRUE, the data will be set as original 
+	 *    (not changed) as if it came from the database.
 	 *
 	 * @param  string  $name 
 	 * @param  string  $value 
@@ -328,7 +357,7 @@ abstract class Jelly_Model
 				$this->_with_values[$relationship][implode(':', $targets)] = $value;
 			}
 			// Key is coming from a database result
-			else if ($alias && !empty($meta->columns[$key]))
+			else if ($alias === TRUE && !empty($meta->columns[$key]))
 			{
 				// Contains an array of fields that the column is mapped to
 				// This allows multiple fields to get data from the same column
@@ -344,7 +373,7 @@ abstract class Jelly_Model
 				}
 			}
 			// Standard setting of a field 
-			else if (!$alias && array_key_exists($key, $meta->fields))
+			else if ($alias === FALSE && array_key_exists($key, $meta->fields))
 			{
 				$data_location[$key] = $meta->fields[$key]->set($value);
 				
@@ -364,8 +393,7 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Returns true if $name is a field of the 
-	 * model or an unmapped column.
+	 * Returns true if $name is a field of the model or an unmapped column.
 	 *
 	 * @param  string   $name 
 	 * @return boolean
@@ -377,8 +405,11 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * This doesn't unset fields. Rather, it sets them to 
-	 * their default value. Unmapped values are unset.
+	 * This doesn't unset fields. Rather, it sets them to their default 
+	 * value. Unmapped, changed, and retrieved values are unset.
+	 * 
+	 * In essence, unsetting a field sets it as if you never made any changes 
+	 * to it, and clears the cache if the value has been retrieved with those changes.
 	 *
 	 * @param  string $name 
 	 * @return void
@@ -394,7 +425,7 @@ abstract class Jelly_Model
 		}
 		
 		// This doesn't matter
-		unset($this->_unmapped[$name]);
+		unset($this->_changed[$name], $this->_retrieved[$name], $this->_unmapped[$name]);
 	}
 	
 	/**
@@ -436,21 +467,21 @@ abstract class Jelly_Model
 				}
 				else
 				{
-					$args[0] = Jelly::model_alias($args[0]);
+					$args[0] = Jelly_Meta::table($args[0]);
 				}
 			}
 			
 			// Join on
 			else if ($method == 'on')
 			{
-				$args[0] = $this->_qb_alias($args[0],TRUE);
+				$args[0] = $this->_qb_alias($args[0], TRUE);
 				$args[2] = $this->_qb_alias($args[2], TRUE);
 			}
 			
 			// Everything else
 			else if (in_array($method, self::$_alias))
 			{
-				$args[0] = $this->_qb_alias($args[0]);
+				$args[0] = $this->_qb_alias($args[0], TRUE);
 			}
 			
 			// Add pending database call which is executed after query type is determined
@@ -463,186 +494,6 @@ abstract class Jelly_Model
 		}
 		
 		return $this;
-	}
-	
-	/**
-	 * Aliases a column that exists only in this model
-	 *
-	 * If $field is null, the model's table name is returned.
-	 * Otherwise, the normal rules apply.
-	 * 
-	 * @param  string   $field  The field's name
-	 * @param  boolean  $join   Whether or not to return the table and column joined
-	 * @return string
-	 * @author Jonathan Geiger
-	 **/
-	public function alias($field = NULL, $join = NULL)
-	{	
-		$meta = $this->meta();
-		
-		// Return the model's alias if nothing is passed
-		if (!$field)
-		{
-			return $meta->table;
-		}
-		
-		// Split off the table name; we already know that
-		if (strpos($field, '.') !== FALSE)
-		{			
-			list(, $field) = explode('.', $field);
-		}
-		
-		// Check and concatenate
-		if (array_key_exists($field, $meta->fields))
-		{
-			$field = $meta->fields[$field]->column;
-		}
-		
-		if ($join)
-		{
-			return $meta->table.'.'.$field;
-		}
-		else
-		{
-			return $field;
-		}
-	}
-	
-	/**
-	 * This is an internal method used for aliasing only things coming 
-	 * to the query builder, since they can come in so many formats.
-	 *
-	 * @param  string   $field 
-	 * @param  boolean  $join
-	 * @return string
-	 * @author Jonathan Geiger
-	 */
-	protected function _qb_alias($field, $join = NULL)
-	{
-		$model = NULL;
-		
-		if (strpos($field, '.') !== FALSE)
-		{			
-			list($model, $field) = explode('.', $field);
-			
-			// If $join is NULL, the column is returned as it came
-			// If it was joined when it came in, it returns joined
-			if ($join === NULL)
-			{
-				$join = TRUE;
-			}
-		}
-		else
-		{
-			if ($join === NULL)
-			{
-				$join = FALSE;
-			}
-		}
-		
-		// If the model is NULL, $this's table name or model name
-		// We just replace if with the current model's name
-		if ($model === NULL || $model == $this->_table)
-		{
-			$model = Jelly_Meta::model_name($this);
-		}
-		
-		return Jelly_Meta::column($model.'.'.$field, $join);
-	}
-	
-	/**
-	 * Returns metadata for this particular object
-	 *
-	 * @param  string  $property 
-	 * @return Jelly_Meta
-	 * @author Jonathan Geiger
-	 */
-	public function meta($property = NULL)
-	{
-		return Jelly_Meta::get($this, $property);
-	}
-	
-	/**
-	 * Counts the number of records for the current query
-	 *
-	 * @param   mixed  $where  An associative array to use as the where clause, or a primary key
-	 * @return  Jelly  Returns $this
-	 */
-	public function count($where = NULL)
-	{
-		$meta = $this->meta();
-		
-		if (is_int($where) || is_string($where))
-		{
-			$this->where($meta->primary_key, '=', $where);
-		}
-		// Add the where
-		else if (is_array($where))
-		{
-			foreach($where as $column => $value)
-			{
-				$this->where($column, '=', $value);
-			}
-		}
-		
-		$query = $this->build(Database::SELECT);
-	
-		return $query->select(array('COUNT("*")', 'total'))
-			->from($meta->table)
-			->execute($meta->db)
-			->get('total');
-	}
-	
-	/**
-	 * Returns whether or not that model is related to the 
-	 * $model specified. This only works with relationships
-	 * where the model "has" another model or models:
-	 * 
-	 * has_many, has_one, many_to_many
-	 *
-	 * @param  string   $name 
-	 * @param  mixed    $models
-	 * @return boolean
-	 * @author Jonathan Geiger
-	 */
-	public function has($name, $models)
-	{
-		$ids = array();
-		
-		// Everything comes in as an array of ids, so we must convert things like
-		// has ('alias', 1), or has('alias', $some_jelly_model)
-		if (!is_array($models) && !$models instanceof Database_Result)
-		{
-			if (is_object($models))
-			{
-				$models = $models->id();
-			}
-			
-			$ids = array($models);
-		}
-		// Construct the primary keys of the models. That's all we'll need
-		else
-		{
-			foreach ($models as $model)
-			{
-				if (is_object($model))
-				{
-					$model = $model->id();
-				}
-				
-				$ids[] = $model;
-			}
-		}
-		
-		$fields = $this->meta()->fields;
-		
-		// Proxy to the field. It handles everything
-		if (isset($fields[$name]) AND is_callable(array($fields[$name], 'has')))
-		{
-			return $fields[$name]->has($model, $ids);
-		}
-		
-		return FALSE;
 	}
 	
 	/**
@@ -678,6 +529,12 @@ abstract class Jelly_Model
 			}
 		}
 		
+		// Anything to load with?
+		if ($meta->load_with)
+		{
+			$this->with($meta->load_with);
+		}
+
 		// Set the working query
 		$query = $this->build(Database::SELECT);
 		$query->from($meta->table);
@@ -704,8 +561,6 @@ abstract class Jelly_Model
 			// Ensure we have something
 			if (count($result))
 			{
-				$values = $result->current();
-				
 				// Insert the original values
 				$this->set($result[0], TRUE, TRUE);
 				
@@ -726,17 +581,6 @@ abstract class Jelly_Model
 			
 			return $query->as_object(get_class($this))->execute($meta->db);
 		}
-	}
-	
-	/**
-	 * Returns whether or not the model is loaded
-	 *
-	 * @return boolean
-	 * @author Jonathan Geiger
-	 */
-	public function loaded()
-	{	
-		return $this->_loaded;
 	}
 	
 	/**
@@ -784,7 +628,7 @@ abstract class Jelly_Model
 					$this->_original[$column] = $values[$field->column] = $field->save($this, $field->default);
 				}
 			}
-			else
+			else if ($field instanceof Jelly_Field_Interface_Saveable)
 			{
 				$relations[$column] = $field;
 			}
@@ -845,17 +689,6 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Whether or not the model is saved
-	 *
-	 * @return boolean
-	 * @author Jonathan Geiger
-	 */
-	public function saved()
-	{	
-		return $this->_saved;
-	}
-	
-	/**
 	 * Deletes a single or multiple records
 	 * 
 	 * If we're loaded(), it just deletes this object, otherwise it deletes 
@@ -899,29 +732,230 @@ abstract class Jelly_Model
 	}
 	
 	/**
-	 * Resets the model to an empty state, as if you 
-	 * were constructing a brand new object.
-	 * 
-	 * All changes, queries, and other state is lost.
+	 * Counts the number of records for the current query
 	 *
+	 * @param   mixed  $where  An associative array to use as the where clause, or a primary key
+	 * @return  Jelly  Returns $this
+	 */
+	public function count($where = NULL)
+	{
+		$meta = $this->meta();
+		
+		if (is_int($where) || is_string($where))
+		{
+			$this->where($meta->primary_key, '=', $where);
+		}
+		// Add the where
+		else if (is_array($where))
+		{
+			foreach($where as $column => $value)
+			{
+				$this->where($column, '=', $value);
+			}
+		}
+		
+		$query = $this->build(Database::SELECT);
+	
+		return $query->select(array('COUNT("*")', 'total'))
+			->from($meta->table)
+			->execute($meta->db)
+			->get('total');
+	}
+	
+	/**
+	 * Allows joining 1:1 relationships in a single query.
+	 *
+	 * @param string $alias 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function reset()
+	public function with($relationship)
 	{
-		// Reset all queries
-		$this->end();
+		$meta = $this->meta();
+		
+		// Make sure we select for this object, since * will not be applied
+		if (empty($this->_with_applied))
+		{
+			$this->select('*');
+		}
+		
+		// Allow unlimited args
+		foreach ((array)$relationship as $target_path)
+		{
+			// Skip already applied paths
+			if (isset($this->_with_applied[$target_path]))
+			{
+				continue;
+			}
+			
+			$relations = explode(':', $target_path);
+			$target = array_pop($relations);
+			$parent = array_pop($relations);
+			
+			// Add the model back on so we can get to the path without the final field
+			$relations[] = $parent;
+			$parent_path = implode(":", $relations);
+			
+			// Parent is $this if it's empty
+			if (!$parent_path)
+			{
+				$parent = Jelly_Meta::model_name($this);
+				$parent_path = $parent;
+			}
+			else
+			{
+				if (!array_key_exists($parent_path, $this->_with_applied))
+				{
+					$this->with($parent_path);
+				}
+			}
 
-		// Reset all of the data back to its default state
-		$this->_original = $this->meta()->defaults;
-		
-		// Reset the various states
-		$this->_loaded = $this->_saved = FALSE;
-		
-		// Clear the cache of values
-		$this->_changed = array();
-		
+			// Ensure the field is "withable"
+			if (FALSE == ($parent_meta = Jelly_Meta::get($parent)))
+			{
+				continue;
+			}
+			
+			$parent_fields = $parent_meta->fields;
+			
+			if (!isset($parent_fields[$target]) || 
+				!($parent_fields[$target] instanceof Jelly_Field_Interface_Joinable))
+			{
+				continue;
+			}
+			
+			// With will be applied. Make note of it
+			$this->_with_applied[$target_path] = TRUE;
+			
+			// We only apply : to the front if the path is aliased
+			if (!empty($this->_with_applied[$parent_path]))
+			{
+				$parent_path = ':'.$parent_path;
+			}
+			
+			// This always needs : in front of it
+			$target_path = ':'.$target_path;
+			
+			// Alias all of the fields for the model we're referencing
+			foreach (Jelly_Meta::get($parent_fields[$target]->foreign['model'])->fields as $alias => $field)
+			{
+				if ($field->in_db)
+				{
+					// We have to manually alias, since the path does not necessarily correspond to the path
+					$this->select(array($target_path.'.'.$field->column, $target_path.':'.$alias));
+				}
+			}
+			
+			// Let the field finish the join
+			$parent_fields[$target]->with($this, $target, $target_path, $parent_path);
+		}
+
 		return $this;
+	}
+	
+	/**
+	 * Returns whether or not that model is related to the 
+	 * $model specified. This only works with relationships
+	 * where the model "has" another model or models:
+	 * 
+	 * has_many, has_one, many_to_many
+	 *
+	 * @param  string   $name 
+	 * @param  mixed    $models
+	 * @return boolean
+	 * @author Jonathan Geiger
+	 */
+	public function has($name, $models)
+	{
+		$fields = $this->meta()->fields;
+		
+		// Don't continue without knowing we have something to work with
+		if (!isset($fields[$name]) || !$fields[$name] instanceof Jelly_Field_Interface_Haveable)
+		{
+			return FALSE;
+		}
+		
+		$field = $fields[$name];
+		$ids = array();
+		
+		// Everything comes in as an array of ids, so we must convert things like
+		// has ('alias', 1), or has('alias', $some_jelly_model)
+		if (!is_array($models) && !$models instanceof Iterator)
+		{
+			if (is_object($models))
+			{
+				$models = $models->id();
+			}
+			
+			$ids[] = $models;
+		}
+		// Construct the primary keys of the models. That's all we'll need
+		else
+		{
+			foreach ($models as $model)
+			{
+				if (is_object($model))
+				{
+					$model = $model->id();
+				}
+				
+				$ids[] = $model;
+			}
+		}
+		
+		return $field->has($this, $ids);
+	}
+	
+	/**
+	 * Adds a specific model(s) to the relationship.
+	 * 
+	 * $models can be one of the following:
+	 * 
+	 * - A primary key
+	 * - Another Jelly model
+	 * - An iterable collection of primary keys or 
+	 *   Jelly models, such as an array or Database_Result
+	 * 
+	 * Even though semantically odd, this method can be used for 
+	 * changing 1:1 relationships like hasOne and belongsTo.
+	 * 
+	 * If you set more than one for these types of relationships,
+	 * however, only the first will be used.
+	 *
+	 * @param  string  $name 
+	 * @param  string  $models 
+	 * @return Jelly   Returns $this
+	 * @author Jonathan Geiger
+	 */
+	public function add($name, $models)
+	{
+		return $this->_change($name, $models, TRUE);
+	}
+	
+	/**
+	 * Removes a specific model(s) from the relationship.
+	 * 
+	 * $models can be one of the following:
+	 * 
+	 * - A primary key
+	 * - Another Jelly model
+	 * - An iterable collection of primary keys or 
+	 *   Jelly models, such as an array or Database_Result
+	 * 
+	 * Even though semantically odd, this method can be used for 
+	 * changing 1:1 relationships like hasOne and belongsTo.
+	 * 
+	 * If you set more than one for these types of relationships,
+	 * however, only the first will be used.
+	 *
+	 * @param  string  $name 
+	 * @param  string  $models 
+	 * @return Jelly   Returns $this
+	 * @author Jonathan Geiger
+	 */
+	public function remove($name, $models)
+	{
+		return $this->_change($name, $models, FALSE);
 	}
 	
 	/**
@@ -942,6 +976,11 @@ abstract class Jelly_Model
 		else
 		{
 			$data = $this->_changed + $this->_original;
+		}
+		
+		if (empty($data))
+		{
+			return $this;
 		}
 		
 		// Create the validation object
@@ -983,62 +1022,50 @@ abstract class Jelly_Model
 		{
 			throw new Validate_Exception($data);
 		}
+		
+		return $this;
 	}
 	
 	/**
-	 * Returns the value of the primary key for the row
+	 * Aliases a column that exists only in this model
 	 *
-	 * @return mixed
+	 * If $field is null, the model's table name is returned.
+	 * Otherwise, the normal rules apply.
+	 * 
+	 * @param  string   $field  The field's name
+	 * @param  boolean  $join   Whether or not to return the table and column joined
+	 * @return string
 	 * @author Jonathan Geiger
-	 */
-	public function id()
-	{
-		return $this->get($this->meta()->primary_key);
-	}
-	
-	/**
-	 * Returns the value of the model's primary value
-	 *
-	 * @return mixed
-	 * @author Jonathan Geiger
-	 */
-	public function name()
-	{
-		return $this->get($this->meta()->name_key);
-	}
-	
-	/**
-	 * Returns a view object the represents the field. If $prefix is an array,
-	 * it will be used for the data and $prefix will be set to the default.
-	 *
-	 * @param  string        $name    The field to render
-	 * @param  string|array  $prefix 
-	 * @param  string        $data 
-	 * @return View
-	 * @author Jonathan Geiger
-	 */
-	public function input($name, $prefix = NULL, $data = array())
-	{
-		if (isset($this->meta()->fields[$name]))
+	 **/
+	public function alias($field = NULL, $join = NULL)
+	{	
+		$meta = $this->meta();
+		
+		// Return the model's alias if nothing is passed
+		if (!$field)
 		{
-			// More data munging. But it makes the API so much more intuitive
-			if (is_array($prefix))
-			{
-				$data = $prefix;
-				$prefix = NULL;
-			}
-			
-			// Set a default prefix if it's NULL
-			if ($prefix === NULL)
-			{
-				$prefix = 'jelly/field';
-			}
-			
-			// Ensure there is a default value. Some fields overridde this
-			$data['value'] = $this->get($name, FALSE);
-			$data['model'] = $this;
-			
-			return $this->meta()->fields[$name]->input($prefix, $data);
+			return $meta->table;
+		}
+		
+		// Split off the table name; we already know that
+		if (strpos($field, '.') !== FALSE)
+		{			
+			list(, $field) = explode('.', $field);
+		}
+		
+		// Check and concatenate
+		if (array_key_exists($field, $meta->fields))
+		{
+			$field = $meta->fields[$field]->column;
+		}
+		
+		if ($join)
+		{
+			return $meta->table.'.'.$field;
+		}
+		else
+		{
+			return $field;
 		}
 	}
 	
@@ -1190,6 +1217,32 @@ abstract class Jelly_Model
 	}
 	
 	/**
+	 * Resets the model to an empty state, as if you 
+	 * were constructing a brand new object.
+	 * 
+	 * All changes, queries, and other state is lost.
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function reset()
+	{
+		// Reset all queries
+		$this->end();
+
+		// Reset all of the data back to its default state
+		$this->_original = $this->meta()->defaults;
+		
+		// Reset the various states
+		$this->_loaded = $this->_saved = FALSE;
+		
+		// Clear the cache of values
+		$this->_changed = array();
+		
+		return $this;
+	}
+	
+	/**
 	 * Resets the database builder
 	 *
 	 * @return Jelly  Returns $this
@@ -1200,7 +1253,251 @@ abstract class Jelly_Model
 		$this->_db_builder = NULL;
 		$this->_db_applied = array();
 		$this->_db_pending = array();
+		$this->_with_applied = array();
 		
 		return $this;
+	}
+
+	/**
+	 * Returns a view object the represents the field. If $prefix is an array,
+	 * it will be used for the data and $prefix will be set to the default.
+	 *
+	 * @param  string        $name    The field to render
+	 * @param  string|array  $prefix 
+	 * @param  string        $data 
+	 * @return View
+	 * @author Jonathan Geiger
+	 */
+	public function input($name, $prefix = NULL, $data = array())
+	{
+		if (isset($this->meta()->fields[$name]))
+		{
+			// More data munging. But it makes the API so much more intuitive
+			if (is_array($prefix))
+			{
+				$data = $prefix;
+				$prefix = NULL;
+			}
+			
+			// Set a default prefix if it's NULL
+			if ($prefix === NULL)
+			{
+				$prefix = 'jelly/field';
+			}
+			
+			// Ensure there is a default value. Some fields overridde this
+			$data['value'] = $this->get($name, FALSE);
+			$data['model'] = $this;
+			
+			return $this->meta()->fields[$name]->input($prefix, $data);
+		}
+	}
+	
+	/**
+	 * Returns metadata for this particular object
+	 *
+	 * @param  string  $property 
+	 * @return Jelly_Meta
+	 * @author Jonathan Geiger
+	 */
+	public function meta($property = NULL)
+	{
+		return Jelly_Meta::get($this, $property);
+	}
+
+	/**
+	 * Returns whether or not the model is loaded
+	 *
+	 * @return boolean
+	 * @author Jonathan Geiger
+	 */
+	public function loaded()
+	{	
+		return $this->_loaded;
+	}
+
+	/**
+	 * Whether or not the model is saved
+	 *
+	 * @return boolean
+	 * @author Jonathan Geiger
+	 */
+	public function saved()
+	{	
+		return $this->_saved;
+	}
+	
+	/**
+	 * Returns the value of the primary key for the row
+	 *
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
+	public function id()
+	{
+		return $this->get($this->meta()->primary_key);
+	}
+	
+	/**
+	 * Returns the value of the model's primary value
+	 *
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
+	public function name()
+	{
+		return $this->get($this->meta()->name_key);
+	}
+
+	/**
+	 * Changes a relation by adding or removing specific records from the relation.
+	 *
+	 * @param  string  $name    The name of the field
+	 * @param  mixed   $models  Models or primary keys to add or remove
+	 * @param  string  $add     True to add, False to remove
+	 * @return Jelly   Returns $this
+	 * @author Jonathan Geiger
+	 */
+	protected function _change($name, $models, $add)
+	{
+		$fields = $this->meta()->fields;
+		
+		if (!isset($fields[$name]) || !($fields[$name] instanceof Jelly_Field_Interface_Changeable))
+		{
+			return $this;
+		}
+		
+		// If this is set, we don't need to re-retrieve the values
+		if (!array_key_exists($name, $this->_changed))
+		{
+			$current = array();
+			$value = $this->__get($name);
+			
+			if ($value instanceof Database_Result)
+			{
+				foreach ($value as $model)
+				{
+					$current[] = $model->id();
+				}
+			}
+			else
+			{
+				$current[] = $value->id();
+			}
+		}
+		else
+		{
+			$current = $this->_changed[$name];
+		}
+		
+		$changes = array();
+				
+		// Handle Database Results
+		if ($models instanceof Iterator || is_array($models))
+		{
+			foreach($models as $row)
+			{
+				if (is_object($row))
+				{
+					// Ignore unloaded relations
+					if ($row->loaded())
+					{
+						$changes[] = $row->id();
+					}
+				}
+				else
+				{
+					$changes[] = $row;
+				}
+			}
+		}
+		// And individual models
+		else if (is_object($models))
+		{
+			// Ignore unloaded relations
+			if ($models->loaded())
+			{
+				$current[] = $models->id();
+			}
+		}
+		// And everything else
+		else
+		{
+			$changes[] = $models;
+		}
+		
+		// Are we adding or removing?
+		if ($add)
+		{
+			$changes = array_unique(array_merge($current, $changes));
+		}
+		else
+		{
+			$changes = array_diff($current, $changes);
+		}
+		
+		// Set it 
+		$this->set($name, $changes);
+		
+		// Chainable
+		return $this;
+	}
+	
+	/**
+	 * This is an internal method used for aliasing only things coming 
+	 * to the query builder, since they can come in so many formats.
+	 *
+	 * @param  string   $field 
+	 * @param  boolean  $join
+	 * @return string
+	 * @author Jonathan Geiger
+	 */
+	protected function _qb_alias($field, $join = NULL)
+	{
+		$model = NULL;
+		
+		// Check for functions
+		if (strpos($field, '"') !== FALSE)
+		{
+			// Quote the column in FUNC("ident") identifiers
+			return preg_replace('/"(.+?)"/e', '"\\"".$this->_qb_alias("$1")."\\""', $field);
+		}
+		
+		// This allows with() to work properly with aliasing
+		if (strpos($field, ':') !== FALSE)
+		{			
+			$paths = explode(':', $field);
+			list($model, $field) = explode('.', array_pop($paths));
+			
+			return implode(':', $paths).':'.$model.'.'.Jelly_Meta::column($model, $field, FALSE);
+		}
+		
+		if (strpos($field, '.') !== FALSE)
+		{			
+			list($model, $field) = explode('.', $field);
+			
+			// If $join is NULL, the column is returned as it came
+			// If it was joined when it came in, it returns joined
+			if ($join === NULL)
+			{
+				$join = TRUE;
+			}
+		}
+		else
+		{
+			if ($join === NULL)
+			{
+				$join = FALSE;
+			}
+		}
+		
+		// If the model is NULL, $this's table name or model name
+		// We just replace if with the current model's name
+		if ($model === NULL || $model == $this->_table)
+		{
+			$model = Jelly_Meta::model_name($this);
+		}
+		
+		return Jelly_Meta::column($model.'.'.$field, $join);
 	}
 }

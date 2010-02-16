@@ -25,8 +25,8 @@ class Jelly_Field_Timestamp extends Jelly_Field
 	/**
 	 * Converts the time to a UNIX timestamp
 	 *
-	 * @param string $value 
-	 * @return void
+	 * @param  mixed $value 
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function set($value)
@@ -34,6 +34,11 @@ class Jelly_Field_Timestamp extends Jelly_Field
 		if (FALSE !== strtotime($value))
 		{
 			return strtotime($value);
+		}
+		// Already a timestamp?
+		else if (is_numeric($value))
+		{
+			return (int) $value;
 		}
 		
 		return $value;
@@ -43,8 +48,9 @@ class Jelly_Field_Timestamp extends Jelly_Field
 	 * Automatically creates or updates the time and 
 	 * converts it, if necessary
 	 *
-	 * @param string $loaded 
-	 * @return void
+	 * @param  Jelly $model
+	 * @param  mixed $value
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function save($model, $value)

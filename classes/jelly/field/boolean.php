@@ -37,8 +37,9 @@ class Jelly_Field_Boolean extends Jelly_Field
 	/**
 	 * Returns the value as it should be represented in the database
 	 *
-	 * @param string $loaded 
-	 * @return void
+	 * @param  Jelly  $model 
+	 * @param  mixed  $value
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function save($model, $value)

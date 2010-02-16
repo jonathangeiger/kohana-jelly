@@ -1,1 +1,1 @@
-<textarea name="<?php echo $name?>" rows="8" cols="40"><?php echo $value?></textarea>
+<textarea name="<?php echo $name?>" id="field-<?php echo $name ?>" rows="8" cols="40"><?php echo $value?></textarea>
