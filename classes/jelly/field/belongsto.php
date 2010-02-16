@@ -27,10 +27,10 @@ class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Fi
 	public $foreign = array();
 	
 	/**
-	 * Overrides the initialize to automatically provide the column name
+	 * Automatically sets foreign to sensible defaults
 	 *
-	 * @param string $model 
-	 * @param string $column 
+	 * @param  string $model 
+	 * @param  string $column 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
@@ -59,7 +59,9 @@ class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Fi
 	}
 	
 	/**
-	 * Returns the primary key of the model passed. Straight primary keys are also accepted.
+	 * Returns the primary key of the model passed. 
+	 * 
+	 * Straight primary keys are also accepted.
 	 * 
 	 * @param  mixed $value
 	 * @return int|string
@@ -94,10 +96,10 @@ class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Fi
 	/**
 	 * Implementation of Jelly_Field_Interface_Joinable
 	 *
-	 * @param string $model 
-	 * @param string $relation 
-	 * @param string $target_path 
-	 * @param string $parent_path 
+	 * @param  Jelly  $model 
+	 * @param  string $relation 
+	 * @param  string $target_path 
+	 * @param  string $parent_path 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */

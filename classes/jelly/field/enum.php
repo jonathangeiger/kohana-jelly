@@ -3,16 +3,14 @@
 class Jelly_Field_Enum extends Jelly_Field
 {
 	/**
-	 * An array of valid choices
-	 *
-	 * @var string
+	 * @var array An array of valid choices
 	 */
 	public $choices = array();
 	
 	/**
 	 * Ensures there is a choices array set
 	 *
-	 * @param string $options 
+	 * @param  array $options 
 	 * @author Jonathan Geiger
 	 */
 	public function __construct($options = array())
@@ -29,8 +27,8 @@ class Jelly_Field_Enum extends Jelly_Field
 	/**
 	 * If $value is in the $choices array, then it is used, otherwise $default is used
 	 *
-	 * @param string $value 
-	 * @return void
+	 * @param  string $value 
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function set($value)

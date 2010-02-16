@@ -26,8 +26,8 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	/**
 	 * Overrides the initialize to automatically provide the column name
 	 *
-	 * @param string $model 
-	 * @param string $column 
+	 * @param  string $model 
+	 * @param  string $column 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
@@ -50,7 +50,7 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	/**
 	 * Converts a Database_Result, Jelly, array of ids, or an id to an array of ids
 	 *
-	 * @param mixed $value 
+	 * @param  mixed $value 
 	 * @return array
 	 * @author Jonathan Geiger
 	 */

@@ -5,7 +5,7 @@ class Jelly_Field_File extends Jelly_Field
 	/**
 	 * Ensures there is a path for saving set
 	 *
-	 * @param string $options 
+	 * @param  array $options 
 	 * @author Jonathan Geiger
 	 */
 	public function __construct($options = array())
@@ -25,8 +25,9 @@ class Jelly_Field_File extends Jelly_Field
 	/**
 	 * Either uploads a file
 	 *
-	 * @param string $value 
-	 * @return void
+	 * @param  Jelly  $model 
+	 * @param  mixed $value 
+	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
 	public function save($model, $value)

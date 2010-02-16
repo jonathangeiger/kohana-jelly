@@ -5,8 +5,8 @@ class Jelly_Field_Integer extends Jelly_Field
 	/**
 	 * Converts the value to an integer
 	 *
-	 * @param string $value 
-	 * @return void
+	 * @param  mixed $value 
+	 * @return int
 	 * @author Jonathan Geiger
 	 */
 	public function set($value)

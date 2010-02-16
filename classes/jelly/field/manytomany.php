@@ -95,7 +95,7 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	/**
 	 * Converts a Database_Result, Jelly, array of ids, or id to an array of ids
 	 *
-	 * @param mixed $value 
+	 * @param  mixed $value 
 	 * @return array
 	 * @author Jonathan Geiger
 	 */
@@ -136,8 +136,8 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	/**
 	 * Returns a pre-built Jelly model ready to be loaded
 	 *
-	 * @param string $model 
-	 * @param string $value 
+	 * @param  Jelly  $model 
+	 * @param  mixed $value 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
@@ -150,8 +150,8 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	/**
 	 * Implementation for Jelly_Field_Interface_Saveable.
 	 *
-	 * @param string $model 
-	 * @param string $value 
+	 * @param  Jelly $model 
+	 * @param  mixed $value 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
@@ -191,7 +191,8 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	/**
 	 * Implementation of Jelly_Field_Interface_Haveable
 	 *
-	 * @param string $model 
+	 * @param  Jelly   $model 
+	 * @param  array   $ids
 	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
@@ -214,8 +215,8 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	 * Returns either an array or unexecuted query to find 
 	 * which columns the model is "in" in the join table
 	 *
-	 * @param Jelly $model 
-	 * @param boolean $as_array 
+	 * @param  Jelly   $model 
+	 * @param  boolean $as_array 
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
@@ -249,9 +250,9 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	/**
 	 * Adds the "ids" variable to the view data
 	 *
-	 * @param string $prefix
-	 * @param string $data
-	 * @return void
+	 * @param  string $prefix
+	 * @param  array  $data
+	 * @return View
 	 * @author Jonathan Geiger
 	 */
 	public function input($prefix = 'jelly/field', $data = array())

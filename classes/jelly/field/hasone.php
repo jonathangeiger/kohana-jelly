@@ -69,10 +69,10 @@ class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Inte
 	/**
 	 * Implementation of Jelly_Field_Interface_Joinable
 	 *
-	 * @param string $model 
-	 * @param string $relation 
-	 * @param string $target_path 
-	 * @param string $parent_path 
+	 * @param  Jelly  $model 
+	 * @param  string $relation 
+	 * @param  string $target_path 
+	 * @param  string $parent_path 
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
