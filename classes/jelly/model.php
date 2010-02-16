@@ -865,12 +865,12 @@ abstract class Jelly_Model
 	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
-	public function has($name, $models, $changed = TRUE)
+	public function has($name, $models)
 	{
 		$fields = $this->meta()->fields;
 		
-		// Don't continue without know the field actually exists
-		if (!isset($fields[$name]))
+		// Don't continue without knowing we have something to work with
+		if (!isset($fields[$name]) || !$fields[$name] instanceof Jelly_Field_Interface_Haveable)
 		{
 			return FALSE;
 		}
@@ -887,7 +887,7 @@ abstract class Jelly_Model
 				$models = $models->id();
 			}
 			
-			$ids = array($models);
+			$ids[] = $models;
 		}
 		// Construct the primary keys of the models. That's all we'll need
 		else
@@ -903,13 +903,7 @@ abstract class Jelly_Model
 			}
 		}
 		
-		// Proxy to the field. It handles everything
-		if ($field instanceof Jelly_Field_Interface_Haveable)
-		{
-			return $field->has($this, $ids);
-		}
-		
-		return FALSE;
+		return $field->has($this, $ids);
 	}
 	
 	/**
