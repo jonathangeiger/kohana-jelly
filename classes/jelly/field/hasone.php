@@ -8,7 +8,7 @@ class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Inte
 	 * @author Jonathan Geiger
 	 */
 	public function set($value)
-	{
+	{	
 		// Handle Database Results
 		if (is_object($value))
 		{

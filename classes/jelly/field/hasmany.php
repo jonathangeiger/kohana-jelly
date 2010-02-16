@@ -1,7 +1,8 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_HasMany extends Jelly_Field_Relationship 
-                          implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable
+class Jelly_Field_HasMany 
+extends Jelly_Field_Relationship 
+implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly_Field_Interface_Changeable
 {	
 	/**
 	 * This is expected to contain an assoc. array containing the key 
@@ -63,7 +64,14 @@ class Jelly_Field_HasMany extends Jelly_Field_Relationship
 		{
 			foreach($value as $row)
 			{
-				$return[] = $row->id();
+				if (is_object($row))
+				{
+					$return[] = $row->id();
+				}
+				else
+				{
+					$return[] = $row;
+				}
 			}
 		}
 		// And individual models

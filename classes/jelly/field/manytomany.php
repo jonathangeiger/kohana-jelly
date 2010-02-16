@@ -1,7 +1,8 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_ManyToMany extends Jelly_Field_Relationship 
-                             implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable
+class Jelly_Field_ManyToMany 
+extends Jelly_Field_Relationship 
+implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly_Field_Interface_Changeable
 {	
 	/**
 	 * This is expected to contain an assoc. array containing the key 
@@ -104,13 +105,26 @@ class Jelly_Field_ManyToMany extends Jelly_Field_Relationship
 		$return = array();
 		
 		// Handle Database Results
-		if (is_object($value))
+		if ($value instanceof Iterator || is_array($value))
 		{
 			foreach($value as $row)
 			{
-				$return[] = $row->id();
+				if (is_object($row))
+				{
+					$return[] = $row->id();
+				}
+				else
+				{
+					$return[] = $row;
+				}
 			}
 		}
+		// And individual models
+		else if (is_object($value))
+		{
+			$return = array($value->id());
+		}
+		// And everything else
 		else
 		{
 			$return = (array)$value;
@@ -148,17 +162,17 @@ class Jelly_Field_ManyToMany extends Jelly_Field_Relationship
 				
 		// Grab all of the actual columns
 		$through_table = Jelly_Meta::table($this->through['model']);
-		$through['columns'] = array(
-			Jelly_Meta::column($this->through['model'].'.'.$this->through['columns'][0], TRUE),
-			Jelly_Meta::column($this->through['model'].'.'.$this->through['columns'][1], TRUE),
+		$through_columns = array(
+			Jelly_Meta::column($this->through['model'].'.'.$this->through['columns'][0], FALSE),
+			Jelly_Meta::column($this->through['model'].'.'.$this->through['columns'][1], FALSE),
 		);
 		
 		// Find old relationships that must be deleted
 		if ($old = array_diff($in, $value))
 		{
 			DB::delete($through_table)
-				->where($through['columns'][0], '=', $model->id())
-				->where($through['columns'][1], 'IN', $old)
+				->where($through_columns[0], '=', $model->id())
+				->where($through_columns[1], 'IN', $old)
 				->execute(Jelly_Meta::get($model, 'db'));
 		}
 
@@ -167,7 +181,7 @@ class Jelly_Field_ManyToMany extends Jelly_Field_Relationship
 		{
 			foreach ($new as $new_id)
 			{
-				DB::insert($through_table, $through['columns'])
+				DB::insert($through_table, $through_columns)
 					->values(array($model->id(), $new_id))
 					->execute(Jelly_Meta::get($model, 'db'));
 			}

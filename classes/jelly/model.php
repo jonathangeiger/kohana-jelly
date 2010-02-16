@@ -338,7 +338,7 @@ abstract class Jelly_Model
 				$this->_with_values[$relationship][implode(':', $targets)] = $value;
 			}
 			// Key is coming from a database result
-			else if ($alias && !empty($meta->columns[$key]))
+			else if ($alias === TRUE && !empty($meta->columns[$key]))
 			{
 				// Contains an array of fields that the column is mapped to
 				// This allows multiple fields to get data from the same column
@@ -354,7 +354,7 @@ abstract class Jelly_Model
 				}
 			}
 			// Standard setting of a field 
-			else if (!$alias && array_key_exists($key, $meta->fields))
+			else if ($alias === FALSE && array_key_exists($key, $meta->fields))
 			{
 				$data_location[$key] = $meta->fields[$key]->set($value);
 				
@@ -473,6 +473,152 @@ abstract class Jelly_Model
 		}
 		
 		return $this;
+	}
+	
+	/**
+	 * Changes a relation by adding or removing specific records from the relation.
+	 *
+	 * @param  string  $name    The name of the field
+	 * @param  mixed   $models  Models or primary keys to add or remove
+	 * @param  string  $add     True to add, False to remove
+	 * @return Jelly   Returns $this
+	 * @author Jonathan Geiger
+	 */
+	protected function _change($name, $models, $add)
+	{
+		$fields = $this->meta()->fields;
+		
+		if (!isset($fields[$name]) || !($fields[$name] instanceof Jelly_Field_Interface_Changeable))
+		{
+			return $this;
+		}
+		
+		// If this is set, we don't need to re-retrieve the values
+		if (!array_key_exists($name, $this->_changed))
+		{
+			$current = array();
+			$value = $this->__get($name);
+			
+			if ($value instanceof Database_Result)
+			{
+				foreach ($value as $model)
+				{
+					$current[] = $model->id();
+				}
+			}
+			else
+			{
+				$current[] = $value->id();
+			}
+		}
+		else
+		{
+			$current = $this->_changed[$name];
+		}
+		
+		$changes = array();
+				
+		// Handle Database Results
+		if ($models instanceof Iterator || is_array($models))
+		{
+			foreach($models as $row)
+			{
+				if (is_object($row))
+				{
+					// Ignore unloaded relations
+					if ($row->loaded())
+					{
+						$changes[] = $row->id();
+					}
+				}
+				else
+				{
+					$changes[] = $row;
+				}
+			}
+		}
+		// And individual models
+		else if (is_object($models))
+		{
+			// Ignore unloaded relations
+			if ($models->loaded())
+			{
+				$current[] = $models->id();
+			}
+		}
+		// And everything else
+		else
+		{
+			$changes[] = $models;
+		}
+		
+		// Are we adding or removing?
+		if ($add)
+		{
+			$changes = array_unique(array_merge($current, $changes));
+		}
+		else
+		{
+			$changes = array_diff($current, $changes);
+		}
+		
+		// Set it 
+		$this->set($name, $changes);
+		
+		// Chainable
+		return $this;
+	}
+	
+	/**
+	 * Adds a specific model(s) to the relationship.
+	 * 
+	 * $models can be one of the following:
+	 * 
+	 * - A primary key
+	 * - Another Jelly model
+	 * - An iterable collection of primary keys or 
+	 *   Jelly models, such as an array or Database_Result
+	 * 
+	 * Even though semantically odd, this method can be used for 
+	 * changing 1:1 relationships like hasOne and belongsTo.
+	 * 
+	 * If you set more than one for these types of relationships,
+	 * however, only the first will be used.
+	 *
+	 * @param  string  $name 
+	 * @param  string  $models 
+	 * @return Jelly   Returns $this
+	 * @author Jonathan Geiger
+	 */
+	public function add($name, $models)
+	{
+		return $this->_change($name, $models, TRUE);
+	}
+	
+	/**
+	 * Removes a specific model(s) from the relationship.
+	 * 
+	 * $models can be one of the following:
+	 * 
+	 * - A primary key
+	 * - Another Jelly model
+	 * - An iterable collection of primary keys or 
+	 *   Jelly models, such as an array or Database_Result
+	 * 
+	 * Even though semantically odd, this method can be used for 
+	 * changing 1:1 relationships like hasOne and belongsTo.
+	 * 
+	 * If you set more than one for these types of relationships,
+	 * however, only the first will be used.
+	 *
+	 * @param  string  $name 
+	 * @param  string  $models 
+	 * @return Jelly   Returns $this
+	 * @author Jonathan Geiger
+	 */
+	public function remove($name, $models)
+	{
+		return $this->_change($name, $models, FALSE);
 	}
 	
 	/**
@@ -1066,6 +1212,11 @@ abstract class Jelly_Model
 			$data = $this->_changed + $this->_original;
 		}
 		
+		if (empty($data))
+		{
+			return $this;
+		}
+		
 		// Create the validation object
 		$data = Validate::factory($data);
 		
@@ -1105,6 +1256,8 @@ abstract class Jelly_Model
 		{
 			throw new Validate_Exception($data);
 		}
+		
+		return $this;
 	}
 
 	/**
