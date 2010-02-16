@@ -45,10 +45,10 @@ abstract class Jelly_Model
 	 * Model's do not have to be instantiated through here; they 
 	 * can be constructed directly.
 	 *
-	 * @param   mixed  $model  A model name or another Jelly to create
-	 * @param   mixed  $id     The id or where clause to load upon construction
-	 * @return  Jelly
-	 * @author  Jonathan Geiger
+	 * @param	mixed  $model  A model name or another Jelly to create
+	 * @param	mixed  $id	   The id or where clause to load upon construction
+	 * @return	Jelly
+	 * @author	Jonathan Geiger
 	 */
 	public static function factory($model, $id = NULL)
 	{	
@@ -129,8 +129,8 @@ abstract class Jelly_Model
 	 * If it is an associative array, it is used in constructing 
 	 * a where clause and the record is loaded automatically.
 	 *
-	 * @param   mixed  $cond  A primary key or where clause to use for auto-loading a particular record
-	 * @author  Jonathan Geiger
+	 * @param	mixed  $cond  A primary key or where clause to use for auto-loading a particular record
+	 * @author	Jonathan Geiger
 	 **/
 	public function __construct($cond = NULL)
 	{
@@ -172,10 +172,10 @@ abstract class Jelly_Model
 	 * 
 	 * A few things to note:
 	 * 
-	 *  - Values that are returned are cached (unlike get()) until they are changed
-	 *  - Relations are automatically load()ed
+	 *	- Values that are returned are cached (unlike get()) until they are changed
+	 *	- Relations are automatically load()ed
 	 *
-	 * @see    get()
+	 * @see	   get()
 	 * @param  string $name 
 	 * @return mixed
 	 * @author Jonathan Geiger
@@ -208,10 +208,10 @@ abstract class Jelly_Model
 	 * If an array or TRUE is passed for $name, an array of fields will be returned.
 	 * If $changed is FALSE, only original data for the field will be returned.
 	 *
-	 * @param   array|int|boolean $name     The field's name
-	 * @param   boolean           $changed
-	 * @return  mixed
-	 * @author  Jonathan Geiger
+	 * @param	array|int|boolean $name		The field's name
+	 * @param	boolean			  $changed
+	 * @return	mixed
+	 * @author	Jonathan Geiger
 	 */
 	public function get($name, $changed = TRUE)
 	{	
@@ -282,7 +282,7 @@ abstract class Jelly_Model
 	 * 
 	 * Under the hood, this is just proxying to set()
 	 *
-	 * @see    set()
+	 * @see	   set()
 	 * @param  string $name 
 	 * @param  mixed $value 
 	 * @return void
@@ -308,10 +308,10 @@ abstract class Jelly_Model
 	 * 
 	 * A few things to note:
 	 * 
-	 *  - If $values is a string, $alias will be used as the value 
-	 *    and $alias will be set to False.
-	 *  - If $original is TRUE, the data will be set as original 
-	 *    (not changed) as if it came from the database.
+	 *	- If $values is a string, $alias will be used as the value 
+	 *	  and $alias will be set to False.
+	 *	- If $original is TRUE, the data will be set as original 
+	 *	  (not changed) as if it came from the database.
 	 *
 	 * @param  string  $name 
 	 * @param  string  $value 
@@ -395,7 +395,7 @@ abstract class Jelly_Model
 	/**
 	 * Returns true if $name is a field of the model or an unmapped column.
 	 *
-	 * @param  string   $name 
+	 * @param  string	$name 
 	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
@@ -433,9 +433,9 @@ abstract class Jelly_Model
 	 * (query, get, insert, update) are not allowed. Query builder methods
 	 * are chainable.
 	 *
-	 * @param   string  method name
-	 * @param   array   method arguments
-	 * @return  Jelly   Returns $this
+	 * @param	string	method name
+	 * @param	array	method arguments
+	 * @return	Jelly	Returns $this
 	 */
 	public function __call($method, array $args)
 	{
@@ -494,6 +494,30 @@ abstract class Jelly_Model
 		}
 		
 		return $this;
+	}
+	
+	/**
+	 * Allows serialization of a model and all of its retrieved and related properties.
+	 * 
+	 * This fixes a bug with retrieved MySQL results.
+	 *
+	 * @return array
+	 * @author Paul Banks
+	 */
+	public function __sleep()
+	{
+		foreach ($this->_retrieved as $field => $object)
+		{
+			if ($object instanceof Database_MySQL_Result)
+			{
+				// Database_MySQL_Results handle results differenly, so they must be converted
+				// Otherwise they are invalide when they wake up.
+				$this->_retrieved[$field] = new Database_Result_Cached($object->as_array(), '');				
+			}
+		}		
+
+		// Return array of all properties to get them serialised
+		return array_keys(get_object_vars($this));
 	}
 	
 	/**
@@ -593,7 +617,7 @@ abstract class Jelly_Model
 	 * If the model's meta data is set to validate on save, then 
 	 * this could potentially throw a Validate_Exception.
 	 *
-	 * @param  bool   Whether or not to save related changes
+	 * @param  bool	  Whether or not to save related changes
 	 * @return Jelly  Returns $this
 	 * @author Jonathan Geiger
 	 **/
@@ -734,8 +758,8 @@ abstract class Jelly_Model
 	/**
 	 * Counts the number of records for the current query
 	 *
-	 * @param   mixed  $where  An associative array to use as the where clause, or a primary key
-	 * @return  Jelly  Returns $this
+	 * @param	mixed  $where  An associative array to use as the where clause, or a primary key
+	 * @return	Jelly  Returns $this
 	 */
 	public function count($where = NULL)
 	{
@@ -860,8 +884,8 @@ abstract class Jelly_Model
 	 * 
 	 * has_many, has_one, many_to_many
 	 *
-	 * @param  string   $name 
-	 * @param  mixed    $models
+	 * @param  string	$name 
+	 * @param  mixed	$models
 	 * @return boolean
 	 * @author Jonathan Geiger
 	 */
@@ -914,7 +938,7 @@ abstract class Jelly_Model
 	 * - A primary key
 	 * - Another Jelly model
 	 * - An iterable collection of primary keys or 
-	 *   Jelly models, such as an array or Database_Result
+	 *	 Jelly models, such as an array or Database_Result
 	 * 
 	 * Even though semantically odd, this method can be used for 
 	 * changing 1:1 relationships like hasOne and belongsTo.
@@ -940,7 +964,7 @@ abstract class Jelly_Model
 	 * - A primary key
 	 * - Another Jelly model
 	 * - An iterable collection of primary keys or 
-	 *   Jelly models, such as an array or Database_Result
+	 *	 Jelly models, such as an array or Database_Result
 	 * 
 	 * Even though semantically odd, this method can be used for 
 	 * changing 1:1 relationships like hasOne and belongsTo.
@@ -1032,8 +1056,8 @@ abstract class Jelly_Model
 	 * If $field is null, the model's table name is returned.
 	 * Otherwise, the normal rules apply.
 	 * 
-	 * @param  string   $field  The field's name
-	 * @param  boolean  $join   Whether or not to return the table and column joined
+	 * @param  string	$field	The field's name
+	 * @param  boolean	$join	Whether or not to return the table and column joined
 	 * @return string
 	 * @author Jonathan Geiger
 	 **/
@@ -1152,8 +1176,8 @@ abstract class Jelly_Model
 	/**
 	 * Initializes the Database Builder to given query type
 	 *
-	 * @param   int  Type of Database query
-	 * @return  Database_Query_Builder
+	 * @param	int	 Type of Database query
+	 * @return	Database_Query_Builder
 	 */
 	public function build($type)
 	{
@@ -1262,9 +1286,9 @@ abstract class Jelly_Model
 	 * Returns a view object the represents the field. If $prefix is an array,
 	 * it will be used for the data and $prefix will be set to the default.
 	 *
-	 * @param  string        $name    The field to render
-	 * @param  string|array  $prefix 
-	 * @param  string        $data 
+	 * @param  string		 $name	  The field to render
+	 * @param  string|array	 $prefix 
+	 * @param  string		 $data 
 	 * @return View
 	 * @author Jonathan Geiger
 	 */
@@ -1352,9 +1376,9 @@ abstract class Jelly_Model
 	/**
 	 * Changes a relation by adding or removing specific records from the relation.
 	 *
-	 * @param  string  $name    The name of the field
-	 * @param  mixed   $models  Models or primary keys to add or remove
-	 * @param  string  $add     True to add, False to remove
+	 * @param  string  $name	The name of the field
+	 * @param  mixed   $models	Models or primary keys to add or remove
+	 * @param  string  $add		True to add, False to remove
 	 * @return Jelly   Returns $this
 	 * @author Jonathan Geiger
 	 */
@@ -1447,8 +1471,8 @@ abstract class Jelly_Model
 	 * This is an internal method used for aliasing only things coming 
 	 * to the query builder, since they can come in so many formats.
 	 *
-	 * @param  string   $field 
-	 * @param  boolean  $join
+	 * @param  string	$field 
+	 * @param  boolean	$join
 	 * @return string
 	 * @author Jonathan Geiger
 	 */
