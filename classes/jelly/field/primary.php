@@ -16,13 +16,22 @@ class Jelly_Field_Primary extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if (is_numeric($value))
+		if ($value)
 		{
-			return (int)$value;
+			if (is_numeric($value))
+			{
+				return (int)$value;
+			}
+			else
+			{
+				return (string)$value;
+			}
 		}
 		else
 		{
-			return (string)$value;
+			// Empty values should be null so 
+			// they are auto-incremented properly
+			return NULL;
 		}
 	}
 }

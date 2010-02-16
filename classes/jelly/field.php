@@ -23,6 +23,11 @@ abstract class Jelly_Field
 	public $name;
 	
 	/**
+	 * @var boolean Whether or not the field should be unique
+	 */
+	public $unique = FALSE;
+	
+	/**
 	* @var string Description of the field. Default is `''` (an empty string).
 	*/
 	public $description = '';
@@ -77,6 +82,13 @@ abstract class Jelly_Field
 			{
 				$this->$name = $value;
 			}
+		}
+		
+		// Check as to whether we need to add 
+		// some callbacks for shortcut properties
+		if ($this->unique === TRUE)
+		{
+			$this->callbacks[] = array($this, '_is_unique');
 		}
 	}
 	
@@ -205,4 +217,27 @@ abstract class Jelly_Field
 		return $view;
 	}
 	
+	/**
+	 * Callback for validating that a field is unique.
+	 *
+	 * @param  Validate $data 
+	 * @param  string $field 
+	 * @return void
+	 * @author Jonathan Geiger
+	 * @author Woody Gilk
+	 */
+	public function _is_unique(Validate $data, $field)
+	{
+		if ($data[$field])
+		{
+			$count = Model::factory($this->model)
+						->where($field, '=', $data[$field])
+						->count();
+
+			if ($count)
+			{
+				$data->error($field, 'unique');
+			}
+		}
+	}
 }
