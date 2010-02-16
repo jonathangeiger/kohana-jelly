@@ -1286,7 +1286,7 @@ abstract class Jelly_Model
 			}
 			
 			// Ensure there is a default value. Some fields overridde this
-			$data['value'] = $this->get($name, FALSE);
+			$data['value'] = $this->__get($name);
 			$data['model'] = $this;
 			
 			return $this->meta()->fields[$name]->input($prefix, $data);

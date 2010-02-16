@@ -30,7 +30,7 @@ class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Inte
 		// Return a real object
 		return Jelly::factory($this->foreign['model'])
 				->limit(1, TRUE)
-				->where($this->through['column'], '=', $model->id());
+				->where($this->foreign['column'], '=', $model->id());
 	}
 	
 	/**
@@ -82,7 +82,7 @@ class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Inte
 		
 		// Fields have to be aliased since we don't necessarily know the model from the path
 		$parent_column = Jelly_Meta::column($this->foreign['model'], $meta->primary_key, FALSE);
-		$target_column = Jelly_Meta::column($this->model, $this->through['column'], FALSE);
+		$target_column = Jelly_Meta::column($this->model, $this->foreign['column'], FALSE);
 		
 		$join_col1 = $parent_path.'.'.$parent_column;
 		$join_col2 = $target_path.'.'.$target_column;

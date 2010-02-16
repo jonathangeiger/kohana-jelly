@@ -257,7 +257,13 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{
-		$data['ids'] = $this->in($data['model'], TRUE);
+		$data['ids'] = array();
+		
+		foreach ($data['value'] as $model)
+		{
+			$data['ids'][] = $model->id();
+		}
+		
 		return parent::input($prefix, $data);
 	}
 }

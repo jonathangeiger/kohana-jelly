@@ -168,12 +168,16 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	*/
 	public function input($prefix = 'jelly/field', $data = array())
 	{
-		$data['ids'] = array();
-
-		// Grab the IDS
-		foreach ($this->get($data['model'], NULL)->load() as $model)
+		// Kind of a wart here, but since HasOne extends this, we don't always want to iterate
+		if ($data['value'] instanceof Database_Result)
 		{
-			$data['ids'][] = $model->id();
+			$data['ids'] = array();
+
+			// Grab the IDS
+			foreach ($data['value'] as $model)
+			{
+				$data['ids'][] = $model->id();
+			}	
 		}
 
 		return parent::input($prefix, $data);
