@@ -84,6 +84,8 @@ abstract class Jelly_Field
 	 * This is called after construction so that fields can finish 
 	 * constructing themselves with a copy of the column it represents.
 	 *
+	 * @param  string  $model
+	 * @param  string  $column
 	 * @return void
 	 * @author Jonathan Geiger
 	 **/
@@ -111,6 +113,7 @@ abstract class Jelly_Field
 	 * Sets a particular value processed according 
 	 * to the class's standards.
 	 *
+	 * @param  mixed
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 **/
@@ -123,8 +126,8 @@ abstract class Jelly_Field
 	 * Returns a particular value processed according 
 	 * to the class's standards.
 	 *
-	 * @param object $model A copy of the current model is always passed
-	 * @param mixed $value The value as it's currently set in the model
+	 * @param  object $model  A copy of the current model is always passed
+	 * @param  mixed  $value  The value as it's currently set in the model
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 **/
@@ -137,8 +140,10 @@ abstract class Jelly_Field
 	 * Called just before saving if the field is $in_db, and just after if it's not.
 	 * 
 	 * If $in_db, it is expected to return a value suitable for insertion 
-	 * into the database. If !$in_db, it is expected to return a status boolean.
+	 * into the database.
 	 *
+	 * @param  Jelly  $model
+	 * @param  mixed  $value
 	 * @return mixed
 	 * @author Jonathan Geiger
 	 */
@@ -200,4 +205,4 @@ abstract class Jelly_Field
 		return $view;
 	}
 	
-} // END abstract class Resource_Field
+}
