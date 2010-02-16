@@ -1,12 +1,12 @@
-Jelly is a nice little ORM for Kohana. It is currently in beta and not quite ready for production.
-
-That said, the ORM is [unit tested](http://github.com/jonathangeiger/jelly-tests) and [very well-documented](http://wiki.github.com/jonathangeiger/kohana-jelly/).
+Jelly is a nice little ORM for Kohana. It is currently in beta and not quite ready for production. However, Jelly is [unit tested](http://github.com/jonathangeiger/jelly-tests) and [very well-documented](http://wiki.github.com/jonathangeiger/kohana-jelly/).
 
 ## Notable Features
 
 * **Standard support for all of the common relationships** — This includes `belongs_to`, `has_many`, and `many_to_many`. Pretty much standard these days.
 
 * **Top-to-bottom table column aliasing** – All references to database columns and tables are made via their aliased names and converted transparently, on the fly. 
+
+* **Active testing on MySQL and SQLite** — All of the Jelly unit tests work 100% correctly on both SQLite and MySQL databases. 
 
 * **A built-in query builder** — This features is a near direct port from Kohana's native ORM. I find its usage much simpler than Sprig's.
 
