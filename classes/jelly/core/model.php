@@ -15,7 +15,7 @@
  * 
  * @license http://kohanaphp.com/license.html
  */
-abstract class Jelly_Model
+abstract class Jelly_Core_Model
 {				
 	/**
 	 * @var array Callable database methods
