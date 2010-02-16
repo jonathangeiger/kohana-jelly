@@ -652,7 +652,7 @@ abstract class Jelly_Model
 					$this->_original[$column] = $values[$field->column] = $field->save($this, $field->default);
 				}
 			}
-			else if ($field instanceof Jelly_Field_Interface_Saveable)
+			else if ($field instanceof Jelly_Behavior_Field_Saveable)
 			{
 				$relations[$column] = $field;
 			}
@@ -843,7 +843,7 @@ abstract class Jelly_Model
 			$parent_fields = $parent_meta->fields;
 			
 			if (!isset($parent_fields[$target]) || 
-				!($parent_fields[$target] instanceof Jelly_Field_Interface_Joinable))
+				!($parent_fields[$target] instanceof Jelly_Behavior_Field_Joinable))
 			{
 				continue;
 			}
@@ -894,7 +894,7 @@ abstract class Jelly_Model
 		$fields = $this->meta()->fields;
 		
 		// Don't continue without knowing we have something to work with
-		if (!isset($fields[$name]) || !$fields[$name] instanceof Jelly_Field_Interface_Haveable)
+		if (!isset($fields[$name]) || !$fields[$name] instanceof Jelly_Behavior_Field_Haveable)
 		{
 			return FALSE;
 		}
@@ -1386,7 +1386,7 @@ abstract class Jelly_Model
 	{
 		$fields = $this->meta()->fields;
 		
-		if (!isset($fields[$name]) || !($fields[$name] instanceof Jelly_Field_Interface_Changeable))
+		if (!isset($fields[$name]) || !($fields[$name] instanceof Jelly_Behavior_Field_Changeable))
 		{
 			return $this;
 		}

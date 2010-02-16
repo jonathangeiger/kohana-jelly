@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Interface_Joinable
+class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Behavior_Field_Joinable
 {		
 	/**
 	 * @param string $value 
@@ -67,7 +67,7 @@ class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Inte
 	}
 	
 	/**
-	 * Implementation of Jelly_Field_Interface_Joinable
+	 * Implementation of Jelly_Behavior_Field_Joinable
 	 *
 	 * @param  Jelly  $model 
 	 * @param  string $relation 

@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Field_Interface_Joinable
+class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Behavior_Field_Joinable
 {	
 	/**
 	 * @var boolean Defaults belongs_to's to in the database
@@ -94,7 +94,7 @@ class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Fi
 	}
 	
 	/**
-	 * Implementation of Jelly_Field_Interface_Joinable
+	 * Implementation of Jelly_Behavior_Field_Joinable
 	 *
 	 * @param  Jelly  $model 
 	 * @param  string $relation 

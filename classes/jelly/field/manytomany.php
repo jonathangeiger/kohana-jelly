@@ -2,7 +2,7 @@
 
 class Jelly_Field_ManyToMany 
 extends Jelly_Field_Relationship 
-implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly_Field_Interface_Changeable
+implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_Behavior_Field_Changeable
 {	
 	/**
 	 * This is expected to contain an assoc. array containing the key 
@@ -148,7 +148,7 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	}
 	
 	/**
-	 * Implementation for Jelly_Field_Interface_Saveable.
+	 * Implementation for Jelly_Behavior_Field_Saveable.
 	 *
 	 * @param  Jelly $model 
 	 * @param  mixed $value 
@@ -189,7 +189,7 @@ implements Jelly_Field_Interface_Saveable, Jelly_Field_Interface_Haveable, Jelly
 	}
 	
 	/**
-	 * Implementation of Jelly_Field_Interface_Haveable
+	 * Implementation of Jelly_Behavior_Field_Haveable
 	 *
 	 * @param  Jelly   $model 
 	 * @param  array   $ids

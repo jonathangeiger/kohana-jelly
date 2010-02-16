@@ -19,7 +19,7 @@
  *
  * @package jelly
  */
-interface Jelly_Field_Interface_Changeable
+interface Jelly_Behavior_Field_Changeable
 {	
 
 }
