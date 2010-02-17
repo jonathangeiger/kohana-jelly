@@ -1313,7 +1313,7 @@ abstract class Jelly_Core_Model
 			// Set a default prefix if it's NULL
 			if ($prefix === NULL)
 			{
-				$prefix = 'jelly/field';
+				$prefix = $meta->input_prefix;
 			}
 			
 			// Ensure there is a default value. Some fields overridde this

@@ -283,6 +283,11 @@ class Jelly_Core_Meta
 	protected $validate_on_save = TRUE;
 	
 	/**
+	 * @var boolean Prefix to apply to input generation
+	 */
+	protected $input_prefix = 'jelly/field';
+	
+	/**
 	 * @var array A map to the resource's fields and how to process each column.
 	 */
 	protected $fields = array();
