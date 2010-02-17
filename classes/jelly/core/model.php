@@ -648,6 +648,15 @@ abstract class Jelly_Core_Model
 			}
 		}
 		
+		// Remove the primary key if it's empty, SQLite accepts it but 
+		// most other databases won't if it's going to auto-increment
+		// It is often inadvertently set by validate() when inserting
+		if (empty($values[$meta->primary_key]))
+		{
+			unset($values[$meta->primary_key]);
+			unset($this->_changed[$meta->primary_key]);	
+		}
+		
 		// Set this just in case it doesn't change with the insert/update
 		$id = $this->id();
 		
