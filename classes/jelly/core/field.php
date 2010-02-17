@@ -1,5 +1,11 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
+/**
+ * Core class that all fields must extend.
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
 abstract class Jelly_Core_Field
 {	
 	/**

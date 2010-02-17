@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Boolean extends Jelly_Field
+/**
+ * Handles boolean data types
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Boolean extends Jelly_Field
 {	
 	/**
 	 * @var mixed How TRUE is represented in the database

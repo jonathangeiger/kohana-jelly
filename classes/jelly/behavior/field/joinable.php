@@ -5,7 +5,7 @@
  * 
  * The with() method is expected to complete the join() clause.
  *
- * @package jelly
+ * @package Jelly
  */
 interface Jelly_Behavior_Field_Joinable
 {	

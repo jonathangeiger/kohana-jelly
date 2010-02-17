@@ -5,7 +5,7 @@
  * 
  * This is used by the Jelly_Model's has() method,
  *
- * @package jelly
+ * @package Jelly
  */
 interface Jelly_Behavior_Field_Haveable
 {	

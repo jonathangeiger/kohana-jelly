@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Float extends Jelly_Field
+/**
+ * Handles floats
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Float extends Jelly_Field
 {
 	/**
 	 * @var int The number of places to round the number, NULL to forgo rounding

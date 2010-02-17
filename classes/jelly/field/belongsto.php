@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Behavior_Field_Joinable
+/**
+ * Handles belongs to relationships
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Behavior_Field_Joinable
 {	
 	/**
 	 * @var boolean Defaults belongs_to's to in the database
@@ -12,15 +18,12 @@ class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Be
 	 * 'model', and the key 'column'
 	 * 
 	 * If they do not exist, they will be filled in with sensible defaults 
-	 * derived from the field's name.
+	 * derived from the field's name. If 'model' is empty it is set to the 
+	 * singularized name of the field. If 'column' is empty, it is set to 'id'.
 	 * 
-	 * 'model' => 'a model to use as the foreign association'
+	 * `'model' => 'a model to use as the foreign association'`
 	 * 
-	 * If 'model' is empty it is set to the singularized name of the field.
-	 * 
-	 * 'column' => 'the column (or alias) that is the foreign model's primary key'
-	 * 
-	 * If 'column' is empty, it is set to 'id'
+	 * `'column' => 'the column (or alias) that is the foreign model's primary key'`
 	 *
 	 * @var array
 	 */

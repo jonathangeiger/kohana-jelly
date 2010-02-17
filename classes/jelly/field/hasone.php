@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Behavior_Field_Joinable
+/**
+ * Handles has one relationships
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Behavior_Field_Joinable
 {		
 	/**
 	 * @param string $value 

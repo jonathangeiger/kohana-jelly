@@ -4,7 +4,8 @@
  * An abstract class that is useful for identifying which 
  * fields that are relationships.
  *
- * @package jelly
+ * @package Jelly
+ * @author  Jonathan Geiger
  */
 abstract class Jelly_Field_Relationship extends Jelly_Field
 {	

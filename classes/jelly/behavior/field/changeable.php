@@ -17,7 +17,7 @@
  * 
  * And in its save() method, it should expect an array of primary keys.
  *
- * @package jelly
+ * @package Jelly
  */
 interface Jelly_Behavior_Field_Changeable
 {	

@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Primary extends Jelly_Field
+/**
+ * Handles primary keys
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Primary extends Jelly_Field
 {
 	/**
 	 * @var boolean Defaults primary keys to primary

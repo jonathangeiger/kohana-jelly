@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Serialized extends Jelly_Field
+/**
+ * Handles serialized data
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Serialized extends Jelly_Field
 {
 	/**
 	 * @var boolean Defaults serialized fields to be non-editable

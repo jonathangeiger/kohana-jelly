@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Integer extends Jelly_Field
+/**
+ * Handles integer data-types
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Integer extends Jelly_Field
 {
 	/**
 	 * Converts the value to an integer

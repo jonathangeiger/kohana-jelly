@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_File extends Jelly_Field
+/**
+ * Handles files and file uploads
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_File extends Jelly_Field
 {	
 	/**
 	 * Ensures there is a path for saving set

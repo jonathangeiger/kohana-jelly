@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Enum extends Jelly_Field
+/**
+ * Handles enumerated lists
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Enum extends Jelly_Field
 {
 	/**
 	 * @var array An array of valid choices

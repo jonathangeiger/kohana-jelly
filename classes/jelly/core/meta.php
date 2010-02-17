@@ -3,10 +3,10 @@
 /**
  * Defines meta data for a particular model
  *
- * @package default
+ * @package Jelly
  * @author Jonathan Geiger
  */
-class Jelly_Core_Meta
+abstract class Jelly_Core_Meta
 {			
 	/**
 	 * @var array Contains all of the meta classes related to models
@@ -177,9 +177,9 @@ class Jelly_Core_Meta
 	 * Returns the column name for a particular field. This 
 	 * method can take arguments in three separate ways:
 	 * 
-	 * $model, $field [, $join = FALSE]
-	 * $model_name, $field [, $join = FALSE]
-	 * $model_plus_field [, $join = FALSE]
+	 *  * $model, $field [, $join = FALSE]
+	 *  * $model_name, $field [, $join = FALSE]
+	 *  * $model_plus_field [, $join = FALSE]
 	 * 
 	 * In the first case, $model is a Jelly model and $field is a string.
 	 * In the second case, $model is a string, and $field is a string.

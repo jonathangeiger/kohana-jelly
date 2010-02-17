@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Password extends Field_String
+/**
+ * Handles passwords
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Password extends Field_String
 {
 	/**
 	 * @var callback A valid callback to use for hashing the password or FALSE to not hash

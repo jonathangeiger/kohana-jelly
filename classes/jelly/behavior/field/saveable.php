@@ -4,7 +4,7 @@
  * Declares a field will handle its own saving queries. Nearly all 
  * relationship types implement this interface.
  *
- * @package jelly
+ * @package Jelly
  */
 interface Jelly_Behavior_Field_Saveable
 {	

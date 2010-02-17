@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Timestamp extends Jelly_Field
+/**
+ * Handles timestamps
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Timestamp extends Jelly_Field
 {
 	/**
 	 * @var boolean Whether or not to automatically set now() on creation

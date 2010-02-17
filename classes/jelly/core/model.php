@@ -4,13 +4,14 @@
  * Jelly is a Kohana 3.0 ORM. It itself is a conceptual fork of Kohana's ORM 
  * and Sprig. Some code and ideas are borrowed from both projects.
  * 
+ * @package Jelly
+ * 
  * @author Jonathan Geiger
  * @author Paul Banks
- * 
  * @author Woody Gilk
- * @link http://github.com/shadowhand/sprig/
- * 
  * @author Kohana Team
+ * 
+ * @link http://github.com/shadowhand/sprig/
  * @link http://github.com/jheathco/kohana-orm
  * 
  * @license http://kohanaphp.com/license.html
@@ -48,7 +49,6 @@ abstract class Jelly_Core_Model
 	 * @param	mixed  $model  A model name or another Jelly to create
 	 * @param	mixed  $id	   The id or where clause to load upon construction
 	 * @return	Jelly
-	 * @author	Jonathan Geiger
 	 */
 	public static function factory($model, $id = NULL)
 	{	
@@ -130,7 +130,6 @@ abstract class Jelly_Core_Model
 	 * a where clause and the record is loaded automatically.
 	 *
 	 * @param	mixed  $cond  A primary key or where clause to use for auto-loading a particular record
-	 * @author	Jonathan Geiger
 	 **/
 	public function __construct($cond = NULL)
 	{
@@ -160,7 +159,6 @@ abstract class Jelly_Core_Model
 	 * Displays the record's id
 	 *
 	 * @return string
-	 * @author Jonathan Geiger
 	 */
 	public function __toString()
 	{
@@ -172,13 +170,12 @@ abstract class Jelly_Core_Model
 	 * 
 	 * A few things to note:
 	 * 
-	 *	- Values that are returned are cached (unlike get()) until they are changed
-	 *	- Relations are automatically load()ed
+	 * * Values that are returned are cached (unlike get()) until they are changed
+	 * * Relations are automatically load()ed
 	 *
 	 * @see	   get()
 	 * @param  string $name 
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function __get($name)
 	{	
@@ -205,13 +202,12 @@ abstract class Jelly_Core_Model
 	/**
 	 * Gets the internally represented value from a field or unmapped column.
 	 * 
-	 * If an array or TRUE is passed for $name, an array of fields will be returned.
-	 * If $changed is FALSE, only original data for the field will be returned.
+	 * * If an array or TRUE is passed for $name, an array of fields will be returned.
+	 * * If $changed is FALSE, only original data for the field will be returned.
 	 *
 	 * @param	array|int|boolean $name		The field's name
 	 * @param	boolean			  $changed
 	 * @return	mixed
-	 * @author	Jonathan Geiger
 	 */
 	public function get($name, $changed = TRUE)
 	{	
@@ -286,7 +282,6 @@ abstract class Jelly_Core_Model
 	 * @param  string $name 
 	 * @param  mixed $value 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function __set($name, $value)
 	{
@@ -316,7 +311,6 @@ abstract class Jelly_Core_Model
 	 * @param  string  $name 
 	 * @param  string  $value 
 	 * @return Jelly   Returns $this
-	 * @author Jonathan Geiger
 	 */
 	public function set($values, $alias = FALSE, $original = FALSE)
 	{
@@ -397,7 +391,6 @@ abstract class Jelly_Core_Model
 	 *
 	 * @param  string	$name 
 	 * @return boolean
-	 * @author Jonathan Geiger
 	 */
 	public function __isset($name)
 	{
@@ -413,7 +406,6 @@ abstract class Jelly_Core_Model
 	 *
 	 * @param  string $name 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function __unset($name)
 	{
@@ -531,7 +523,6 @@ abstract class Jelly_Core_Model
 	 *
 	 * @param  mixed  $where  an array or id to load 
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function load($where = NULL, $limit = NULL)
 	{
@@ -619,7 +610,6 @@ abstract class Jelly_Core_Model
 	 *
 	 * @param  bool	  Whether or not to save related changes
 	 * @return Jelly  Returns $this
-	 * @author Jonathan Geiger
 	 **/
 	public function save($save_related = TRUE)
 	{
@@ -720,7 +710,6 @@ abstract class Jelly_Core_Model
 	 *
 	 * @param  $where  A simple where statement
 	 * @return Jelly   Returns $this
-	 * @author Jonathan Geiger
 	 **/
 	public function delete($where = NULL)
 	{
@@ -791,7 +780,6 @@ abstract class Jelly_Core_Model
 	 *
 	 * @param string $alias 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function with($relationship)
 	{
@@ -887,7 +875,6 @@ abstract class Jelly_Core_Model
 	 * @param  string	$name 
 	 * @param  mixed	$models
 	 * @return boolean
-	 * @author Jonathan Geiger
 	 */
 	public function has($name, $models)
 	{
@@ -949,7 +936,6 @@ abstract class Jelly_Core_Model
 	 * @param  string  $name 
 	 * @param  string  $models 
 	 * @return Jelly   Returns $this
-	 * @author Jonathan Geiger
 	 */
 	public function add($name, $models)
 	{
@@ -975,7 +961,6 @@ abstract class Jelly_Core_Model
 	 * @param  string  $name 
 	 * @param  string  $models 
 	 * @return Jelly   Returns $this
-	 * @author Jonathan Geiger
 	 */
 	public function remove($name, $models)
 	{
@@ -987,7 +972,6 @@ abstract class Jelly_Core_Model
 	 *
 	 * @throws Validate_Exception
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function validate()
 	{
@@ -1059,7 +1043,6 @@ abstract class Jelly_Core_Model
 	 * @param  string	$field	The field's name
 	 * @param  boolean	$join	Whether or not to return the table and column joined
 	 * @return string
-	 * @author Jonathan Geiger
 	 **/
 	public function alias($field = NULL, $join = NULL)
 	{	
@@ -1108,7 +1091,6 @@ abstract class Jelly_Core_Model
 	 * @param mixed $data Depends on the above documentation
 	 * @param mixed $as_object Depends on the above documentation
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function execute($type = Database::SELECT, $data = NULL, $as_object = NULL)
 	{
@@ -1247,7 +1229,6 @@ abstract class Jelly_Core_Model
 	 * All changes, queries, and other state is lost.
 	 *
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function reset()
 	{
@@ -1270,7 +1251,6 @@ abstract class Jelly_Core_Model
 	 * Resets the database builder
 	 *
 	 * @return Jelly  Returns $this
-	 * @author Jonathan Geiger
 	 */
 	public function end()
 	{
@@ -1290,7 +1270,6 @@ abstract class Jelly_Core_Model
 	 * @param  string|array	 $prefix 
 	 * @param  string		 $data 
 	 * @return View
-	 * @author Jonathan Geiger
 	 */
 	public function input($name, $prefix = NULL, $data = array())
 	{
@@ -1329,7 +1308,6 @@ abstract class Jelly_Core_Model
 	 *
 	 * @param  string  $property 
 	 * @return Jelly_Meta
-	 * @author Jonathan Geiger
 	 */
 	public function meta($property = NULL)
 	{
@@ -1340,7 +1318,6 @@ abstract class Jelly_Core_Model
 	 * Returns whether or not the model is loaded
 	 *
 	 * @return boolean
-	 * @author Jonathan Geiger
 	 */
 	public function loaded()
 	{	
@@ -1351,7 +1328,6 @@ abstract class Jelly_Core_Model
 	 * Whether or not the model is saved
 	 *
 	 * @return boolean
-	 * @author Jonathan Geiger
 	 */
 	public function saved()
 	{	
@@ -1362,7 +1338,6 @@ abstract class Jelly_Core_Model
 	 * Returns the value of the primary key for the row
 	 *
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function id()
 	{
@@ -1373,7 +1348,6 @@ abstract class Jelly_Core_Model
 	 * Returns the value of the model's primary value
 	 *
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function name()
 	{
@@ -1387,7 +1361,6 @@ abstract class Jelly_Core_Model
 	 * @param  mixed   $models	Models or primary keys to add or remove
 	 * @param  string  $add		True to add, False to remove
 	 * @return Jelly   Returns $this
-	 * @author Jonathan Geiger
 	 */
 	protected function _change($name, $models, $add)
 	{
@@ -1481,7 +1454,6 @@ abstract class Jelly_Core_Model
 	 * @param  string	$field 
 	 * @param  boolean	$join
 	 * @return string
-	 * @author Jonathan Geiger
 	 */
 	protected function _qb_alias($field, $join = NULL)
 	{

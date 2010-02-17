@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Jelly_Field_Slug extends Field_String
+/**
+ * Handles "slugs"
+ *
+ * @package Jelly
+ * @author Jonathan Geiger
+ */
+abstract class Jelly_Field_Slug extends Field_String
 {
 	/**
 	 * Converts a slug to value valid for a URL.
