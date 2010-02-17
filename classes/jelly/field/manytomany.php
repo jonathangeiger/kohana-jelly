@@ -257,6 +257,11 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{
+		if (!$this->editable) 
+		{
+			return FALSE;
+		}
+		
 		$data['ids'] = array();
 		
 		foreach ($data['value'] as $model)

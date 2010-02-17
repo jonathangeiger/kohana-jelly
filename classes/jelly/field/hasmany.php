@@ -168,6 +168,11 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	*/
 	public function input($prefix = 'jelly/field', $data = array())
 	{
+		if (!$this->editable) 
+		{
+			return FALSE;
+		}
+		
 		// Kind of a wart here, but since HasOne extends this, we don't always want to iterate
 		if ($data['value'] instanceof Database_Result)
 		{

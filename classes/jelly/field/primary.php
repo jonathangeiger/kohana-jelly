@@ -8,6 +8,11 @@ class Jelly_Field_Primary extends Jelly_Field
 	public $primary = TRUE;
 	
 	/**
+	 * @var boolean Primary keys generally aren't editable
+	 */
+	public $editable = FALSE;
+	
+	/**
 	 * Converts numeric IDs to ints
 	 *
 	 * @param  mixed $value 

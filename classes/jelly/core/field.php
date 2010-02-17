@@ -28,6 +28,11 @@ abstract class Jelly_Core_Field
 	public $unique = FALSE;
 	
 	/**
+	 * @var boolean Whether or not the field should display an input
+	 */
+	public $editable = TRUE;
+	
+	/**
 	* @var string Description of the field. Default is `''` (an empty string).
 	*/
 	public $description = '';
@@ -173,6 +178,11 @@ abstract class Jelly_Core_Field
 	 **/
 	public function input($prefix = 'jelly/field', $data = array())
 	{
+		if (!$this->editable) 
+		{
+			return FALSE;
+		}
+		
 		// Get the view name
 		$view = $this->_input_view($prefix);
 		

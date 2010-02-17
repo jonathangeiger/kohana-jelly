@@ -1294,8 +1294,15 @@ abstract class Jelly_Core_Model
 	 */
 	public function input($name, $prefix = NULL, $data = array())
 	{
-		if (isset($this->meta()->fields[$name]))
+		$meta = $this->meta();
+		
+		if (isset($meta->fields[$name]))
 		{
+			if (!$meta->fields[$name]->editable) 
+			{
+				return FALSE;
+			}
+			
 			// More data munging. But it makes the API so much more intuitive
 			if (is_array($prefix))
 			{
@@ -1313,7 +1320,7 @@ abstract class Jelly_Core_Model
 			$data['value'] = $this->__get($name);
 			$data['model'] = $this;
 			
-			return $this->meta()->fields[$name]->input($prefix, $data);
+			return $meta->fields[$name]->input($prefix, $data);
 		}
 	}
 	
