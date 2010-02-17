@@ -283,7 +283,7 @@ class Jelly_Core_Meta
 	protected $validate_on_save = TRUE;
 	
 	/**
-	 * @var boolean Prefix to apply to input generation
+	 * @var string Prefix to apply to input generation
 	 */
 	protected $input_prefix = 'jelly/field';
 	
