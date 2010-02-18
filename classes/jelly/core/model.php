@@ -813,77 +813,62 @@ abstract class Jelly_Core_Model
 		// Allow unlimited args
 		foreach ((array)$relationship as $target_path)
 		{
-			// Skip already applied paths
-			if (isset($this->_with_applied[$target_path]))
-			{
-				continue;
-			}
+			// We'll start with the first one and work our way down
+			$paths = explode(":", $target_path);
+			$parent = $this;
+			$chain = '';
 			
-			$relations = explode(':', $target_path);
-			$target = array_pop($relations);
-			$parent = array_pop($relations);
-			
-			// Add the model back on so we can get to the path without the final field
-			$relations[] = $parent;
-			$parent_path = implode(":", $relations);
-			
-			// Parent is $this if it's empty
-			if (!$parent_path)
+			foreach ($paths as $iteration => $path)
 			{
-				$parent = Jelly_Meta::model_name($this);
-				$parent_path = $parent;
-			}
-			else
-			{
-				if (!array_key_exists($parent_path, $this->_with_applied))
+				$field = Jelly_Meta::field($parent, $path);
+				
+				if (!($field instanceof Jelly_Behavior_Field_Joinable))
 				{
-					$this->with($parent_path);
+					// Entire list is invalid
+					continue 2;
 				}
-			}
 
-			// Ensure the field is "withable"
-			if (FALSE == ($parent_meta = Jelly_Meta::get($parent)))
-			{
-				continue;
-			}
-			
-			$target_field = Jelly_Meta::field($parent, $target);
-
-			// Ensure the field is joinable
-			if (!($target_field instanceof Jelly_Behavior_Field_Joinable))
-			{
-				continue;
-			}
-			
-			// With will be applied. Make note of it
-			$this->_with_applied[$target_path] = TRUE;
-			
-			// We only apply : to the front if the path is aliased
-			if (!empty($this->_with_applied[$parent_path]))
-			{
-				$parent_path = ':'.$parent_path;
-			}
-			
-			// This always needs : in front of it
-			$target_path = ':'.$target_path;
-			
-			// Alias all of the fields for the model we're referencing
-			foreach (Jelly_Meta::get($target_field->foreign['model'])->fields as $alias => $field)
-			{
-				if ($field->in_db)
+				// If we're on the first iteration, the parent path is just the 
+				// name of the model, otherwise we use the chain
+				if ($iteration === 0)
 				{
-					// We have to manually alias, since the path does not necessarily correspond to the path
-					$this->select(array($target_path.'.'.$field->column, $target_path.':'.$alias));
+					$prev_chain = Jelly_Meta::model_name($this);
 				}
+				else
+				{
+					$prev_chain = $chain;
+				}
+				
+				$chain .= ":".$field->name;
+						
+				// Set the next iteration's parent
+				$model = $field->foreign['model'];
+				
+				// Select all of the model's fields
+				foreach (Jelly_Meta::get($model)->fields as $alias => $select)
+				{
+					if ($select->in_db)
+					{
+						// Withs have to manually alias
+						$column = Jelly_Meta::column($model, $alias);
+						
+						// We have to manually alias, since the path does not necessarily correspond to the path
+						$this->select(array($chain.'.'.$column, $chain.':'.$alias));
+					}
+				}
+				
+				// Let the field finish the rest
+				$field->with($this, $path, $chain, $prev_chain);
+				
+				// Model now becomes the parent
+				$parent = $model;
 			}
-			
-			// Let the field finish the join
-			$target_field->with($this, $target, $target_path, $parent_path);
 		}
-
+		
 		return $this;
 	}
-	
+			
+
 	/**
 	 * Returns whether or not that model is related to the 
 	 * $model specified. This only works with relationships
@@ -1163,15 +1148,10 @@ abstract class Jelly_Core_Model
 		{
 			$query->as_object(get_class($this));
 		}
-		// Allow custom classes
-		else if (is_string($as_object))
+		// Allow custom classes and such
+		else 
 		{
 			$query->as_object($as_object);
-		}
-		// Return as an array
-		else
-		{
-			$query->as_array();
 		}
 		
 		return $query->execute($meta->db);
@@ -1504,13 +1484,10 @@ abstract class Jelly_Core_Model
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_qb_alias("$1")."\\""', $field);
 		}
 		
-		// This allows with() to work properly with aliasing
+		// with() call, aliasing is already completed
 		if (strpos($field, ':') !== FALSE)
 		{			
-			$paths = explode(':', $field);
-			list($model, $field) = explode('.', array_pop($paths));
-			
-			return implode(':', $paths).':'.$model.'.'.Jelly_Meta::column($model, $field, FALSE);
+			return $field;
 		}
 		
 		if (strpos($field, '.') !== FALSE)

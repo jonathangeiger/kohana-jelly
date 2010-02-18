@@ -155,19 +155,12 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	public function has($model, $ids)
 	{
 		$foreign = Jelly::factory($this->foreign['model']);
-		$result = $foreign
-			->select(array('COUNT("*")', 'records_found'))
-			->where($this->foreign['column'], '=', $model->id())
-			->where($foreign->meta()->primary_key, 'IN', $ids)
-			->execute(Database::SELECT, FALSE);
-			
-		var_dump($result);
 		
 		return (bool) $foreign
 			->select(array('COUNT("*")', 'records_found'))
 			->where($this->foreign['column'], '=', $model->id())
 			->where($foreign->meta()->primary_key, 'IN', $ids)
-			->execute()
+			->execute(Database::SELECT, FALSE)
 			->get('records_found');
 	}
 	
