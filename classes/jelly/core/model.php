@@ -1141,15 +1141,10 @@ abstract class Jelly_Core_Model
 		{
 			$query->as_object(get_class($this));
 		}
-		// Allow custom classes
-		else if (is_string($as_object))
+		// Allow custom classes and such
+		else 
 		{
 			$query->as_object($as_object);
-		}
-		// Return as an array
-		else
-		{
-			$query->as_array();
 		}
 		
 		return $query->execute($meta->db);
