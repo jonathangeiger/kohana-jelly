@@ -1275,7 +1275,10 @@ abstract class Jelly_Core_Model
 	 */
 	public function input($name, $prefix = NULL, $data = array())
 	{
-		if ($field = $this->field($name))
+		$meta = $this->meta();
+		$name = $this->field($name, TRUE);
+		
+		if (isset($meta->fields[$name]))
 		{			
 			// More data munging. But it makes the API so much more intuitive
 			if (is_array($prefix))
@@ -1287,14 +1290,14 @@ abstract class Jelly_Core_Model
 			// Set a default prefix if it's NULL
 			if ($prefix === NULL)
 			{
-				$prefix = $this->meta()->input_prefix;
+				$prefix = $meta->input_prefix;
 			}
 			
 			// Ensure there is a default value. Some fields overridde this
 			$data['value'] = $this->__get($name);
 			$data['model'] = $this;
 			
-			return $field->input($prefix, $data);
+			return $meta->fields[$name]->input($prefix, $data);
 		}
 	}
 	
