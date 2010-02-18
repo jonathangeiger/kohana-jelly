@@ -1278,12 +1278,7 @@ abstract class Jelly_Core_Model
 		$meta = $this->meta();
 		
 		if (isset($meta->fields[$name]))
-		{
-			if (!$meta->fields[$name]->editable) 
-			{
-				return FALSE;
-			}
-			
+		{			
 			// More data munging. But it makes the API so much more intuitive
 			if (is_array($prefix))
 			{

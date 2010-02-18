@@ -9,11 +9,6 @@
 abstract class Jelly_Field_Serialized extends Jelly_Field
 {
 	/**
-	 * @var boolean Defaults serialized fields to be non-editable
-	 */
-	public $editable = FALSE;
-	
-	/**
 	 * Unserializes data as soon as it comes in.
 	 * 
 	 * Incoming data that isn't actually serialized will not be harmed.
