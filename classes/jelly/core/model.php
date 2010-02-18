@@ -179,7 +179,10 @@ abstract class Jelly_Core_Model
 	 */
 	public function __get($name)
 	{	
-		$meta = $this->meta();
+		// Alias the field to its actual name. We must do this now
+		// so that any aliases will be cached under the real fields
+		// name, rather than under its alias name
+		$name = $this->field($name, TRUE);
 		
 		if (!array_key_exists($name, $this->_retrieved))
 		{
@@ -235,9 +238,10 @@ abstract class Jelly_Core_Model
 		}
 		else 
 		{
-			if (array_key_exists($name, $meta->fields))
+			if ($field = $this->field($name))
 			{	
-				$field = $meta->fields[$name];
+				// Alias the name to its actual name
+				$name = $field->name;
 				
 				// Changes trump with() and original values
 				if ($changed && array_key_exists($name, $this->_changed))
@@ -341,7 +345,10 @@ abstract class Jelly_Core_Model
 			if (FALSE !== strpos($key, ':'))
 			{
 				$targets = explode(':', ltrim($key, ':'), 2);
-				$relationship = array_shift($targets);
+				
+				// Alias as it comes back in, which allows people to use with()
+				// with alaised field names
+				$relationship = $this->field(array_shift($targets), TRUE);
 								
 				if (!array_key_exists($relationship, $this->_with_values))
 				{
@@ -367,14 +374,14 @@ abstract class Jelly_Core_Model
 				}
 			}
 			// Standard setting of a field 
-			else if ($alias === FALSE && array_key_exists($key, $meta->fields))
+			else if ($alias === FALSE && $field = $this->field($key))
 			{
-				$data_location[$key] = $meta->fields[$key]->set($value);
+				$data_location[$field->name] = $field->set($value);
 				
 				// Invalidate the cache
-				if (array_key_exists($key, $this->_retrieved))
+				if (array_key_exists($field->name, $this->_retrieved))
 				{
-					unset($this->_retrieved[$key]);
+					unset($this->_retrieved[$field->name]);
 				}
 			}
 			else
@@ -394,7 +401,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function __isset($name)
 	{
-		return (array_key_exists($name, $this->_original) || array_key_exists($name, $this->_unmapped));
+		return ($this->field($name) || array_key_exists($name, $this->_unmapped));
 	}
 	
 	/**
@@ -409,15 +416,19 @@ abstract class Jelly_Core_Model
 	 */
 	public function __unset($name)
 	{
-		if (array_key_exists($name, $this->_original))
+		if ($field = $this->field($name, TRUE))
 		{
 			// We don't want to unset the keys, because 
-			// they are assumed to exist. Just NULL them out.
-			$this->_original[$name] = $this->meta()->defaults[$name];
+			// they are assumed to exist. Just set them back to defaults
+			$this->_original[$field] = $this->meta()->defaults[$field];
+			
+			// Ensure changed and retrieved data is cleared
+			// This effectively clears the cache and any changes
+			unset($this->_changed[$name], $this->_retrieved[$name]);
 		}
 		
 		// This doesn't matter
-		unset($this->_changed[$name], $this->_retrieved[$name], $this->_unmapped[$name]);
+		unset($this->_unmapped[$name]);
 	}
 	
 	/**
@@ -534,7 +545,6 @@ abstract class Jelly_Core_Model
 			$this->where($meta->primary_key, '=', $where);
 			$limit = 1;
 		}
-		
 		// Simple where clause
 		else if (is_array($where))
 		{
@@ -837,10 +847,10 @@ abstract class Jelly_Core_Model
 				continue;
 			}
 			
-			$parent_fields = $parent_meta->fields;
-			
-			if (!isset($parent_fields[$target]) || 
-				!($parent_fields[$target] instanceof Jelly_Behavior_Field_Joinable))
+			$target_field = Jelly_Meta::field($parent, $target);
+
+			// Ensure the field is joinable
+			if (!($target_field instanceof Jelly_Behavior_Field_Joinable))
 			{
 				continue;
 			}
@@ -858,7 +868,7 @@ abstract class Jelly_Core_Model
 			$target_path = ':'.$target_path;
 			
 			// Alias all of the fields for the model we're referencing
-			foreach (Jelly_Meta::get($parent_fields[$target]->foreign['model'])->fields as $alias => $field)
+			foreach (Jelly_Meta::get($target_field->foreign['model'])->fields as $alias => $field)
 			{
 				if ($field->in_db)
 				{
@@ -868,7 +878,7 @@ abstract class Jelly_Core_Model
 			}
 			
 			// Let the field finish the join
-			$parent_fields[$target]->with($this, $target, $target_path, $parent_path);
+			$target_field->with($this, $target, $target_path, $parent_path);
 		}
 
 		return $this;
@@ -887,15 +897,18 @@ abstract class Jelly_Core_Model
 	 */
 	public function has($name, $models)
 	{
-		$fields = $this->meta()->fields;
+		$field = $this->field($name);
 		
 		// Don't continue without knowing we have something to work with
-		if (!isset($fields[$name]) || !$fields[$name] instanceof Jelly_Behavior_Field_Haveable)
+		if ($field instanceof Jelly_Behavior_Field_Haveable)
+		{
+			$name = $field->name;
+		}
+		else
 		{
 			return FALSE;
 		}
 		
-		$field = $fields[$name];
 		$ids = array();
 		
 		// Everything comes in as an array of ids, so we must convert things like
@@ -1070,9 +1083,9 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Check and concatenate
-		if (array_key_exists($field, $meta->fields))
+		if ($this->field($field))
 		{
-			$field = $meta->fields[$field]->column;
+			$field = $this->field($field)->column;
 		}
 		
 		if ($join)
@@ -1322,6 +1335,18 @@ abstract class Jelly_Core_Model
 	{
 		return Jelly_Meta::get($this, $property);
 	}
+	
+	/**
+	 * Returns a field for this particular object. Aliases are resolved automatically.
+	 *
+	 * @param  string  $property 
+	 * @param  boolean $name
+	 * @return Jelly_Field
+	 */
+	public function field($field, $name = FALSE)
+	{
+		return Jelly_Meta::field($this, $field, $name);
+	}
 
 	/**
 	 * Returns whether or not the model is loaded
@@ -1373,9 +1398,13 @@ abstract class Jelly_Core_Model
 	 */
 	protected function _change($name, $models, $add)
 	{
-		$fields = $this->meta()->fields;
+		$field = $this->field($name);
 		
-		if (!isset($fields[$name]) || !($fields[$name] instanceof Jelly_Behavior_Field_Changeable))
+		if ($field instanceof Jelly_Behavior_Field_Changeable)
+		{
+			$name = $field->name;
+		}
+		else
 		{
 			return $this;
 		}

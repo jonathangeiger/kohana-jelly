@@ -88,6 +88,20 @@ abstract class Jelly_Core_Meta
 		// Initialize all of the fields with their column and the model name
 		foreach($meta->fields as $column => $field)
 		{
+			// Allow aliasing fields
+			if (is_string($field))
+			{
+				if (isset($meta->fields[$field]))
+				{
+					$meta->aliases[$column] = $field;
+				}
+									
+				// Aliases shouldn't pollute fields
+				unset($meta->fields[$column]);
+				
+				continue;
+			}
+			
 			$field->initialize($model, $column);
 			
 			// Ensure a default primary key is set
@@ -219,12 +233,11 @@ abstract class Jelly_Core_Meta
 			list($model, $column) = explode('.', $field);
 		}
 		
-		
 		if ($meta = Jelly_Meta::get($model))
 		{
-			if ($column != '*' && isset($meta->fields[$column]))
+			if ($column != '*' && $field = Jelly_Meta::field($model, $column))
 			{
-				$column = $meta->fields[$column]->column;
+				$column = $field->column;
 			}
 			
 			// Ensure the model is aliased as well
@@ -241,6 +254,51 @@ abstract class Jelly_Core_Meta
 		}
 	}
 	
+	/**
+	 * Returns a particular field on the model while resolving aliases to fields.
+	 * 
+	 * For example, if 'username' is an alias that maps to the field 'name',
+	 * then the 'name' field will be returned.
+	 * 
+	 * If $name is TRUE, the name of the field will be returned. For example, if 
+	 * 'username' is an alias that maps to the field 'name', then 'name' will be returned.
+	 *
+	 * Returns FALSE if the model doesn't exist, NULL if the field doesn't exist,
+	 * or some instance of Jelly_Core_Field otherwise.
+	 *
+	 * @param  Jelly|string  $model 
+	 * @param  string        $field
+	 * @param  boolean       $name
+	 * @return mixed
+	 * @author Jonathan Geiger
+	 */
+	public static function field($model, $field, $name = FALSE)
+	{
+		if (FALSE == ($meta = Jelly_Meta::get($model)))
+		{
+			return FALSE;
+		}
+		
+		// Check to see if the field is aliased
+		if (isset($meta->aliases[$field]))
+		{
+			$field = $meta->aliases[$field];
+		}
+		
+		if (isset($meta->fields[$field]))
+		{
+			if ($name)
+			{
+				return $field;
+			}
+			else
+			{
+				return $meta->fields[$field];
+			}
+		}
+		
+		return NULL;
+	}
 	
 	/**
 	 * @var string If this is FALSE, properties can still be set on it
@@ -291,6 +349,11 @@ abstract class Jelly_Core_Meta
 	 * @var array A map to the resource's fields and how to process each column.
 	 */
 	protected $fields = array();
+	
+	/**
+	 * @var array A map of aliases to fields
+	 */
+	protected $aliases = array();
 	
 	/**
 	 * @var array A list of columns and how they relate to fields
