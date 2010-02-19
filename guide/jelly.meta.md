@@ -202,6 +202,27 @@ passed.
     
 ------------------------------------------------------------------------------
 
+<h4 id="meta-method-table">Jelly_Meta::field($model, $field [,name_only = FALSE]);</h4>
+
+Returns the canonical `$field` for the `$model` passed. `$model` can be a
+string or an instantiated Jelly. This method resolves all aliases. If
+`$name_only` is TRUE, then only the canonical name of the field will be
+returned.
+
+    // Assume 'username' is an alias for the 'name' field
+    Jelly_Meta::field('user', 'username');
+    Jelly_Meta::field('user', 'name');
+    => Returns the name field object
+
+    Jelly_Meta::field($user, 'username', TRUE);
+    Jelly_Meta::field($user, 'name', TRUE);
+    => 'name'
+
+    $user->field($user, 'non-existent');
+    => FALSE
+
+------------------------------------------------------------------------------
+
 <h4 id="meta-method-table">Jelly_Meta::table($model);</h4>
 
 Returns the table name of the model passed. If the model doesn't exist, the input is returned.

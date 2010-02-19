@@ -134,7 +134,8 @@ make sure they all access the same data.
 
 <h3 id="field-aliases">Field aliases</h3>
 
-Similar to the aforementioned topics, fields can also be aliased to one other. For example, say you have a `name` field that you also want to be able to 
+Similar to the aforementioned topics, fields can also be aliased to one other.
+For example, say you have a `name` field that you also want to be able to
 reference as `username`:
 
     class Model_Post extends Jelly
@@ -179,6 +180,8 @@ and anything else you can think of. Even using `with()` works:
 
     // This works
     $post->with('_author')->load();
+    
+[!!] **Note**: Field aliases do not show up in your `$model->meta()->fields` list.
 
 <h3 id="in-table-relationships">In-Table Relationships</h3>
 

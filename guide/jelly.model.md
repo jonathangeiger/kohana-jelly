@@ -430,6 +430,26 @@ was passed in if the alias can't be found. If `$join` is TRUE the format
 
 ------------------------------------------------------------------------------
 
+<h4 id="jelly-alias">field($name [, $name_only = FALSE]]);</h4>
+
+Returns the canonical field for the `$name` passed. This resolves any aliased
+fields to their actual implementation. If `$name_only` is TRUE, then only   
+the canonical name of the field will be returned.
+
+    // Assume 'username' is an alias for the 'name' field
+    $user->field('username');
+    $user->field('name');
+    => Returns the name field object
+    
+    $user->field('username', TRUE);
+    $user->field('name', TRUE);
+    => 'name'
+    
+    $user->field('non-existent');
+    => FALSE
+
+------------------------------------------------------------------------------
+
 <h4 id="jelly-others">Other useful methods</h4>
 
 * **loaded()**—Returns a `Boolean` indicating whether or not the model is loaded.
