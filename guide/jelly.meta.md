@@ -77,6 +77,10 @@ The name of the table that the model references.
 An array of fields to use for the model, where the key is the alias you want
 to use to reference the field, and the value is a new `Field_*` object.
 
+If the value is a string, it will be assumed that you are declaring an alias
+to another field. You can read more about 
+[field aliases](jelly.other-features#field-aliases) in the [other features](jelly.other-features) section.
+
 ------------------------------------------------------------------------------
 
 <h4 id="meta-load_with">$meta->load_with</h4>
