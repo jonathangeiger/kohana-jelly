@@ -6,6 +6,7 @@ many of these more esoteric features.
 
   * [Aliasing](#aliasing)
   * [Complex Queries](#complex-queries)
+  * [Optimizing Results](#optimizing-results)
   * [Unmapped columns](#unmapped-columns)
   * [Fields referencing the same column](#dual-fields)
   * [Field aliases](#field-aliases)
@@ -92,10 +93,64 @@ benefits of working in a model, without the constraints!
         
 [!!] For more information, you may want to read up on the [execute](jelly.model#jelly-execute) method
 
+<h3 id="optimizing-results">Optimizing Results</h3>
+
+Say you have a particular table where you could end up retrieving thousands or
+millions of records and you're worried about performance. What are your options?
+
+1. Jelly's `execute()` method allows you to specify the class you want results
+   to come as. By default, they come back as Jelly's, but if you want, you can
+   manually specify to use an array or `stdClass`. In informal tests on
+   retrieving 14,000 records, returning each record as a Jelly took about 2.75
+   seconds, while records retrieved as a `stdClass` took about 250 milliseconds!
+   Each method used about the same amount of memory. 
+
+   Keep in mind, however, that you have lost all of the features of Jelly when
+   results are returned as a `stdClass`, however this is generally acceptable for
+   large records.
+
+    **Example** - Returning results as a stdClass
+
+		// Oh no! There's 1 million records in this table!
+		$result = Jelly::factory('huge_table')
+					->where('some-aliased-column', '=', 'foo')
+					->execute(Database::SELECT, 'stdClass');
+ 		 
+1. So what happens when you need a bit of a performance boost but you still 
+   need Jelly? Take a look at the following code sample for an idea. 
+   Retrieving 14,000 records as a Jelly took about 2.75 seconds, while using
+   this method shaved a second off of the load time. Not as good as the first
+   method, but still better.
+
+	**Example** - Injecting arrays into Jelly
+
+		// Create our model instance
+		$model = Jelly::factory('huge_table');
+	
+		// Oh no! There's 1 million records in this table!
+		$result = Jelly::factory('huge-table')
+					->where('some-aliased-column', '=', 'foo')
+					->execute(Database::SELECT, FALSE); // Passing false returns as array
+				
+		foreach ($result as $row)
+		{
+			// Passing TRUE for the first arg indicates this is a database result
+			// and the columns need to be aliased.
+			// Passing TRUE for the third arg indicates that the data is 
+			// "original" (from the database, or not changed).
+			$model->set($row, TRUE, TRUE);
+		
+			// Do stuff with $model as if it were a jelly object
+		
+			// When you're done, reset the model back to an empty state
+			$model->reset();
+		}
+   
 <h3 id="unmapped-columns">Unmapped Columns</h3>
 
-Jelly offers access to so-called "unmapped" columns, which are essentially columns in your database that aren't referenced by a field. You access these
-columns by their actual name. 
+Jelly offers access to so-called "unmapped" columns, which are essentially
+columns in your database that aren't referenced by a field. You access these
+columns by their actual name.
 
     // Even though this isn't a field, we can still reference it
     $post->category_id;

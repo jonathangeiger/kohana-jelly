@@ -83,6 +83,16 @@ abstract class Jelly_Core_Model
 	protected $_loaded = FALSE;
 	
 	/**
+	 * @var Jelly_Meta a copy of this object's meta object
+	 */
+	protected $_meta = NULL;
+	
+	/**
+	 * @var array a copy of this object's fields
+	 */
+	protected $_fields = array();
+	
+	/**
 	 * @var boolean Whether or not the model is saved
 	 */
 	protected $_saved = FALSE;
@@ -137,11 +147,8 @@ abstract class Jelly_Core_Model
 		// the added benefit of registering the model's metadata, if it does not exist yet
 		$this->_original = $this->meta('defaults');
 		
-		// Reset to an empty object
-		$this->reset();
-
 		// Add the values stored by mysql_set_object
-		if (is_array($this->_preload_data) && !empty($this->_preload_data))
+		if (!empty($this->_preload_data) && is_array($this->_preload_data))
 		{
 			$this->set($this->_preload_data, TRUE, TRUE);
 			$this->_loaded = $this->_saved = TRUE;
@@ -149,7 +156,7 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Have an id? Attempt to load it
-		if (is_int($cond) || is_string($cond) || is_array($cond))
+		if ($cond && (is_int($cond) || is_string($cond) || is_array($cond)))
 		{
 			$this->load($cond, 1);
 		}
@@ -189,7 +196,7 @@ abstract class Jelly_Core_Model
 			$value = $this->get($name);
 			
 			// Auto-load relations
-			if ($value instanceof Jelly && !$value->loaded())
+			if ($value instanceof Jelly && !$value->_loaded)
 			{
 				$this->_retrieved[$name] = $value->load();
 			}
@@ -342,7 +349,7 @@ abstract class Jelly_Core_Model
 		foreach($values as $key => $value)
 		{
 			// Key is coming from a with statement
-			if (FALSE !== strpos($key, ':'))
+			if (substr($key, 0, 1) === ':')
 			{
 				$targets = explode(':', ltrim($key, ':'), 2);
 				
@@ -424,11 +431,22 @@ abstract class Jelly_Core_Model
 			
 			// Ensure changed and retrieved data is cleared
 			// This effectively clears the cache and any changes
-			unset($this->_changed[$name], $this->_retrieved[$name]);
+			if (array_key_exists($name, $this->_changed))
+			{
+				unset($this->_changed[$name]);
+			}
+			
+			if (array_key_exists($name, $this->_retrieved))
+			{
+				unset($this->_retrieved[$name]);
+			}
 		}
 		
 		// This doesn't matter
-		unset($this->_unmapped[$name]);
+		if (array_key_exists($name, $this->_unmapped))
+		{
+			unset($this->_unmapped[$name]);
+		}
 	}
 	
 	/**
@@ -1309,7 +1327,25 @@ abstract class Jelly_Core_Model
 	 */
 	public function meta($property = NULL)
 	{
-		return Jelly_Meta::get($this, $property);
+		// Cache the meta object
+		if (!$this->_meta)
+		{
+			$this->_meta = Jelly_Meta::get($this);
+		}
+		
+		if ($property)
+		{
+			if (isset($this->_meta->$property))
+			{
+				return $this->_meta->$property;
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+		
+		return $this->_meta;
 	}
 	
 	/**
@@ -1321,7 +1357,24 @@ abstract class Jelly_Core_Model
 	 */
 	public function field($field, $name = FALSE)
 	{
-		return Jelly_Meta::field($this, $field, $name);
+		if (empty($this->_fields[$field]))
+		{
+			$this->_fields[$field] = Jelly_Meta::field($this, $field);
+		}
+		
+		if ($name)
+		{
+			if (is_object($this->_fields[$field]))
+			{
+				return $this->_fields[$field]->name;
+			}
+		}
+		else
+		{
+			return $this->_fields[$field];
+		}
+		
+		return NULL;
 	}
 
 	/**

@@ -303,67 +303,67 @@ abstract class Jelly_Core_Meta
 	/**
 	 * @var string If this is FALSE, properties can still be set on it
 	 */
-	private $initialized = FALSE;
+	public $initialized = FALSE;
 	
 	/**
 	 * @var string The database key to use for connection
 	 */
-	protected $db = 'default';
+	public $db = 'default';
 	
 	/**
 	 * @var string The table this model represents
 	 */
-	protected $table = '';
+	public $table = '';
 	
 	/**
 	 * @var string The primary key
 	 */
-	protected $primary_key = '';
+	public $primary_key = '';
 	
 	/**
 	 * @var string The title key
 	 */
-	protected $name_key = 'name';
+	public $name_key = 'name';
 	
 	/**
 	 * @var array An array of ordering options for selects
 	 */
-	protected $sorting = array();
+	public $sorting = array();
 	
 	/**
 	 * @var array An array of options to pass to with for every load()
 	 */
-	protected $load_with = array();
+	public $load_with = array();
 	
 	/**
 	 * @var boolean Whether or not to validate before save()ing
 	 */
-	protected $validate_on_save = TRUE;
+	public $validate_on_save = TRUE;
 	
 	/**
 	 * @var string Prefix to apply to input generation
 	 */
-	protected $input_prefix = 'jelly/field';
+	public $input_prefix = 'jelly/field';
 	
 	/**
 	 * @var array A map to the resource's fields and how to process each column.
 	 */
-	protected $fields = array();
+	public $fields = array();
 	
 	/**
 	 * @var array A map of aliases to fields
 	 */
-	protected $aliases = array();
+	public $aliases = array();
 	
 	/**
 	 * @var array A list of columns and how they relate to fields
 	 */
-	private $columns = array();
+	public $columns = array();
 	
 	/**
 	 * @var array Default data for each field
 	 */
-	private $defaults = array();
+	public $defaults = array();
 	
 	/**
 	 * Constructor. Meta fields cannot be instantiated directly.
@@ -378,35 +378,5 @@ abstract class Jelly_Core_Meta
 		{
 			$this->table = inflector::plural($model);
 		}
-	}
-	
-	/**
-	 * Opens up access only when initializing. 
-	 * After that the Meta object is read-only.
-	 *
-	 * @param string $name 
-	 * @param string $value 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public function __set($name, $value)
-	{
-		if (!$this->initialized)
-		{
-			$this->$name = $value;
-		}
-	}
-	
-	/**
-	 * Allow directly retrieving properties, which 
-	 * is useful for things like array access.
-	 *
-	 * @param string $name 
-	 * @return void
-	 * @author Jonathan Geiger
-	 */
-	public function __get($name)
-	{
-		return $this->$name;
 	}
 }
