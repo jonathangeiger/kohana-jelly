@@ -17,28 +17,7 @@
  * @license http://kohanaphp.com/license.html
  */
 abstract class Jelly_Core_Model
-{				
-	/**
-	 * @var array Callable database methods
-	 */
-	protected static $_db_methods = array
-	(
-		'where', 'and_where', 'or_where', 'where_open', 'and_where_open', 'or_where_open', 'where_close',
-		'and_where_close', 'or_where_close', 'distinct', 'select', 'from', 'join', 'on', 'group_by',
-		'having', 'and_having', 'or_having', 'having_open', 'and_having_open', 'or_having_open',
-		'having_close', 'and_having_close', 'or_having_close', 'order_by', 'limit', 'offset', 'cached',
-		'table',
-	);
-	
-	/**
-	 * @var array DB methods that must be aliased
-	 */
-	protected static $_alias = array
-	(
-		'where', 'and_where', 'or_where', 'select', 'from', 'join', 'on', 'group_by',
-		'having', 'and_having', 'or_having', 'order_by', 'table'
-	);
-	
+{
 	/**
 	 * Factory for generating models. Fields are initialized only 
 	 * on the first instantiation of the model, and never again.
@@ -55,6 +34,53 @@ abstract class Jelly_Core_Model
 		$class = Jelly_Meta::class_name($model);
 		
 		return new $class($id);
+	}
+	
+	/**
+	 * Returns a query builder that can be used for selecting many records.
+	 *
+	 * @param  string $model 
+	 * @return Jelly_Builder
+	 */
+	public static function select($model)
+	{
+		return new Jelly_Query_Builder($model, Database::SELECT);
+	}
+	
+	/**
+	 * Returns a query builder that can be used for inserting a record.
+	 * 
+	 * This method is only here for completeness. However it doesn't serve
+	 * much purpose over instantiating a model directly.
+	 *
+	 * @param  string $model 
+	 * @return Jelly_Builder
+	 */
+	public static function insert($model)
+	{
+		return new Jelly_Query_Builder($model, Database::INSERT);
+	}
+	
+	/**
+	 * Returns a query builder that can be used for updating many records.
+	 *
+	 * @param  string $model 
+	 * @return Jelly_Builder
+	 */
+	public static function update($model)
+	{
+		return new Jelly_Query_Builder($model, Database::UPDATE);
+	}
+	
+	/**
+	 * Returns a query builder that can be used for deleting many records.
+	 *
+	 * @param  string $model 
+	 * @return Jelly_Builder
+	 */
+	public static function delete($model)
+	{
+		return new Jelly_Query_Builder($model, Database::DELETE);
 	}
 
 	/**
@@ -86,11 +112,6 @@ abstract class Jelly_Core_Model
 	 * @var Jelly_Meta a copy of this object's meta object
 	 */
 	protected $_meta = NULL;
-	
-	/**
-	 * @var array a copy of this object's fields
-	 */
-	protected $_fields = array();
 	
 	/**
 	 * @var boolean Whether or not the model is saved
@@ -143,9 +164,12 @@ abstract class Jelly_Core_Model
 	 **/
 	public function __construct($cond = NULL)
 	{
+		// Load the object's meta data for quick access
+		$this->_meta = Jelly_Meta::get($this);
+		
 		// Copy over the defaults into the original data. This also has 
 		// the added benefit of registering the model's metadata, if it does not exist yet
-		$this->_original = $this->meta('defaults');
+		$this->_original = $this->_meta->defaults();
 		
 		// Add the values stored by mysql_set_object
 		if (!empty($this->_preload_data) && is_array($this->_preload_data))
@@ -158,18 +182,8 @@ abstract class Jelly_Core_Model
 		// Have an id? Attempt to load it
 		if ($cond && (is_int($cond) || is_string($cond) || is_array($cond)))
 		{
-			$this->load($cond, 1);
+			$this->load($cond);
 		}
-	}
-	
-	/**
-	 * Displays the record's id
-	 *
-	 * @return string
-	 */
-	public function __toString()
-	{
-		return (string) $this->id();
 	}
 	
 	/**
@@ -196,13 +210,9 @@ abstract class Jelly_Core_Model
 			$value = $this->get($name);
 			
 			// Auto-load relations
-			if ($value instanceof Jelly && !$value->_loaded)
+			if ($value instanceof Jelly_Builder)
 			{
-				$this->_retrieved[$name] = $value->load();
-			}
-			else
-			{
-				$this->_retrieved[$name] = $value;
+				$this->_retrieved[$name] = $value->execute();
 			}
 		}
 		
@@ -448,75 +458,7 @@ abstract class Jelly_Core_Model
 			unset($this->_unmapped[$name]);
 		}
 	}
-	
-	/**
-	 * Handles pass-through to database methods. Calls to query methods
-	 * (query, get, insert, update) are not allowed. Query builder methods
-	 * are chainable.
-	 *
-	 * @param	string	method name
-	 * @param	array	method arguments
-	 * @return	Jelly	Returns $this
-	 */
-	public function __call($method, array $args)
-	{
-		if (in_array($method, Jelly::$_db_methods))
-		{
-			// Add support for column aliasing
-			// Get the edge-cases first
-			if ($method == 'select')
-			{
-				foreach ($args as $i => $arg)
-				{
-					if (is_array($arg))
-					{
-						$args[$i][0] = $this->_qb_alias($arg[0], TRUE);
-					}
-					else
-					{
-						$args[$i]= $this->_qb_alias($arg, TRUE);
-					}
-				}
-			}
-			
-			// Table alias
-			else if ($method == 'from' || $method == 'join')
-			{
-				if (is_array($args[0]))
-				{
-					$args[0][0] = Jelly_Meta::table($args[0][0]);
-				}
-				else
-				{
-					$args[0] = Jelly_Meta::table($args[0]);
-				}
-			}
-			
-			// Join on
-			else if ($method == 'on')
-			{
-				$args[0] = $this->_qb_alias($args[0], TRUE);
-				$args[2] = $this->_qb_alias($args[2], TRUE);
-			}
-			
-			// Everything else
-			else if (in_array($method, self::$_alias))
-			{
-				$args[0] = $this->_qb_alias($args[0], TRUE);
-			}
-			
-			// Add pending database call which is executed after query type is determined
-			$this->_db_pending[] = array('name' => $method, 'args' => $args);
-		}
-		else
-		{
-			throw new Kohana_Exception('Invalid method :method called in :class',
-				array(':method' => $method, ':class' => get_class($this)));
-		}
-		
-		return $this;
-	}
-	
+
 	/**
 	 * Allows serialization of a model and all of its retrieved and related properties.
 	 * 
@@ -553,76 +495,36 @@ abstract class Jelly_Core_Model
 	 * @param  mixed  $where  an array or id to load 
 	 * @return mixed
 	 */
-	public function load($where = NULL, $limit = NULL)
+	public function load($where = NULL)
 	{
-		$meta = $this->meta();
+		$query = Jelly::select($this->_meta->model(), Database::SELECT);
 		
 		// Apply the limit
 		if (is_int($where) || is_string($where))
 		{
-			$this->where($meta->primary_key, '=', $where);
-			$limit = 1;
+			$query->where($this->_meta->primary_key(), '=', $where);
 		}
 		// Simple where clause
 		else if (is_array($where))
 		{
 			foreach($where as $column => $value)
 			{
-				$this->where($column, '=', $value);
+				$query->where($column, '=', $value);
 			}
 		}
 		
-		// Anything to load with?
-		if ($meta->load_with)
-		{
-			$this->with($meta->load_with);
-		}
-
-		// Set the working query
-		$query = $this->build(Database::SELECT);
-		$query->from($meta->table);
+		// All good
+		$result = $query->execute();
 		
-		// limit() is overloaded so that if the second argument exists 
-		// the call will override what's passed here for $limit. This allows us
-		// to set a limit before load and have it load single rows directly into the object
-		if (isset($this->_db_applied['limit'][1]) && $this->_db_applied['limit'][0] == 1)
+		// Ensure we have something
+		if (count($result))
 		{
-			$limit = 1;
-		}
-		
-		// Apply the limit if we can
-		if ($limit !== NULL)
-		{
-			$query->limit($limit);
-		}
-		
-		// We can load directly into the model
-		if ($limit === 1)
-		{
-			$result = $query->execute($meta->db);
+			// Insert the original values
+			$this->set($result[0], TRUE, TRUE);
 			
-			// Ensure we have something
-			if (count($result))
-			{
-				// Insert the original values
-				$this->set($result[0], TRUE, TRUE);
-				
-				// We're good!
-				$this->_loaded = $this->_saved = TRUE;
-				$this->_changed = array();
-			}
-
-			return $this->end();
-		}
-		else
-		{
-			// Apply sorting options
-			foreach($meta->sorting as $column => $direction)
-			{
-				$query->order_by($this->alias($column), $direction);
-			}
-			
-			return $query->as_object(get_class($this))->execute($meta->db);
+			// We're good!
+			$this->_loaded = $this->_saved = TRUE;
+			$this->_changed = $this->_retrieved = array();
 		}
 	}
 	
@@ -748,7 +650,7 @@ abstract class Jelly_Core_Model
 	 * @param  $where  A simple where statement
 	 * @return Jelly   Returns $this
 	 **/
-	public function delete($where = NULL)
+	public function destroy($where = NULL)
 	{
 		$meta = $this->meta();
 		
@@ -781,112 +683,6 @@ abstract class Jelly_Core_Model
 		return $this;
 	}
 	
-	/**
-	 * Counts the number of records for the current query
-	 *
-	 * @param	mixed  $where  An associative array to use as the where clause, or a primary key
-	 * @return	Jelly  Returns $this
-	 */
-	public function count($where = NULL)
-	{
-		$meta = $this->meta();
-		
-		if (is_int($where) || is_string($where))
-		{
-			$this->where($meta->primary_key, '=', $where);
-		}
-		// Add the where
-		else if (is_array($where))
-		{
-			foreach($where as $column => $value)
-			{
-				$this->where($column, '=', $value);
-			}
-		}
-		
-		$query = $this->build(Database::SELECT);
-	
-		return $query->select(array('COUNT("*")', 'total'))
-			->from($meta->table)
-			->execute($meta->db)
-			->get('total');
-	}
-	
-	/**
-	 * Allows joining 1:1 relationships in a single query.
-	 *
-	 * @param string $alias 
-	 * @return void
-	 */
-	public function with($relationship)
-	{
-		$meta = $this->meta();
-		
-		// Make sure we select for this object, since * will not be applied
-		if (empty($this->_with_applied))
-		{
-			$this->select('*');
-		}
-		
-		// Allow unlimited args
-		foreach ((array)$relationship as $target_path)
-		{
-			// We'll start with the first one and work our way down
-			$paths = explode(":", $target_path);
-			$parent = $this;
-			$chain = '';
-			
-			foreach ($paths as $iteration => $path)
-			{
-				$field = Jelly_Meta::field($parent, $path);
-				
-				if (!($field instanceof Jelly_Behavior_Field_Joinable))
-				{
-					// Entire list is invalid
-					continue 2;
-				}
-
-				// If we're on the first iteration, the parent path is just the 
-				// name of the model, otherwise we use the chain
-				if ($iteration === 0)
-				{
-					$prev_chain = Jelly_Meta::model_name($this);
-				}
-				else
-				{
-					$prev_chain = $chain;
-				}
-				
-				$chain .= ":".$field->name;
-						
-				// Set the next iteration's parent
-				$model = $field->foreign['model'];
-				
-				// Select all of the model's fields
-				foreach (Jelly_Meta::get($model)->fields as $alias => $select)
-				{
-					if ($select->in_db)
-					{
-						// Withs have to manually alias
-						$column = Jelly_Meta::column($model, $alias);
-						
-						// We have to manually alias, since the path does not necessarily correspond to the path
-						$this->select(array($chain.'.'.$column, $chain.':'.$alias));
-					}
-				}
-				
-				// Let the field finish the rest
-				$field->with($this, $path, $chain, $prev_chain);
-				
-				// Model now becomes the parent
-				$parent = $model;
-			}
-		}
-		
-		return $this;
-	}
-			
-
 	/**
 	 * Returns whether or not that model is related to the 
 	 * $model specified. This only works with relationships
@@ -1029,21 +825,9 @@ abstract class Jelly_Core_Model
 			}
 
 			$data->label($column, $field->label);
-
-			if ($field->filters)
-			{
-				$data->filters($column, $field->filters);
-			}
-
-			if ($field->rules)
-			{
-				$data->rules($column, $field->rules);
-			}
-
-			if ($field->callbacks)
-			{
-				$data->callbacks($column, $field->callbacks);
-			}			
+			$data->filters($column, $field->filters);
+			$data->rules($column, $field->rules);
+			$data->callbacks($column, $field->callbacks);
 		}
 
 		if ($data->check())
@@ -1055,229 +839,6 @@ abstract class Jelly_Core_Model
 		{
 			throw new Validate_Exception($data);
 		}
-		
-		return $this;
-	}
-	
-	/**
-	 * Aliases a column that exists only in this model
-	 *
-	 * If $field is null, the model's table name is returned.
-	 * Otherwise, the normal rules apply.
-	 * 
-	 * @param  string	$field	The field's name
-	 * @param  boolean	$join	Whether or not to return the table and column joined
-	 * @return string
-	 **/
-	public function alias($field = NULL, $join = NULL)
-	{	
-		$meta = $this->meta();
-		
-		// Return the model's alias if nothing is passed
-		if (!$field)
-		{
-			return $meta->table;
-		}
-		
-		// Split off the table name; we already know that
-		if (strpos($field, '.') !== FALSE)
-		{			
-			list(, $field) = explode('.', $field);
-		}
-		
-		// Check and concatenate
-		if ($this->field($field))
-		{
-			$field = $this->field($field)->column;
-		}
-		
-		if ($join)
-		{
-			return $meta->table.'.'.$field;
-		}
-		else
-		{
-			return $field;
-		}
-	}
-	
-	/**
-	 * Returns the raw query builder query, executed. The args are 
-	 * slightly different depending on the $type to execute:
-	 * 
-	 * If the type is a Database::INSERT or Database::UPDATE, and the 
-	 * second argument is an array, the second argument is assumed to be 
-	 * the data to insert or update (the keys of the array will be aliased).
-	 * The third argument then becomes $as_object.
-	 * 
-	 * Otherwise, $as_object is the second argument.
-	 * 
-	 * @param const $type A Database constant type to use for the query
-	 * @param mixed $data Depends on the above documentation
-	 * @param mixed $as_object Depends on the above documentation
-	 * @return mixed
-	 */
-	public function execute($type = Database::SELECT, $data = NULL, $as_object = NULL)
-	{
-		$query = $this->build($type);
-		$meta = $this->meta();
-		
-		// Have we got a from for SELECTS?
-		if ($type === Database::SELECT && !isset($this->_db_applied['from']))
-		{
-			$query->from($meta->table);
-		}
-		// All other methods require table() to be set
-		else if ($type !== Database::SELECT && !isset($this->_db_applied['table']))
-		{
-			$query->table($meta->table);
-		}
-		
-		// Perform a little arg-munging since UPDATES and INSERTS accept a data parameter
-		if ($type === Database::UPDATE && is_array($data))
-		{
-			// Since we're out of the Jelly, we have to alias manually
-			foreach($data as $column => $value)
-			{
-				$query->value($this->alias($column), $value);
-			}
-		}
-		else if ($type === Database::INSERT && is_array($data))
-		{
-			// Keys have to be manually aliased
-			$columns = array();
-			$values = array();
-			foreach ($data as $column => $value)
-			{
-				$columns[] = $this->alias($column);
-				$values[] = $value;
-			}
-			
-			$query->columns($columns);
-			$query->values($values);
-		}
-		else
-		{
-			$as_object = $data;
-		}
-		
-		// Return a StdClass. Much faster
-		if ($as_object === NULL)
-		{
-			$query->as_object(get_class($this));
-		}
-		// Allow custom classes and such
-		else 
-		{
-			$query->as_object($as_object);
-		}
-		
-		return $query->execute($meta->db);
-	}
-	
-	/**
-	 * Initializes the Database Builder to given query type
-	 *
-	 * @param	int	 Type of Database query
-	 * @return	Database_Query_Builder
-	 */
-	public function build($type)
-	{
-		$meta = $this->meta();
-		
-		// Construct new builder object based on query type
-		switch ($type)
-		{
-			case Database::SELECT:
-				$this->_db_builder = DB::select();
-				break;
-			case Database::UPDATE:
-				$this->_db_builder = DB::update($meta->table);
-				break;
-			case Database::INSERT:
-				$this->_db_builder = DB::insert($meta->table);
-				break;
-			case Database::DELETE:
-				$this->_db_builder = DB::delete($meta->table);
-				break;
-		}
-		
-		// Process pending database method calls
-		foreach ($this->_db_pending as $method)
-		{
-			$name = $method['name'];
-			$args = $method['args'];
-
-			$this->_db_applied[$name] = $args;
-			
-			if (!method_exists($this->_db_builder, $method['name']))
-			{
-				continue;
-			}
-			
-			switch (count($args))
-			{
-				case 0:
-					$this->_db_builder->$name();
-				break;
-				case 1:
-					$this->_db_builder->$name($args[0]);
-				break;
-				case 2:
-					$this->_db_builder->$name($args[0], $args[1]);
-				break;
-				case 3:
-					$this->_db_builder->$name($args[0], $args[1], $args[2]);
-				break;
-				case 4:
-					$this->_db_builder->$name($args[0], $args[1], $args[2], $args[3]);
-				break;
-				default:
-					// Here comes the snail...
-					call_user_func_array(array($this->_db_builder, $name), $args);
-				break;
-			}
-		}
-
-		return $this->_db_builder;
-	}
-	
-	/**
-	 * Resets the model to an empty state, as if you 
-	 * were constructing a brand new object.
-	 * 
-	 * All changes, queries, and other state is lost.
-	 *
-	 * @return void
-	 */
-	public function reset()
-	{
-		// Reset all queries
-		$this->end();
-
-		// Reset all of the data back to its default state
-		$this->_original = $this->meta()->defaults;
-		
-		// Reset the various states
-		$this->_loaded = $this->_saved = FALSE;
-		
-		// Clear the cache of values
-		$this->_changed = array();
-		
-		return $this;
-	}
-	
-	/**
-	 * Resets the database builder
-	 *
-	 * @return Jelly  Returns $this
-	 */
-	public function end()
-	{
-		$this->_db_builder = NULL;
-		$this->_db_applied = array();
-		$this->_db_pending = array();
-		$this->_with_applied = array();
 		
 		return $this;
 	}
@@ -1317,64 +878,6 @@ abstract class Jelly_Core_Model
 			
 			return $meta->fields[$name]->input($prefix, $data);
 		}
-	}
-	
-	/**
-	 * Returns metadata for this particular object
-	 *
-	 * @param  string  $property 
-	 * @return Jelly_Meta
-	 */
-	public function meta($property = NULL)
-	{
-		// Cache the meta object
-		if (!$this->_meta)
-		{
-			$this->_meta = Jelly_Meta::get($this);
-		}
-		
-		if ($property)
-		{
-			if (isset($this->_meta->$property))
-			{
-				return $this->_meta->$property;
-			}
-			else
-			{
-				return NULL;
-			}
-		}
-		
-		return $this->_meta;
-	}
-	
-	/**
-	 * Returns a field for this particular object. Aliases are resolved automatically.
-	 *
-	 * @param  string  $property 
-	 * @param  boolean $name
-	 * @return Jelly_Field
-	 */
-	public function field($field, $name = FALSE)
-	{
-		if (empty($this->_fields[$field]))
-		{
-			$this->_fields[$field] = Jelly_Meta::field($this, $field);
-		}
-		
-		if ($name)
-		{
-			if (is_object($this->_fields[$field]))
-			{
-				return $this->_fields[$field]->name;
-			}
-		}
-		else
-		{
-			return $this->_fields[$field];
-		}
-		
-		return NULL;
 	}
 
 	/**
@@ -1512,59 +1015,5 @@ abstract class Jelly_Core_Model
 		
 		// Chainable
 		return $this;
-	}
-	
-	/**
-	 * This is an internal method used for aliasing only things coming 
-	 * to the query builder, since they can come in so many formats.
-	 *
-	 * @param  string	$field 
-	 * @param  boolean	$join
-	 * @return string
-	 */
-	protected function _qb_alias($field, $join = NULL)
-	{
-		$model = NULL;
-		
-		// Check for functions
-		if (strpos($field, '"') !== FALSE)
-		{
-			// Quote the column in FUNC("ident") identifiers
-			return preg_replace('/"(.+?)"/e', '"\\"".$this->_qb_alias("$1")."\\""', $field);
-		}
-		
-		// with() call, aliasing is already completed
-		if (strpos($field, ':') !== FALSE)
-		{			
-			return $field;
-		}
-		
-		if (strpos($field, '.') !== FALSE)
-		{			
-			list($model, $field) = explode('.', $field);
-			
-			// If $join is NULL, the column is returned as it came
-			// If it was joined when it came in, it returns joined
-			if ($join === NULL)
-			{
-				$join = TRUE;
-			}
-		}
-		else
-		{
-			if ($join === NULL)
-			{
-				$join = FALSE;
-			}
-		}
-		
-		// If the model is NULL, $this's table name or model name
-		// We just replace if with the current model's name
-		if ($model === NULL || $model == $this->_table)
-		{
-			$model = Jelly_Meta::model_name($this);
-		}
-		
-		return Jelly_Meta::column($model.'.'.$field, $join);
 	}
 }

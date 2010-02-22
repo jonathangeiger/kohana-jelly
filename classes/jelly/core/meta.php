@@ -26,7 +26,7 @@ abstract class Jelly_Core_Meta
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public static function get($model, $property = NULL)
+	public static function get($model)
 	{
 		$model = Jelly_Meta::model_name($model);
 		
@@ -36,16 +36,6 @@ abstract class Jelly_Core_Meta
 			{
 				return FALSE;
 			}
-		}
-		
-		if ($property)
-		{
-			if (isset(Jelly_Meta::$_models[$model]->$property))
-			{
-				return Jelly_Meta::$_models[$model]->$property;
-			}
-			
-			return NULL;
 		}
 		
 		return Jelly_Meta::$_models[$model];
@@ -81,8 +71,8 @@ abstract class Jelly_Core_Meta
 
 		// Let the intialize() method override defaults.
 		call_user_func(array($class, 'initialize'), $meta);
-		
-		// Meta object can no longer have properties set on it
+				
+		// Meta object is initialized and no longer writable
 		$meta->initialized = TRUE;
 		
 		// Initialize all of the fields with their column and the model name
@@ -170,200 +160,74 @@ abstract class Jelly_Core_Meta
 	}
 	
 	/**
-	 * Returns the table name of the model passed. If the model 
-	 * doesn't exist in the registry, the original value is returned.
-	 *
-	 * @param  mixed   $model  A model name or another Jelly
-	 * @return string
-	 * @author Jonathan Geiger
-	 */
-	public static function table($model)
-	{
-		if ($meta = Jelly_Meta::get($model))
-		{
-			return $meta->table;
-		}
-		
-		return $model;
-	}
-	
-	/**
-	 * Returns the column name for a particular field. This 
-	 * method can take arguments in three separate ways:
-	 * 
-	 *  * $model, $field [, $join = FALSE]
-	 *  * $model_name, $field [, $join = FALSE]
-	 *  * $model_plus_field [, $join = FALSE]
-	 * 
-	 * In the first case, $model is a Jelly model and $field is a string.
-	 * In the second case, $model is a string, and $field is a string.
-	 * In the third case, $model_plus_field is a string in the format of 'model.field'.
-	 * 
-	 * If the model cannot be found in the registry (or registered), the method will make
-	 * every reasonable attempt to return something valid. This allows you to pass
-	 * tables and fields and still expect something reasonable back.
-	 *
-	 * @param mixed $model
-	 * @param mixed $field
-	 * @param mixed $join
-	 * @return string
-	 * @author Jonathan Geiger
-	 */
-	public static function column($model, $field = FALSE, $join = FALSE)
-	{
-		// Accept either a jelly or a string in the format of model.field
-		if ($model instanceof Jelly || (is_string($model) && is_string($field)))
-		{			
-			$model = Jelly_Meta::model_name($model);
-			$column = $field;
-		}
-		else
-		{
-			// If the args are coming in without a Jelly, $model 
-			// must be in the format of model.field and $field is $
-			$join = $field;
-			$field = $model;
-			
-			// Can't find anything if we don't have a model
-			if (strpos($field, '.') === FALSE)
-			{			
-				return $field;
-			}
-
-			list($model, $column) = explode('.', $field);
-		}
-		
-		if ($meta = Jelly_Meta::get($model))
-		{
-			if ($column != '*' && $field = Jelly_Meta::field($model, $column))
-			{
-				$column = $field->column;
-			}
-			
-			// Ensure the model is aliased as well
-			$model = $meta->table;
-		}
-		
-		if ($join)
-		{
-			return $model.'.'.$column;
-		}
-		else
-		{
-			return $column;
-		}
-	}
-	
-	/**
-	 * Returns a particular field on the model while resolving aliases to fields.
-	 * 
-	 * For example, if 'username' is an alias that maps to the field 'name',
-	 * then the 'name' field will be returned.
-	 * 
-	 * If $name is TRUE, the name of the field will be returned. For example, if 
-	 * 'username' is an alias that maps to the field 'name', then 'name' will be returned.
-	 *
-	 * Returns FALSE if the model doesn't exist, NULL if the field doesn't exist,
-	 * or some instance of Jelly_Core_Field otherwise.
-	 *
-	 * @param  Jelly|string  $model 
-	 * @param  string        $field
-	 * @param  boolean       $name
-	 * @return mixed
-	 * @author Jonathan Geiger
-	 */
-	public static function field($model, $field, $name = FALSE)
-	{
-		if (FALSE == ($meta = Jelly_Meta::get($model)))
-		{
-			return FALSE;
-		}
-		
-		// Check to see if the field is aliased
-		if (isset($meta->aliases[$field]))
-		{
-			$field = $meta->aliases[$field];
-		}
-		
-		if (isset($meta->fields[$field]))
-		{
-			if ($name)
-			{
-				return $field;
-			}
-			else
-			{
-				return $meta->fields[$field];
-			}
-		}
-		
-		return NULL;
-	}
-	
-	/**
 	 * @var string If this is FALSE, properties can still be set on it
 	 */
-	public $initialized = FALSE;
+	protected $initialized = FALSE;
+	
+	/**
+	 * @var string The model this meta object belongs to
+	 */
+	protected $model = NULL;
 	
 	/**
 	 * @var string The database key to use for connection
 	 */
-	public $db = 'default';
+	protected $db = 'default';
 	
 	/**
 	 * @var string The table this model represents
 	 */
-	public $table = '';
+	protected $table = '';
 	
 	/**
 	 * @var string The primary key
 	 */
-	public $primary_key = '';
+	protected $primary_key = '';
 	
 	/**
 	 * @var string The title key
 	 */
-	public $name_key = 'name';
+	protected $name_key = 'name';
 	
 	/**
 	 * @var array An array of ordering options for selects
 	 */
-	public $sorting = array();
+	protected $sorting = array();
 	
 	/**
 	 * @var array An array of options to pass to with for every load()
 	 */
-	public $load_with = array();
-	
-	/**
-	 * @var boolean Whether or not to validate before save()ing
-	 */
-	public $validate_on_save = TRUE;
+	protected $load_with = array();
 	
 	/**
 	 * @var string Prefix to apply to input generation
 	 */
-	public $input_prefix = 'jelly/field';
+	protected $input_prefix = 'jelly/field';
 	
 	/**
 	 * @var array A map to the resource's fields and how to process each column.
 	 */
-	public $fields = array();
+	protected $fields = array();
 	
 	/**
 	 * @var array A map of aliases to fields
 	 */
-	public $aliases = array();
+	protected $aliases = array();
 	
 	/**
 	 * @var array A list of columns and how they relate to fields
 	 */
-	public $columns = array();
+	protected $columns = array();
 	
 	/**
 	 * @var array Default data for each field
 	 */
-	public $defaults = array();
+	protected $defaults = array();
+	
+	/**
+	 * @var array A cache of retrieved fields, with aliases resolved
+	 */
+	protected $field_cache = array();
 	
 	/**
 	 * Constructor. Meta fields cannot be instantiated directly.
@@ -378,5 +242,248 @@ abstract class Jelly_Core_Meta
 		{
 			$this->table = inflector::plural($model);
 		}
+		
+		$this->model = $model;
+	}
+	
+	/**
+	 * Allows dynamic retrieval of members when initializing
+	 *
+	 * @param string $key 
+	 * @return void
+	 * @author Expressway Video
+	 */
+	public function __get($key)
+	{
+		if (!$this->initialized)
+		{
+			return $this->$key;
+		}
+	}
+	
+	/**
+	 * Allows dynamic setting of members when initializing
+	 *
+	 * @param string $key 
+	 * @return void
+	 * @author Expressway Video
+	 */
+	public function __set($key, $value)
+	{
+		$this->set($key, $value);
+	}
+	
+	/**
+	 * Allows setting a variable only when initalized
+	 *
+	 * @param  string $key 
+	 * @param  string $value 
+	 * @return $this
+	 * @author Expressway Video
+	 */
+	protected function set($key, $value)
+	{
+		if (!$this->initialized)
+		{
+			$this->$key = $value;
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Returns the meta object's model
+	 * @return string
+	 */
+	public function model()
+	{
+		return $this->model;
+	}
+	
+	/**
+	 * Returns the meta object db group
+	 * @return string
+	 */
+	public function db($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('db', $db);
+		}
+		
+		return $this->db;
+	}
+	
+	/**
+	 * Returns the meta object's table
+	 * @return string
+	 */
+	public function table($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('table', $value);
+		}
+		
+		return $this->table;
+	}
+	
+	/**
+	 * Returns the fields for this object.
+	 * 
+	 * If $field is specified, only the particular field is returned.
+	 * If $name is TRUE, the name of the field specified is returned.
+	 * @return array
+	 */
+	public function fields($field = NULL, $name = FALSE)
+	{
+		if (func_num_args() == 0)
+		{
+			return $this->fields;
+		}
+		
+		if (is_array($field))
+		{
+			return $this->set('fields', $field);
+		}
+		
+		if (!isset($this->field_cache[$field]))
+		{
+			$resolved_name = $field;
+			
+			if (isset($this->aliases[$field]))
+			{
+				$resolved_name = $this->aliases[$field];
+			}
+			
+			if (isset($this->fields[$resolved_name]))
+			{
+				$this->field_cache[$field] = $this->fields[$resolved_name];
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+		
+		if ($name)
+		{
+			return $this->field_cache[$field]->name;
+		}
+		else
+		{
+			return $this->field_cache[$field];
+		}
+	}
+	
+	/**
+	 * Returns all of the columns for this meta object.
+	 * 
+	 * Each key in the array is a column's name, while the value
+	 * is an array of fields the column maps to.
+	 * 
+	 * If $name is specified, only the particular column is returned.
+	 * @return array
+	 */
+	public function columns($name = NULL)
+	{
+		if (func_get_args() == 0)
+		{
+			return $this->columns;
+		}
+		
+		if (isset($this->columns[$name]))
+		{
+			return $this->columns[$name];
+		}
+	}
+	
+	/**
+	 * Returns the defaults for the object.
+	 * 
+	 * If $name is specified, then 
+	 *
+	 * @param string $field 
+	 * @return void
+	 * @author Expressway Video
+	 */
+	public function defaults($field = NULL)
+	{
+		if ($field === NULL)
+		{
+			return $this->defaults;
+		}
+		
+		return $this->field($field)->default;
+	}
+	
+	/**
+	 * Returns the object's primary key
+	 * @return mixed
+	 */
+	public function primary_key($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('primary_key', $value);
+		}
+		
+		return $this->primary_key;
+	}
+	
+	/**
+	 * Returns the object's name key
+	 * @return string
+	 */
+	public function name_key($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('name_key', $value);
+		}
+		
+		return $this->name_key;
+	}
+	
+	/**
+	 * Returns the object's sorting properties
+	 * @return array
+	 */
+	public function sorting($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('sorting', $value);
+		}
+			
+		return $this->sorting;
+	}
+	
+	/**
+	 * Returns the object's load_with properties
+	 * @return array
+	 */
+	public function load_with($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('load_with', $value);
+		}
+		
+		return $this->load_with;
+	}
+	
+	/**
+	 * Returns the object's input prefix
+	 * @return string
+	 */
+	public function input_prefix($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('input_prefix', $value);
+		}
+		
+		return $this->input_prefix;
 	}
 }
