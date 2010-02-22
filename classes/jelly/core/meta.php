@@ -344,7 +344,12 @@ abstract class Jelly_Core_Meta
 		
 		if (is_array($field))
 		{
-			return $this->set('fields', $field);
+			if (!$this->initialized)
+			{
+				// Allows fields to be appended
+				$this->fields += $field;
+				return $this;
+			}
 		}
 		
 		if (!isset($this->field_cache[$field]))

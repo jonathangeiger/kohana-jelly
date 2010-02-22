@@ -8,7 +8,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	protected $_meta = NULL;
 	
 	/**
-	 * @var array Data to be set, if this is an insert o rupdate
+	 * @var array Data to be set, if this is an insert or update
 	 */
 	protected $_set = array();
 	
@@ -47,9 +47,6 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		{
 			$this->from($this->_meta->table());
 			
-			// Default to loading as Jellys
-			$this->as_object(Jelly_Meta::class_name($this->_meta->model()));
-			
 			// Apply sorting and with if necessary
 			if ($type === Database::SELECT)
 			{
@@ -63,6 +60,9 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 					$this->with($this->_meta->load_with());
 				}
 			}
+			
+			// Default to loading as Jellys
+			$this->as_object(Jelly_Meta::class_name($this->_meta->model()));
 		}
 		else
 		{
@@ -102,6 +102,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 				$query->_join 		= $this->_join;
 				$query->_group_by 	= $this->_group_by;
 				$query->_order_by 	= $this->_order_by;
+				$query->_as_object  = $this->_as_object;
 				break;
 				
 			case Database::UPDATE:

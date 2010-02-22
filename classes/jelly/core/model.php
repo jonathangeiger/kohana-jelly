@@ -44,7 +44,7 @@ abstract class Jelly_Core_Model
 	 */
 	public static function select($model)
 	{
-		return new Jelly_Query_Builder($model, Database::SELECT);
+		return new Jelly_Builder(Jelly_Meta::model_name($model), Database::SELECT);
 	}
 	
 	/**
@@ -58,7 +58,7 @@ abstract class Jelly_Core_Model
 	 */
 	public static function insert($model)
 	{
-		return new Jelly_Query_Builder($model, Database::INSERT);
+		return new Jelly_Builder(Jelly_Meta::model_name($model), Database::INSERT);
 	}
 	
 	/**
@@ -69,7 +69,7 @@ abstract class Jelly_Core_Model
 	 */
 	public static function update($model)
 	{
-		return new Jelly_Query_Builder($model, Database::UPDATE);
+		return new Jelly_Builder(Jelly_Meta::model_name($model), Database::UPDATE);
 	}
 	
 	/**
@@ -80,7 +80,7 @@ abstract class Jelly_Core_Model
 	 */
 	public static function delete($model)
 	{
-		return new Jelly_Query_Builder($model, Database::DELETE);
+		return new Jelly_Builder(Jelly_Meta::model_name($model), Database::DELETE);
 	}
 
 	/**
@@ -109,14 +109,14 @@ abstract class Jelly_Core_Model
 	protected $_loaded = FALSE;
 	
 	/**
-	 * @var Jelly_Meta a copy of this object's meta object
-	 */
-	protected $_meta = NULL;
-	
-	/**
 	 * @var boolean Whether or not the model is saved
 	 */
 	protected $_saved = FALSE;
+	
+	/**
+	 * @var Jelly_Meta a copy of this object's meta object
+	 */
+	protected $_meta = NULL;
 	
 	/**
 	 * @var array Data set by mysql_fetch_object. Daggers to ye who overloads this.
@@ -127,31 +127,6 @@ abstract class Jelly_Core_Model
 	 * @var array With data
 	 */
 	protected $_with = array();
-	
-	/**
-	 * @var array Applied with associations
-	 */
-	protected $_with_applied = array();
-	
-	/**
-	 * @var array Incoming with results
-	 */
-	protected $_with_values = array();
-
-	/**
-	 * @var array Applied query builder methods
-	 */
-	protected $_db_applied = array();
-	
-	/**
-	 * @var array Pending query builder methods
-	 */
-	protected $_db_pending = array();
-	
-	/**
-	 * @var object Current query builder
-	 */
-	protected $_db_builder;
 
 	/**
 	 * An optional conditional can be passed. If it is an integer 
@@ -203,7 +178,7 @@ abstract class Jelly_Core_Model
 		// Alias the field to its actual name. We must do this now
 		// so that any aliases will be cached under the real fields
 		// name, rather than under its alias name
-		$name = $this->field($name, TRUE);
+		$name = $this->_meta->fields($name, TRUE);
 		
 		if (!array_key_exists($name, $this->_retrieved))
 		{
@@ -231,12 +206,12 @@ abstract class Jelly_Core_Model
 	 */
 	public function get($name, $changed = TRUE)
 	{	
-		$meta = $this->meta();
+		$meta = $this->_meta;
 		
 		// Passing TRUE or an array of fields to get returns them as an array
 		if (is_array($name) || $name === TRUE)	
 		{
-			$fields = ($name === TRUE) ? array_keys($meta->fields) : $name;
+			$fields = ($name === TRUE) ? array_keys($meta->fields()) : $name;
 			$result = array();
 
 			foreach($fields as $field)
@@ -255,7 +230,7 @@ abstract class Jelly_Core_Model
 		}
 		else 
 		{
-			if ($field = $this->field($name))
+			if ($field = $meta->fields($name))
 			{	
 				// Alias the name to its actual name
 				$name = $field->name;
@@ -265,10 +240,10 @@ abstract class Jelly_Core_Model
 				{	
 					$value = $field->get($this, $this->_changed[$name]);
 				}
-				else if ($changed && array_key_exists($name, $this->_with_values))
+				else if ($changed && array_key_exists($name, $this->_with))
 				{
-					$model = Jelly::Factory($name);
-					$model->set($this->_with_values[$name], FALSE, TRUE);
+					$model = Jelly::factory($name);
+					$model->set($this->_with[$name], FALSE, TRUE);
 					
 					// Try and verify that it's actually loaded
 					if ($model->id())
@@ -335,7 +310,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function set($values, $alias = FALSE, $original = FALSE)
 	{
-		$meta = $this->meta();
+		$meta = $this->_meta;
 		
 		// Accept set('name', 'value');
 		if (!is_array($values))
@@ -365,23 +340,23 @@ abstract class Jelly_Core_Model
 				
 				// Alias as it comes back in, which allows people to use with()
 				// with alaised field names
-				$relationship = $this->field(array_shift($targets), TRUE);
+				$relationship = $meta->fields(array_shift($targets), TRUE);
 								
-				if (!array_key_exists($relationship, $this->_with_values))
+				if (!array_key_exists($relationship, $this->_with))
 				{
-					$this->_with_values[$relationship] = array();
+					$this->_with[$relationship] = array();
 				}
 				
-				$this->_with_values[$relationship][implode(':', $targets)] = $value;
+				$this->_with[$relationship][implode(':', $targets)] = $value;
 			}
 			// Key is coming from a database result
-			else if ($alias === TRUE && !empty($meta->columns[$key]))
+			else if ($alias === TRUE && $meta->columns($key))
 			{
 				// Contains an array of fields that the column is mapped to
 				// This allows multiple fields to get data from the same column
-				foreach ($meta->columns[$key] as $field)
+				foreach ($meta->columns($key) as $field)
 				{
-					$data_location[$field] = $meta->fields[$field]->set($value);
+					$data_location[$field] = $meta->fields($field)->set($value);
 					
 					// Invalidate the cache
 					if (array_key_exists($field, $this->_retrieved))
@@ -391,7 +366,7 @@ abstract class Jelly_Core_Model
 				}
 			}
 			// Standard setting of a field 
-			else if ($alias === FALSE && $field = $this->field($key))
+			else if ($alias === FALSE && $field = $meta->fields($key))
 			{
 				$data_location[$field->name] = $field->set($value);
 				
@@ -418,7 +393,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function __isset($name)
 	{
-		return ($this->field($name) || array_key_exists($name, $this->_unmapped));
+		return (bool)($this->_meta->fields($name) || array_key_exists($name, $this->_unmapped));
 	}
 	
 	/**
@@ -433,11 +408,11 @@ abstract class Jelly_Core_Model
 	 */
 	public function __unset($name)
 	{
-		if ($field = $this->field($name, TRUE))
+		if ($field = $this->_meta->fields($name, TRUE))
 		{
 			// We don't want to unset the keys, because 
 			// they are assumed to exist. Just set them back to defaults
-			$this->_original[$field] = $this->meta()->defaults[$field];
+			$this->_original[$field] = $this->_meta->defaults($field);
 			
 			// Ensure changed and retrieved data is cleared
 			// This effectively clears the cache and any changes
@@ -497,7 +472,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function load($where = NULL)
 	{
-		$query = Jelly::select($this->_meta->model(), Database::SELECT);
+		$query = Jelly::select($this);
 		
 		// Apply the limit
 		if (is_int($where) || is_string($where))
@@ -544,11 +519,6 @@ abstract class Jelly_Core_Model
 	public function save($save_related = TRUE)
 	{
 		$meta = $this->meta();
-		
-		if ($meta->validate_on_save)
-		{
-			$this->validate();
-		}
 		
 		// Stuff that will be inserted
 		$values = array();
