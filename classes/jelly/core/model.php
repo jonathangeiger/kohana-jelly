@@ -44,7 +44,7 @@ abstract class Jelly_Core_Model
 	 */
 	public static function select($model)
 	{
-		return new Jelly_Builder(Jelly_Meta::model_name($model), Database::SELECT);
+		return new Jelly_Builder($model, Database::SELECT);
 	}
 	
 	/**
@@ -58,7 +58,7 @@ abstract class Jelly_Core_Model
 	 */
 	public static function insert($model)
 	{
-		return new Jelly_Builder(Jelly_Meta::model_name($model), Database::INSERT);
+		return new Jelly_Builder($model, Database::INSERT);
 	}
 	
 	/**
@@ -69,7 +69,7 @@ abstract class Jelly_Core_Model
 	 */
 	public static function update($model)
 	{
-		return new Jelly_Builder(Jelly_Meta::model_name($model), Database::UPDATE);
+		return new Jelly_Builder($model, Database::UPDATE);
 	}
 	
 	/**
@@ -80,7 +80,7 @@ abstract class Jelly_Core_Model
 	 */
 	public static function delete($model)
 	{
-		return new Jelly_Builder(Jelly_Meta::model_name($model), Database::DELETE);
+		return new Jelly_Builder($model, Database::DELETE);
 	}
 
 	/**
@@ -189,6 +189,8 @@ abstract class Jelly_Core_Model
 			{
 				$this->_retrieved[$name] = $value->execute();
 			}
+			
+			$this->_retrieved[$name] = $value;
 		}
 		
 		return $this->_retrieved[$name];
@@ -516,97 +518,79 @@ abstract class Jelly_Core_Model
 	 * @param  bool	  Whether or not to save related changes
 	 * @return Jelly  Returns $this
 	 **/
-	public function save($save_related = TRUE)
+	public function save()
 	{
-		$meta = $this->meta();
+		// Determine whether or not we're updating
+		$values = ($this->_loaded) ? $this->_changed : $this->_changed + $this->_original;
 		
-		// Stuff that will be inserted
-		$values = array();
+		// Run validation
+		$values = $this->validate($values);
 		
 		// These will be processed later
 		$relations = array();
 		
 		// Run through the main table data
-		foreach($meta->fields as $column => $field)
-		{			
-			// Only add actual columns
-			if ($field->in_db)
-			{	
-				if (array_key_exists($column, $this->_changed))
-				{
-					$this->_original[$column] = $values[$field->column] = $field->save($this, $this->_changed[$column]);
-				}
-				// Set default data. Careful not to override unchanged data!
-				else if ($this->_original[$column] == $meta->defaults[$column] && !$field->primary)
-				{
-					$this->_original[$column] = $values[$field->column] = $field->save($this, $field->default);
-				}
-			}
-			else if ($field instanceof Jelly_Behavior_Field_Saveable)
-			{
-				$relations[$column] = $field;
-			}
-		}
-		
-		// Remove the primary key if it's empty, SQLite accepts it but 
-		// most other databases won't if it's going to auto-increment
-		// It is often inadvertently set by validate() when inserting
-		if (empty($values[$meta->primary_key]))
+		foreach ($values as $column => $value)
 		{
-			unset($values[$meta->primary_key]);
-			unset($this->_changed[$meta->primary_key]);	
+			$field = $this->_meta->field($column);
+			
+			// We'll determine whether there's user for this column later on
+			unset($values[$column]);
+			
+			// Skip NULL primary keys
+			if ($field->primary && empty($value))
+			{
+				continue;
+			}
+			
+			if ($field->in_db)
+			{
+				// Update the column with the saved value
+				$values[$field->column] = $field->save($this, $value, $loaded);
+			}
+			
+			if ($field instanceof Jelly_Behavior_Field_Saveable)
+			{
+				$relations[$column] = $value;
+			}
 		}
 		
-		// Set this just in case it doesn't change with the insert/update
-		$id = $this->id();
-		
-		// Check if we have a loaded object, in which case it's an update
 		if ($this->_loaded)
 		{
-			// Do we even have to update anything in the main table?
+			// Do we even have to update anything in the row?
 			if ($values)
 			{
-				DB::update($meta->table)
+				Jelly::update($this)
+					->where($this->_meta->primary_key(), '=', $this->_original[$this->_meta->primary_key()])
 					->set($values)
-					->where($this->alias($meta->primary_key), '=', $this->id())
-					->execute($meta->db);
-
-				// Has id changed? 
-				if (isset($values[$meta->primary_key]))
-				{
-					$id = $values[$meta->primary_key];
-				}
+					->execute();
 			}
 		}
 		else
 		{
-			list($id) = DB::insert($meta->table)
-						->columns(array_keys($values))
-						->values($values)
-						->execute($meta->db);
+			list($id) = Jelly::insert($this)
+							->set($values)
+							->execute();
+							
+			// Gotta make sure to set this
+			$values[$this->_meta->primary_key()] = $id;
 		}
 		
-		// Update the primary key
-		$this->_original[$meta->primary_key] = $id;
+		// Set the changed data back as original
+		$this->set($values, FALSE, TRUE);
 		
-		if ($save_related)
-		{
-			// Load the relations
-			foreach($relations as $column => $field)
-			{				
-				if (array_key_exists($column, $this->_changed))
-				{
-					$this->_original[$column] = $field->save($this, $this->_changed[$column]);
-				}
-			}
-		}
-
 		// We're good!
 		$this->_loaded = $this->_saved = TRUE;
-		$this->_changed = array();
+		$this->_retrieved = $this->_changed = array();
 		
-		// Delete the last queries
-		$this->end();
+		// Save the relations
+		foreach($relations as $column => $value)
+		{	
+			$this->_meta->field($column)->save($this, $value, $loaded);
+		}
+		
+		// Enter relations back in
+		$this->set($relations, FALSE, TRUE);
 		
 		return $this;
 	}
@@ -620,35 +604,21 @@ abstract class Jelly_Core_Model
 	 * @param  $where  A simple where statement
 	 * @return Jelly   Returns $this
 	 **/
-	public function destroy($where = NULL)
+	public function destroy()
 	{
-		$meta = $this->meta();
-		
-		// Delete an id
-		if (is_int($where) || is_string($where))
-		{
-			$this->where($meta->primary_key, '=', $where);
-		}
-		// Simple where clause
-		else if (is_array($where))
-		{
-			foreach($where as $column => $value)
-			{
-				$this->where($column, '=', $value);
-			}
-		}
-		
 		// Are we loaded? Then we're just deleting this record
 		if ($this->_loaded)
 		{
-			$this->where($meta->primary_key, '=', $this->id());
+			Jelly::delete($this)
+				->where($this->_meta->primary_key(), '=', $this->id())
+				->execute();
 		}
 		
-		// Here goes nothing. NO LIMIT CLAUSE?!?!
-		$this->execute(Database::DELETE);
-		
-		// Re-initialize to an empty object
-		$this->reset();
+		// Reset back to the initial state
+		$this->_loaded = $this->_saved = FALSE;
+		$this->_with = $this->_changed = 
+		$this->_retrieved = $this->_unmapped = array();
+		$this->_original = $this->_meta->defaults();
 		
 		return $this;
 	}
@@ -666,7 +636,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function has($name, $models)
 	{
-		$field = $this->field($name);
+		$field = $this->_meta->field($name);
 		
 		// Don't continue without knowing we have something to work with
 		if ($field instanceof Jelly_Behavior_Field_Haveable)
@@ -762,31 +732,25 @@ abstract class Jelly_Core_Model
 	 * Validates and filters the data
 	 *
 	 * @throws Validate_Exception
-	 * @return void
+	 * @return array
 	 */
-	public function validate()
+	public function validate($data = NULL)
 	{
-		// Only validate changed data if it's an update
-		if ($this->_loaded)
+		if ($data === NULL)
 		{
 			$data = $this->_changed;
-		}
-		// Validate all data on insert
-		else
-		{
-			$data = $this->_changed + $this->_original;
 		}
 		
 		if (empty($data))
 		{
-			return $this;
+			return $data;
 		}
 		
 		// Create the validation object
 		$data = Validate::factory($data);
 		
 		// Loop through all columns, adding rules where data exists
-		foreach ($this->meta()->fields as $column => $field)
+		foreach ($this->_meta->fields() as $column => $field)
 		{
 			// Do not add any rules for this field
 			if (!$data->offsetExists($column))
@@ -800,17 +764,12 @@ abstract class Jelly_Core_Model
 			$data->callbacks($column, $field->callbacks);
 		}
 
-		if ($data->check())
-		{
-			// Insert filtered data back into the model
-			$this->set($data->as_array());
-		}
-		else
+		if (!$data->check())
 		{
 			throw new Validate_Exception($data);
 		}
 		
-		return $this;
+		return $data->as_array();
 	}
 
 	/**
@@ -824,30 +783,26 @@ abstract class Jelly_Core_Model
 	 */
 	public function input($name, $prefix = NULL, $data = array())
 	{
-		$meta = $this->meta();
-		$name = $this->field($name, TRUE);
+		$field = $this->_meta->fields($name);
 		
-		if (isset($meta->fields[$name]))
-		{			
-			// More data munging. But it makes the API so much more intuitive
-			if (is_array($prefix))
-			{
-				$data = $prefix;
-				$prefix = NULL;
-			}
-			
-			// Set a default prefix if it's NULL
-			if ($prefix === NULL)
-			{
-				$prefix = $meta->input_prefix;
-			}
-			
-			// Ensure there is a default value. Some fields overridde this
-			$data['value'] = $this->__get($name);
-			$data['model'] = $this;
-			
-			return $meta->fields[$name]->input($prefix, $data);
+		// More data munging. But it makes the API so much more intuitive
+		if (is_array($prefix))
+		{
+			$data = $prefix;
+			$prefix = NULL;
 		}
+		
+		// Set a default prefix if it's NULL
+		if ($prefix === NULL)
+		{
+			$prefix = $this->_meta->input_prefix();
+		}
+		
+		// Ensure there is a default value. Some fields overridde this
+		$data['value'] = $this->__get($name);
+		$data['model'] = $this;
+		
+		return $field->input($prefix, $data);
 	}
 
 	/**
@@ -877,7 +832,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function id()
 	{
-		return $this->get($this->meta()->primary_key);
+		return $this->get($this->_meta->primary_key());
 	}
 	
 	/**
@@ -887,7 +842,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function name()
 	{
-		return $this->get($this->meta()->name_key);
+		return $this->get($this->_meta->name_key());
 	}
 
 	/**
@@ -915,60 +870,14 @@ abstract class Jelly_Core_Model
 		if (!array_key_exists($name, $this->_changed))
 		{
 			$current = array();
-			$value = $this->__get($name);
-			
-			if ($value instanceof Database_Result)
-			{
-				foreach ($value as $model)
-				{
-					$current[] = $model->id();
-				}
-			}
-			else
-			{
-				$current[] = $value->id();
-			}
+			$value = $this->_ids($this->__get($name));
 		}
 		else
 		{
 			$current = $this->_changed[$name];
 		}
 		
-		$changes = array();
-				
-		// Handle Database Results
-		if ($models instanceof Iterator || is_array($models))
-		{
-			foreach($models as $row)
-			{
-				if (is_object($row))
-				{
-					// Ignore unloaded relations
-					if ($row->loaded())
-					{
-						$changes[] = $row->id();
-					}
-				}
-				else
-				{
-					$changes[] = $row;
-				}
-			}
-		}
-		// And individual models
-		else if (is_object($models))
-		{
-			// Ignore unloaded relations
-			if ($models->loaded())
-			{
-				$current[] = $models->id();
-			}
-		}
-		// And everything else
-		else
-		{
-			$changes[] = $models;
-		}
+		$changes = $this->_ids($models);
 		
 		// Are we adding or removing?
 		if ($add)
@@ -985,5 +894,52 @@ abstract class Jelly_Core_Model
 		
 		// Chainable
 		return $this;
+	}
+	
+	/**
+	 * Converts different model types to an array of primary keys
+	 *
+	 * @param  mixed $models 
+	 * @return array
+	 */
+	protected function _ids($models)
+	{	
+		$ids = array();
+				
+		// Handle Database Results
+		if ($models instanceof Iterator || is_array($models))
+		{
+			foreach($models as $row)
+			{
+				if (is_object($row))
+				{
+					// Ignore unloaded relations
+					if ($row->loaded())
+					{
+						$ids[] = $row->id();
+					}
+				}
+				else
+				{
+					$ids[] = $row;
+				}
+			}
+		}
+		// And individual models
+		else if (is_object($models))
+		{
+			// Ignore unloaded relations
+			if ($models->loaded())
+			{
+				$ids[] = $models->id();
+			}
+		}
+		// And everything else
+		else
+		{
+			$ids[] = $models;
+		}
+		
+		return $ids;
 	}
 }

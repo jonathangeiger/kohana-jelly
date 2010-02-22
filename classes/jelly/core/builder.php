@@ -29,8 +29,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 * are just set so because PHP throws errors otherwise, since
 	 * it doesn't conform the parent's definition.
 	 *
-	 * @param string $model 
-	 * @author Expressway Video
+	 * @param string $model
 	 */
 	public function __construct($model = NULL, $type = NULL)
 	{
@@ -38,6 +37,9 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		{
 			throw new Kohana_Exception(get_class($this) . ' requires $model and $type to be set in the constructor');
 		}
+		
+		// Convert to a model
+		$model = Jelly_Meta::model_name($model);
 		
 		// Hopefully we have a model to work with
 		$this->_meta = Jelly_Meta::get($model);
@@ -80,9 +82,8 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 *
 	 * @param string $type 
 	 * @return void
-	 * @author Expressway Video
 	 */
-	public function execute($db = NULL)
+	public function execute($db = 'default')
 	{
 		// Don't repeat queries
 		if ($this->_result)
@@ -90,70 +91,28 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 			return $this->_result;
 		}
 		
-		switch($this->_type)
-		{
-			case Database::SELECT:
-				$query = DB::select();
-				$query->_from		= $this->_from;
-				$query->_select 	= $this->_select;
-				$query->_distinct	= $this->_distinct;
-				$query->_offset 	= $this->_offset;
-				$query->_limit 		= $this->_limit;
-				$query->_join 		= $this->_join;
-				$query->_group_by 	= $this->_group_by;
-				$query->_order_by 	= $this->_order_by;
-				$query->_as_object  = $this->_as_object;
-				break;
-				
-			case Database::UPDATE:
-				$query = DB::update(current($this->_from));
-				break;
-				
-			case Database::INSERT:
-				$query = DB::insert(current($this->_from));
-				break;		
-				
-			case Database::DELETE:
-				$query = DB::delete(current($this->_from));
-				break;
-				
-			default:
-				throw new Kohana_Exception("Unsupported database constant");
-				break;
-		}
-		
-		// Copy over the common conditions to a new statement
-		$query->_where = $this->_where;
-		
-		// Convert sets
-		if ($this->_set && $this->_type === Database::INSERT)
-		{
-			$query->columns(array_keys($this->_set));
-			$query->values($this->_set);
-		}
-		
-		if ($this->_set && $this->_type === Database::UPDATE)
-		{
-			$query->set($this->_set);
-		}
-		
-		// See if we can use a proper database
-		if ($db === NULL && is_object($this->_meta))
+		// See if we can use a better $db group
+		if ($this->_meta)
 		{
 			$db = $this->_meta->db();
 		}
-		// Revert to the default database group
-		else
-		{
-			$db = 'default';
-		}
 		
 		// We've now left the Jelly
-		$this->_result = $query->execute($db);
-		
-		return $this->_result;
+		return $this->_result = $this->_build()->execute($db);
 	}
 	
+	/**
+	 * Compiles the builder into a usable expression
+	 *
+	 * @param Database $db 
+	 * @return void
+	 * @author Expressway Video
+	 */
+	public function compile(Database $db)
+	{
+		return $this->_build()->compile($db);
+	}
+
 	/**
 	 * Creates a new "AND WHERE" condition for the query.
 	 *
@@ -179,7 +138,6 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	{
 		return parent::or_where($this->_column($column, TRUE), $op, $value);
 	}
-	
 	
 	/**
 	 * Choose the columns to select from.
@@ -543,5 +501,62 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		{
 			return $column;
 		}
+	}
+	
+	/**
+	 * Builders the instance into a usable Database_Query_Builder_* instance.
+	 *
+	 * @return void
+	 */
+	protected function _build()
+	{
+		switch($this->_type)
+		{
+			case Database::SELECT:
+				$query = DB::select();
+				$query->_from		= $this->_from;
+				$query->_select 	= $this->_select;
+				$query->_distinct	= $this->_distinct;
+				$query->_offset 	= $this->_offset;
+				$query->_limit 		= $this->_limit;
+				$query->_join 		= $this->_join;
+				$query->_group_by 	= $this->_group_by;
+				$query->_order_by 	= $this->_order_by;
+				$query->_as_object  = $this->_as_object;
+				break;
+				
+			case Database::UPDATE:
+				$query = DB::update(current($this->_from));
+				break;
+				
+			case Database::INSERT:
+				$query = DB::insert(current($this->_from));
+				break;		
+				
+			case Database::DELETE:
+				$query = DB::delete(current($this->_from));
+				break;
+				
+			default:
+				throw new Kohana_Exception("Unsupported database constant");
+				break;
+		}
+		
+		// Copy over the common conditions to a new statement
+		$query->_where = $this->_where;
+		
+		// Convert sets
+		if ($this->_set && $this->_type === Database::INSERT)
+		{
+			$query->columns(array_keys($this->_set));
+			$query->values($this->_set);
+		}
+		
+		if ($this->_set && $this->_type === Database::UPDATE)
+		{
+			$query->set($this->_set);
+		}
+		
+		return $query;
 	}
 }

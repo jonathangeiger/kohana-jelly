@@ -251,7 +251,6 @@ abstract class Jelly_Core_Meta
 	 *
 	 * @param string $key 
 	 * @return void
-	 * @author Expressway Video
 	 */
 	public function __get($key)
 	{
@@ -266,7 +265,6 @@ abstract class Jelly_Core_Meta
 	 *
 	 * @param string $key 
 	 * @return void
-	 * @author Expressway Video
 	 */
 	public function __set($key, $value)
 	{
@@ -279,7 +277,6 @@ abstract class Jelly_Core_Meta
 	 * @param  string $key 
 	 * @param  string $value 
 	 * @return $this
-	 * @author Expressway Video
 	 */
 	protected function set($key, $value)
 	{
@@ -410,7 +407,6 @@ abstract class Jelly_Core_Meta
 	 *
 	 * @param string $field 
 	 * @return void
-	 * @author Expressway Video
 	 */
 	public function defaults($field = NULL)
 	{
