@@ -34,9 +34,9 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	public function get($model, $value)
 	{
 		// Return a real object
-		return Jelly::factory($this->foreign['model'])
-				->limit(1, TRUE)
-				->where($this->foreign['column'], '=', $model->id());
+		return Jelly::select($this->foreign['model'])
+				->where($this->foreign['column'], '=', $model->id())
+				->limit(1);
 	}
 	
 	/**

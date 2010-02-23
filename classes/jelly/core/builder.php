@@ -107,7 +107,16 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 			// Hand it over to Jelly_Result if it's a select
 			if ($this->_type === Database::SELECT)
 			{
-				$this->_result = new Jelly_Result($this->_meta->model(), $this->_result);
+				if ($this->_meta)
+				{
+					$model = $this->_meta->model();
+				}
+				else
+				{
+					$model = NULL;
+				}
+				
+				$this->_result = new Jelly_Result($model, $this->_result);
 			}
 		}
 		
@@ -541,7 +550,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		
 		// If the model is NULL, $this's table name or model name
 		// We just replace if with the current model's name
-		if ($model === NULL || $model == $this->_meta->table())
+		if ($this->_meta && ($model === NULL || $model == $this->_meta->table()))
 		{
 			$model = $this->_meta->model();
 		}
@@ -561,7 +570,8 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 			}
 		}
 		
-		if ($join)
+		// Only join when we actually have a table
+		if ($join && $table)
 		{
 			return $table.'.'.$column;
 		}

@@ -106,7 +106,7 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	public function get($model, $value)
 	{
 		// Return a real object
-		return Jelly::factory($this->foreign['model'])
+		return Jelly::select($this->foreign['model'])
 				->where($this->foreign['column'], '=', $model->id());
 	}
 	
@@ -120,28 +120,21 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 */
 	public function save($model, $value)
 	{
-		$foreign = Jelly::Factory($this->foreign['model']);
-		
 		// Empty relations to the default value
-		$foreign
+		Jelly::update($this->foreign['model'])
 			->where($this->foreign['column'], '=', $model->id())
-			->execute(Database::UPDATE, array(
-				$this->foreign['column'] => $this->default
-			));
+			->set(array($this->foreign['column'] => $this->default))
+			->execute();
 						
 		// Set the new relations
 		if (!empty($value) && is_array($value))
 		{			
 			// Update the ones in our list
-			$foreign
-				->end()
-				->where(Jelly_Meta::get($foreign, 'primary_key'), 'IN', $value)
-				->execute(Database::UPDATE, array(
-					$this->foreign['column'] => $model->id()
-				));
+			Jelly::update($this->foreign['model'])
+				->where(Jelly_Meta::get($foreign)->primary_key(), 'IN', $value)
+				->set(array($this->foreign['column'] => $model->id()))
+				->execute();
 		}
-		
-		return $value;
 	}
 	
 	/**
@@ -154,14 +147,10 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 */
 	public function has($model, $ids)
 	{
-		$foreign = Jelly::factory($this->foreign['model']);
-		
-		return (bool) $foreign
-			->select(array('COUNT("*")', 'records_found'))
+		return (bool) Jelly::select($this->foreign['model'])
 			->where($this->foreign['column'], '=', $model->id())
 			->where($foreign->meta()->primary_key, 'IN', $ids)
-			->execute(Database::SELECT, FALSE)
-			->get('records_found');
+			->count();
 	}
 	
 	/**
@@ -176,7 +165,7 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	public function input($prefix = 'jelly/field', $data = array())
 	{
 		// Kind of a wart here, but since HasOne extends this, we don't always want to iterate
-		if ($data['value'] instanceof Database_Result)
+		if ($data['value'] instanceof Iterator)
 		{
 			$data['ids'] = array();
 

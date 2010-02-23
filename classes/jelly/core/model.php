@@ -187,7 +187,7 @@ abstract class Jelly_Core_Model
 			// Auto-load relations
 			if ($value instanceof Jelly_Builder)
 			{
-				$this->_retrieved[$name] = $value->execute();
+				$value = $value->execute();
 			}
 			
 			$this->_retrieved[$name] = $value;
@@ -320,7 +320,6 @@ abstract class Jelly_Core_Model
 			$values = array($values => $alias);
 			$alias = FALSE;
 		}
-		
 		
 		// Determine where to write the data to, changed or original
 		if ($original)
@@ -495,10 +494,10 @@ abstract class Jelly_Core_Model
 		$result = $query->execute();
 		
 		// Ensure we have something
-		if (count($result))
-		{
+		if ($result->count())
+		{			
 			// Insert the original values
-			$this->set($result[0], TRUE, TRUE);
+			$this->set($result->current(FALSE), TRUE, TRUE);
 			
 			// We're good!
 			$this->_loaded = $this->_saved = TRUE;
@@ -590,7 +589,7 @@ abstract class Jelly_Core_Model
 		// Save the relations
 		foreach($relations as $column => $value)
 		{	
-			$this->_meta->field($column)->save($this, $value);
+			$this->_meta->fields($column)->save($this, $value);
 		}
 		
 		// Enter relations back in
@@ -650,7 +649,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function has($name, $models)
 	{
-		$field = $this->_meta->field($name);
+		$field = $this->_meta->fields($name);
 		
 		// Don't continue without knowing we have something to work with
 		if ($field instanceof Jelly_Behavior_Field_Haveable)
@@ -838,7 +837,7 @@ abstract class Jelly_Core_Model
 	 */
 	protected function _change($name, $models, $add)
 	{
-		$field = $this->field($name);
+		$field = $this->fields($name);
 		
 		if ($field instanceof Jelly_Behavior_Field_Changeable)
 		{

@@ -415,7 +415,7 @@ abstract class Jelly_Core_Meta
 			return $this->defaults;
 		}
 		
-		return $this->field($field)->default;
+		return $this->fields($field)->default;
 	}
 	
 	/**

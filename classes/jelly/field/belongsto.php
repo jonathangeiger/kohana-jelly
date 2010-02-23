@@ -91,9 +91,9 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	public function get($model, $value)
 	{
 		// Return a real category object
-		return Jelly::factory($this->foreign['model'])
-				->limit(1, TRUE)
-				->where($this->foreign['column'], '=', $value);
+		return Jelly::select($this->foreign['model'])
+				->where($this->foreign['column'], '=', $value)
+				->limit(1);
 	}
 	
 	/**
