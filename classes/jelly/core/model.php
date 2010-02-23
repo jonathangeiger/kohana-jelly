@@ -149,7 +149,7 @@ abstract class Jelly_Core_Model
 		// Add the values stored by mysql_set_object
 		if (!empty($this->_preload_data) && is_array($this->_preload_data))
 		{
-			$this->set($this->_preload_data, TRUE, TRUE);
+			$this->load_values($this->_preload_data);
 			$this->_loaded = $this->_saved = TRUE;
 			$this->_preload_data = array();
 		}
@@ -202,18 +202,16 @@ abstract class Jelly_Core_Model
 	 * * If an array or TRUE is passed for $name, an array of fields will be returned.
 	 * * If $changed is FALSE, only original data for the field will be returned.
 	 *
-	 * @param	array|int|boolean $name		The field's name
-	 * @param	boolean			  $changed
+	 * @param	mixed    $name	   The field's name
+	 * @param	boolean	 $changed
 	 * @return	mixed
 	 */
 	public function get($name, $changed = TRUE)
 	{	
-		$meta = $this->_meta;
-		
 		// Passing TRUE or an array of fields to get returns them as an array
 		if (is_array($name) || $name === TRUE)	
 		{
-			$fields = ($name === TRUE) ? array_keys($meta->fields()) : $name;
+			$fields = ($name === TRUE) ? array_keys($this->_meta->fields()) : $name;
 			$result = array();
 
 			foreach($fields as $field)
@@ -232,7 +230,7 @@ abstract class Jelly_Core_Model
 		}
 		else 
 		{
-			if ($field = $meta->fields($name))
+			if ($field = $this->_meta->fields($name))
 			{	
 				// Alias the name to its actual name
 				$name = $field->name;
@@ -244,8 +242,7 @@ abstract class Jelly_Core_Model
 				}
 				else if ($changed && array_key_exists($name, $this->_with))
 				{
-					$model = Jelly::factory($name);
-					$model->set($this->_with[$name], FALSE, TRUE);
+					$model = Jelly::factory($name)->load_values($this->_with[$name], FALSE);
 					
 					// Try and verify that it's actually loaded
 					if ($model->id())
@@ -310,81 +307,81 @@ abstract class Jelly_Core_Model
 	 * @param  string  $value 
 	 * @return Jelly   Returns $this
 	 */
-	public function set($values, $alias = FALSE, $original = FALSE)
+	public function set($values, $value = NULL)
 	{
-		$meta = $this->_meta;
-		
 		// Accept set('name', 'value');
 		if (!is_array($values))
 		{
-			$values = array($values => $alias);
-			$alias = FALSE;
-		}
-		
-		// Determine where to write the data to, changed or original
-		if ($original)
-		{
-			$data_location =& $this->_original;
-		}
-		else
-		{
-			$data_location =& $this->_changed;
+			$values = array($values => $value);
 		}
 
 		// Why this way? Because it allows the model to have 
 		// multiple fields that are based on the same column
 		foreach($values as $key => $value)
 		{
-			// Key is coming from a with statement
-			if (substr($key, 0, 1) === ':')
+			$field = $this->_meta->field($key);
+			
+			$this->_changed[$field->name] = $field->set($value);
+			
+			// Invalidate the cache
+			if (array_key_exists($field->name, $this->_retrieved))
 			{
-				$targets = explode(':', ltrim($key, ':'), 2);
-				
-				// Alias as it comes back in, which allows people to use with()
-				// with alaised field names
-				$relationship = $meta->fields(array_shift($targets), TRUE);
-								
-				if (!array_key_exists($relationship, $this->_with))
-				{
-					$this->_with[$relationship] = array();
-				}
-				
-				$this->_with[$relationship][implode(':', $targets)] = $value;
-			}
-			// Key is coming from a database result
-			else if ($alias === TRUE && $meta->columns($key))
-			{
-				// Contains an array of fields that the column is mapped to
-				// This allows multiple fields to get data from the same column
-				foreach ($meta->columns($key) as $field)
-				{
-					$data_location[$field] = $meta->fields($field)->set($value);
-					
-					// Invalidate the cache
-					if (array_key_exists($field, $this->_retrieved))
-					{
-						unset($this->_retrieved[$field]);
-					}
-				}
-			}
-			// Standard setting of a field 
-			else if ($alias === FALSE && $field = $meta->fields($key))
-			{
-				$data_location[$field->name] = $field->set($value);
-				
-				// Invalidate the cache
-				if (array_key_exists($field->name, $this->_retrieved))
-				{
-					unset($this->_retrieved[$field->name]);
-				}
-			}
-			else
-			{
-				$this->_unmapped[$key] = $value;
+				unset($this->_retrieved[$field->name]);
 			}
 		}
 		
 		return $this;
+	}
+	
+	/**
+	 * Clears the object and loads an array of values into the object.
+	 * 
+	 * This should only be used for setting database results.
+	 *
+	 * @param  array   $values 
+	 * @param  boolean $alias 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function load_values(array $values, $alias = TRUE)
+	{
+		// Clear the object
+		$this->clear();
+		
+		foreach($values as $key => $value)
+		{
+			// Key is coming from a with statement
+			if (substr($key, 0, 1) === ':')
+			{
+				$targets = explode(':', ltrim($key, ':'), 2);
+
+				// Alias as it comes back in, which allows people to use with()
+				// with alaised field names
+				$relationship = $this->_meta->fields(array_shift($targets), TRUE);
+
+				if (!array_key_exists($relationship, $this->_with))
+				{
+					$this->_with[$relationship] = array();
+				}
+
+				$this->_with[$relationship][implode(':', $targets)] = $value;
+			}
+			// Key is coming from a database result
+			else if ($alias === TRUE && $columns = $this->_meta->columns($key))
+			{
+				// Contains an array of fields that the column is mapped to
+				// This allows multiple fields to get data from the same column
+				foreach ($columns as $field)
+				{
+					$this->_original[$field] = $this->_meta->fields($field)->set($value);
+				}
+			}
+			// Standard setting of a field 
+			else if ($alias === FALSE && $field = $this->_meta->fields($key))
+			{
+				$this->_original[$field->name] = $field->set($value);
+			}
+		}
 	}
 	
 	/**
@@ -497,7 +494,7 @@ abstract class Jelly_Core_Model
 		if ($result->count())
 		{			
 			// Insert the original values
-			$this->set($result->current(FALSE), TRUE, TRUE);
+			$this->load_values($result->current(FALSE));
 			
 			// We're good!
 			$this->_loaded = $this->_saved = TRUE;
@@ -580,7 +577,8 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Set the changed data back as original
-		$this->set($values, FALSE, TRUE);
+		// @TODO: Fix this. It's wrong.
+		$this->load_values($values, FALSE);
 		
 		// We're good!
 		$this->_loaded = $this->_saved = TRUE;
@@ -593,7 +591,7 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Enter relations back in
-		$this->set($relations, FALSE, TRUE);
+		$this->load_values($relations, FALSE);
 		
 		return $this;
 	}

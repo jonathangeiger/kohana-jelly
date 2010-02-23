@@ -9,11 +9,6 @@ class Jelly_Core_Result implements Iterator, Countable
 	protected $_model = NULL;
 	
 	/**
-	 * @var Jelly_Meta The meta object for the current model
-	 */
-	protected $_meta = NULL;
-	
-	/**
 	 * @var mixed The current result set
 	 */
 	protected $_result = NULL;
@@ -34,7 +29,6 @@ class Jelly_Core_Result implements Iterator, Countable
 			// Instantiate the model, which we'll continually
 			// fill with values when iterating
 			$this->_model = new $model;
-			$this->_meta = Jelly_Meta::get($model);
 		}
 		
 		$this->_result = $result;
@@ -58,7 +52,7 @@ class Jelly_Core_Result implements Iterator, Countable
 	{
 		if ($object)
 		{
-	        return $this->_model->clear()->set($this->_result->current(), TRUE, TRUE);
+	        return $this->_model->load_values($this->_result->current());
 		}
 		else
 		{
@@ -112,11 +106,13 @@ class Jelly_Core_Result implements Iterator, Countable
 	 */
 	public function as_array($key = NULL, $value = NULL)
 	{
-		if ($this->_meta)
+		if ($this->_model)
 		{
+			$meta = Jelly_Meta::get($model);
+			
 			foreach (array('key', 'value') as $var)
 			{
-				if ($field = $this->_meta->fields($$var))
+				if ($field = $meta->fields($$var))
 				{
 					$$var = $field->column;
 				}
