@@ -384,17 +384,19 @@ abstract class Jelly_Core_Model
 			else if ($alias === FALSE && $field = $this->field($key))
 	        {
 				$value = $field->set($value);
-
-				// Check if the original value has really changed
-				if ($this->_original[$field->name] !== $value) 
+				
+				// Ensure value has actually changed
+				if ($field->in_db && $value == $this->_original[$field->name])
 				{
-					$data_location[$field->name] = $value;
-	
-					// Invalidate the cache
-					if (array_key_exists($field->name, $this->_retrieved))
-					{
-						unset($this->_retrieved[$field->name]);
-					}
+					continue;
+				}
+				
+				$data_location[$field->name] = $value;
+
+				// Invalidate the cache
+				if (array_key_exists($field->name, $this->_retrieved))
+				{
+					unset($this->_retrieved[$field->name]);
 				}
  			}
 			else
