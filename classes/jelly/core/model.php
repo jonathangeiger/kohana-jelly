@@ -321,6 +321,7 @@ abstract class Jelly_Core_Model
 			$alias = FALSE;
 		}
 		
+		
 		// Determine where to write the data to, changed or original
 		if ($original)
 		{
@@ -474,7 +475,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function load($where = NULL)
 	{
-		$query = Jelly::select($this);
+		$query = Jelly::select($this)->as_object(FALSE);
 		
 		// Apply the limit
 		if (is_int($where) || is_string($where))
@@ -503,6 +504,8 @@ abstract class Jelly_Core_Model
 			$this->_loaded = $this->_saved = TRUE;
 			$this->_changed = $this->_retrieved = array();
 		}
+		
+		return $this;
 	}
 	
 	/**
@@ -532,7 +535,7 @@ abstract class Jelly_Core_Model
 		// Run through the main table data
 		foreach ($values as $column => $value)
 		{
-			$field = $this->_meta->field($column);
+			$field = $this->_meta->fields($column);
 			
 			// We'll determine whether there's user for this column later on
 			unset($values[$column]);
@@ -546,7 +549,7 @@ abstract class Jelly_Core_Model
 			if ($field->in_db)
 			{
 				// Update the column with the saved value
-				$values[$field->column] = $field->save($this, $value, $loaded);
+				$values[$field->column] = $field->save($this, $value);
 			}
 			
 			if ($field instanceof Jelly_Behavior_Field_Saveable)
@@ -569,7 +572,8 @@ abstract class Jelly_Core_Model
 		else
 		{
 			list($id) = Jelly::insert($this)
-							->set($values)
+							->columns(array_keys($values))
+							->values(array_values($values))
 							->execute();
 							
 			// Gotta make sure to set this
@@ -586,7 +590,7 @@ abstract class Jelly_Core_Model
 		// Save the relations
 		foreach($relations as $column => $value)
 		{	
-			$this->_meta->field($column)->save($this, $value, $loaded);
+			$this->_meta->field($column)->save($this, $value);
 		}
 		
 		// Enter relations back in
@@ -609,17 +613,27 @@ abstract class Jelly_Core_Model
 		// Are we loaded? Then we're just deleting this record
 		if ($this->_loaded)
 		{
-			Jelly::delete($this)
+			$result = Jelly::delete($this)
 				->where($this->_meta->primary_key(), '=', $this->id())
 				->execute();
 		}
 		
+		return $this->clear();
+	}
+	
+	/**
+	 * Sets a model to its original state, as if freshly instantiated
+	 *
+	 * @return $this
+	 * @author Jonathan Geiger
+	 */
+	public function clear()
+	{
 		// Reset back to the initial state
 		$this->_loaded = $this->_saved = FALSE;
 		$this->_with = $this->_changed = 
 		$this->_retrieved = $this->_unmapped = array();
 		$this->_original = $this->_meta->defaults();
-		
 		return $this;
 	}
 	
@@ -641,41 +655,10 @@ abstract class Jelly_Core_Model
 		// Don't continue without knowing we have something to work with
 		if ($field instanceof Jelly_Behavior_Field_Haveable)
 		{
-			$name = $field->name;
-		}
-		else
-		{
-			return FALSE;
+			return $field->has($this, $this->_ids($models));
 		}
 		
-		$ids = array();
-		
-		// Everything comes in as an array of ids, so we must convert things like
-		// has ('alias', 1), or has('alias', $some_jelly_model)
-		if (!is_array($models) && !$models instanceof Iterator)
-		{
-			if (is_object($models))
-			{
-				$models = $models->id();
-			}
-			
-			$ids[] = $models;
-		}
-		// Construct the primary keys of the models. That's all we'll need
-		else
-		{
-			foreach ($models as $model)
-			{
-				if (is_object($model))
-				{
-					$model = $model->id();
-				}
-				
-				$ids[] = $model;
-			}
-		}
-		
-		return $field->has($this, $ids);
+		return FALSE;
 	}
 	
 	/**

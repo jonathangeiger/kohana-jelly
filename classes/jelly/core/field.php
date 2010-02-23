@@ -236,7 +236,7 @@ abstract class Jelly_Core_Field
 	{
 		if ($data[$field])
 		{
-			$count = Model::factory($this->model)
+			$count = Jelly::select($this->model)
 						->where($field, '=', $data[$field])
 						->count();
 

@@ -8,9 +8,19 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	protected $_meta = NULL;
 	
 	/**
-	 * @var array Data to be set, if this is an insert or update
+	 * @var array Data to be updated
 	 */
 	protected $_set = array();
+	
+	/**
+	 * @var array Columns to be inserted
+	 */
+	protected $_columns = array();
+	
+	/**
+	 * @var array Values to be inserted
+	 */
+	protected $_values = array();
 	
 	/**
 	 * @var int The query type
@@ -33,13 +43,12 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 */
 	public function __construct($model = NULL, $type = NULL)
 	{
+		parent::__construct();
+		
 		if (!$model OR !$type)
 		{
 			throw new Kohana_Exception(get_class($this) . ' requires $model and $type to be set in the constructor');
 		}
-		
-		// Convert to a model
-		$model = Jelly_Meta::model_name($model);
 		
 		// Hopefully we have a model to work with
 		$this->_meta = Jelly_Meta::get($model);
@@ -62,19 +71,17 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 					$this->with($this->_meta->load_with());
 				}
 			}
-			
-			// Default to loading as Jellys
-			$this->as_object(Jelly_Meta::class_name($this->_meta->model()));
 		}
 		else
 		{
 			$this->from($model);
 		}
 		
+		// Default to loading as arrays
+		$this->as_object(FALSE);
+		
 		// Save this for building the query later on
 		$this->_type = $type;
-		
-		parent::__construct();
 	}
 	
 	/**
@@ -86,19 +93,26 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	public function execute($db = 'default')
 	{
 		// Don't repeat queries
-		if ($this->_result)
+		if (!$this->_result)
 		{
-			return $this->_result;
+			// See if we can use a better $db group
+			if ($this->_meta)
+			{
+				$db = $this->_meta->db();
+			}
+			
+			// We've now left the Jelly
+			$this->_result = $this->_build()->execute($db);
+			
+			// Hand it over to Jelly_Result if it's a select
+			if ($this->_type === Database::SELECT)
+			{
+				$this->_result = new Jelly_Result($this->_meta->model(), $this->_result);
+			}
 		}
 		
-		// See if we can use a better $db group
-		if ($this->_meta)
-		{
-			$db = $this->_meta->db();
-		}
-		
-		// We've now left the Jelly
-		return $this->_result = $this->_build()->execute($db);
+		// Hand off the result to the Jelly_Result
+		return $this->_result;
 	}
 	
 	/**
@@ -111,6 +125,24 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	public function compile(Database $db)
 	{
 		return $this->_build()->compile($db);
+	}
+	
+	/**
+	 * Returns a count with the current where clauses applied.
+	 *
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	public function count()
+	{
+		$query = $this->_build(Database::SELECT);
+		$db = (is_object($this->_meta)) ? $this->_meta->db() : 'default';
+		
+		// Find the count
+		return (int) $query
+						->select(array('COUNT("*")', 'total'))
+						->execute($db)
+						->get('total');
 	}
 
 	/**
@@ -317,38 +349,74 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	}
 	
 	/**
-	 * Allows setting for UPDATEs or INSERTs
+	 * Set the values to update with an associative array.
 	 *
-	 * @param  array $values 
-	 * @return $this
+	 * @param   array   associative (column => value) list
+	 * @return  $this
 	 */
-	public function set($values, $alias = TRUE)
+	public function set(array $pairs, $alias = TRUE)
 	{
-		foreach ($values as $key => $value)
+		foreach ($pairs as $column => $value)
 		{
-			$this->value($key, $value, $alias);
+			$this->value($column, $value, $alias);
+		}
+
+		return $this;
+	}
+
+	/**
+	 * Set the value of a single column.
+	 *
+	 * @param   mixed  table name or array($table, $alias) or object
+	 * @param   mixed  column value
+	 * @return  $this
+	 */
+	public function value($column, $value, $alias = TRUE)
+	{
+		if ($alias)
+		{
+			$column = $this->_column($column);
 		}
 		
+		$this->_set[$column] = $value;
+
 		return $this;
 	}
 	
 	/**
-	 * Sets a single value
+	 * Set the columns that will be inserted.
 	 *
-	 * @param  string $key 
-	 * @param  string $value 
-	 * @param  string $alias 
-	 * @return $this
+	 * @param   array  column names
+	 * @return  $this
 	 */
-	public function value($key, $value, $alias = TRUE)
+	public function columns(array $columns, $alias = TRUE)
 	{
 		if ($alias)
 		{
-			$key = $this->_column($key);
+			foreach ($columns as $i => $column)
+			{
+				$columns[$i] = $this->_column($column);
+			}
 		}
 		
-		$this->_set[$key] = $value;
-		
+		$this->_columns = $columns;
+
+		return $this;
+	}
+	
+	/**
+	 * Sets values on an insert
+	 *
+	 * @param  array $values 
+	 * @return $this
+	 */
+	public function values(array $values)
+	{
+		// Get all of the passed values
+		$values = func_get_args();
+
+		$this->_values = array_merge($this->_values, $values);
+
 		return $this;
 	}
 	
@@ -508,9 +576,14 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 *
 	 * @return void
 	 */
-	protected function _build()
+	protected function _build($type = NULL)
 	{
-		switch($this->_type)
+		if ($type === NULL)
+		{
+			$type = $this->_type;
+		}
+		
+		switch($type)
 		{
 			case Database::SELECT:
 				$query = DB::select();
@@ -546,13 +619,15 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		$query->_where = $this->_where;
 		
 		// Convert sets
-		if ($this->_set && $this->_type === Database::INSERT)
+		if ($this->_columns && $this->_values && $type === Database::INSERT)
 		{
-			$query->columns(array_keys($this->_set));
-			$query->values($this->_set);
+			$query->columns($this->_columns);
+			
+			// Have to do a call_user_func_array to support multiple sets
+			call_user_func_array(array($query, 'values'), $this->_values);
 		}
 		
-		if ($this->_set && $this->_type === Database::UPDATE)
+		if ($this->_set && $type === Database::UPDATE)
 		{
 			$query->set($this->_set);
 		}
