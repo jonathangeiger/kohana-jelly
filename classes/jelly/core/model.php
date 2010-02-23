@@ -382,15 +382,21 @@ abstract class Jelly_Core_Model
 			}
 			// Standard setting of a field 
 			else if ($alias === FALSE && $field = $this->field($key))
-			{
-				$data_location[$field->name] = $field->set($value);
-				
-				// Invalidate the cache
-				if (array_key_exists($field->name, $this->_retrieved))
+	        {
+				$value = $field->set($value);
+
+				// Check if the original value has really changed
+				if ($this->_original[$field->name] !== $value) 
 				{
-					unset($this->_retrieved[$field->name]);
+					$data_location[$field->name] = $value;
+	
+					// Invalidate the cache
+					if (array_key_exists($field->name, $this->_retrieved))
+					{
+						unset($this->_retrieved[$field->name]);
+					}
 				}
-			}
+ 			}
 			else
 			{
 				$this->_unmapped[$key] = $value;
