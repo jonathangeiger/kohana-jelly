@@ -362,7 +362,15 @@ abstract class Jelly_Core_Model
 					$this->_with_values[$relationship] = array();
 				}
 				
-				$this->_with_values[$relationship][implode(':', $targets)] = $value;
+				$target = implode(':', $targets);
+				
+				// If there is no ":" in the target, it is a column, otherwise it's another with()
+				if (FALSE !== strpos($target, ':'))
+				{
+					$target = ':'.$target;
+				}
+				
+				$this->_with_values[$relationship][$target] = $value;
 			}
 			// Key is coming from a database result
 			else if ($alias === TRUE && !empty($meta->columns[$key]))
