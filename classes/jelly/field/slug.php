@@ -4,7 +4,6 @@
  * Handles "slugs"
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Slug extends Field_String
 {
@@ -15,7 +14,6 @@ abstract class Jelly_Field_Slug extends Field_String
 	 *
 	 * @param string $value 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{

@@ -7,7 +7,7 @@
  *
  * @package Jelly
  */
-interface Jelly_Behavior_Field_Haveable
+interface Jelly_Field_Behavior_Haveable
 {	
 	/**
 	 * This method should return a boolean that indicates whether or 
@@ -24,7 +24,6 @@ interface Jelly_Behavior_Field_Haveable
 	 * @param  Jelly $model 
 	 * @param  array $ids 
 	 * @return bool
-	 * @author Jonathan Geiger
 	 */
 	public function has($model, $ids);
 }

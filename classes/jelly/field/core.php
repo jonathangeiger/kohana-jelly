@@ -6,7 +6,7 @@
  * @package Jelly
  * @author Jonathan Geiger
  */
-abstract class Jelly_Core_Field
+abstract class Jelly_Field_Core
 {	
 	/**
 	 * @var string The model's name
@@ -58,12 +58,12 @@ abstract class Jelly_Core_Field
 	*/
 	public $filters = array();
 
-	    /**
+	/**
 	* @var array {@link Kohana_Validate} rules for this field.
 	*/
 	public $rules = array();
 
-	    /**
+	/**
 	* @var array {@link Kohana_Validate} callbacks for this field.
 	*/
 	public $callbacks = array();
@@ -72,7 +72,6 @@ abstract class Jelly_Core_Field
 	 * Sets all options
 	 *
 	 * @return void
-	 * @author Jonathan Geiger
 	 **/
 	public function __construct($options = array())
 	{
@@ -105,7 +104,6 @@ abstract class Jelly_Core_Field
 	 * @param  string  $model
 	 * @param  string  $column
 	 * @return void
-	 * @author Jonathan Geiger
 	 **/
 	public function initialize($model, $column)
 	{
@@ -133,7 +131,6 @@ abstract class Jelly_Core_Field
 	 *
 	 * @param  mixed
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 **/
 	public function set($value)
 	{
@@ -147,7 +144,6 @@ abstract class Jelly_Core_Field
 	 * @param  object $model  A copy of the current model is always passed
 	 * @param  mixed  $value  The value as it's currently set in the model
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 **/
 	public function get($model, $value)
 	{
@@ -163,7 +159,6 @@ abstract class Jelly_Core_Field
 	 * @param  Jelly  $model
 	 * @param  mixed  $value
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function save($model, $value) 
 	{
@@ -175,7 +170,6 @@ abstract class Jelly_Core_Field
 	 *
 	 * @param string $prefix The prefix to put before the filename to be rendered
 	 * @return View
-	 * @author Jonathan Geiger
 	 **/
 	public function input($prefix = 'jelly/field', $data = array())
 	{
@@ -229,7 +223,6 @@ abstract class Jelly_Core_Field
 	 * @param  Validate $data 
 	 * @param  string $field 
 	 * @return void
-	 * @author Jonathan Geiger
 	 * @author Woody Gilk
 	 */
 	public function _is_unique(Validate $data, $field)

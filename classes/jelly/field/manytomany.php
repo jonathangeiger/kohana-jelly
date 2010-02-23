@@ -4,11 +4,10 @@
  * Handles many to many relationships
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_ManyToMany 
 extends Jelly_Field_Relationship 
-implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_Behavior_Field_Changeable
+implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
 {	
 	/**
 	 * This is expected to contain an assoc. array containing the key 
@@ -55,7 +54,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 * @param string $model 
 	 * @param string $column 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function initialize($model, $column)
 	{
@@ -103,7 +101,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 *
 	 * @param  mixed $value 
 	 * @return array
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{
@@ -145,7 +142,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 * @param  Jelly  $model 
 	 * @param  mixed $value 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function get($model, $value)
 	{
@@ -154,12 +150,11 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	}
 	
 	/**
-	 * Implementation for Jelly_Behavior_Field_Saveable.
+	 * Implementation for Jelly_Field_Behavior_Saveable.
 	 *
 	 * @param  Jelly $model 
 	 * @param  mixed $value 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function save($model, $value)
 	{
@@ -172,7 +167,7 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 			Jelly::delete($this->through['model'])
 				->where($this->through['columns'][0], '=', $model->id())
 				->where($this->through['columns'][1], 'IN', $old)
-				->execute(Jelly_Meta::get($model)->db());
+				->execute(Jelly::meta($model)->db());
 		}
 
 		// Find new relationships that must be inserted
@@ -191,12 +186,11 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Haveable
+	 * Implementation of Jelly_Field_Behavior_Haveable
 	 *
 	 * @param  Jelly   $model 
 	 * @param  array   $ids
 	 * @return boolean
-	 * @author Jonathan Geiger
 	 */
 	public function has($model, $ids)
 	{
@@ -220,7 +214,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 * @param  Jelly   $model 
 	 * @param  boolean $as_array 
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	protected function _in($model, $as_array = FALSE)
 	{
@@ -231,7 +224,7 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 		if ($as_array)
 		{
 			$result = $result
-						->execute(Jelly_Meta::get($model)->db())
+						->execute(Jelly::meta($model)->db())
 						->as_array(NULL, $this->through['columns'][1]);
 		}
 		
@@ -244,7 +237,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 * @param  string $prefix
 	 * @param  array  $data
 	 * @return View
-	 * @author Jonathan Geiger
 	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{

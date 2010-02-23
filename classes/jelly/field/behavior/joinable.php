@@ -7,7 +7,7 @@
  *
  * @package Jelly
  */
-interface Jelly_Behavior_Field_Joinable
+interface Jelly_Field_Behavior_Joinable
 {	
 	/**
 	 * This method should add a join() and on() clause 
@@ -26,7 +26,6 @@ interface Jelly_Behavior_Field_Joinable
 	 * @param string $target_path The target's alias in the join clause
 	 * @param string $parent_path The parent's alias in the join clause
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function with($model, $relation, $target_path, $parent_path);
 }

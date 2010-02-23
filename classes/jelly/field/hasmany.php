@@ -4,11 +4,10 @@
  * Handles has many relationships
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_HasMany 
 extends Jelly_Field_Relationship 
-implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_Behavior_Field_Changeable
+implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
 {	
 	/**
 	 * This is expected to contain an assoc. array containing the key 
@@ -35,7 +34,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 * @param  string $model 
 	 * @param  string $column 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function initialize($model, $column)
 	{
@@ -58,7 +56,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 *
 	 * @param  mixed $value 
 	 * @return array
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{
@@ -101,7 +98,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 * @param  string $model 
 	 * @param  string $value 
 	 * @return Jelly
-	 * @author Jonathan Geiger
 	 */
 	public function get($model, $value)
 	{
@@ -111,12 +107,11 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Saveable
+	 * Implementation of Jelly_Field_Behavior_Saveable
 	 *
 	 * @param   Jelly $model 
 	 * @param   mixed $value
 	 * @return  void
-	 * @author  Jonathan Geiger
 	 */
 	public function save($model, $value)
 	{
@@ -131,19 +126,18 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 		{			
 			// Update the ones in our list
 			Jelly::update($this->foreign['model'])
-				->where(Jelly_Meta::get($foreign)->primary_key(), 'IN', $value)
+				->where(Jelly::meta($foreign)->primary_key(), 'IN', $value)
 				->set(array($this->foreign['column'] => $model->id()))
 				->execute();
 		}
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Haveable
+	 * Implementation of Jelly_Field_Behavior_Haveable
 	 *
 	 * @param  Jelly $model 
 	 * @param  array $ids 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function has($model, $ids)
 	{
@@ -160,7 +154,6 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	* @param string $prefix
 	* @param string $data
 	* @return void
-	* @author Jonathan Geiger
 	*/
 	public function input($prefix = 'jelly/field', $data = array())
 	{

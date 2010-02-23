@@ -4,14 +4,12 @@
  * Handles has one relationships
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
-abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Behavior_Field_Joinable
+abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Behavior_Joinable
 {		
 	/**
 	 * @param string $value 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{	
@@ -29,7 +27,6 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	/**
 	 * @param string $object 
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function get($model, $value)
 	{
@@ -44,7 +41,6 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	 *
 	 * @param string $model 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function has($model, $id)
 	{
@@ -64,7 +60,6 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	 * @param string $prefix
 	 * @param string $data
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{
@@ -73,18 +68,17 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Joinable
+	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
 	 * @param  Jelly  $model 
 	 * @param  string $relation 
 	 * @param  string $target_path 
 	 * @param  string $parent_path 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function with($model, $relation, $target_path, $parent_path)
 	{
-		$meta = Jelly_meta::get($this->foreign['model']);
+		$meta = Jelly::meta($this->foreign['model']);
 		
 		// Fields have to be aliased since we don't necessarily know the model from the path
 		$parent_column = Jelly_Meta::column($this->foreign['model'], $meta->primary_key, FALSE);

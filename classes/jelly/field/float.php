@@ -4,7 +4,6 @@
  * Handles floats
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Float extends Jelly_Field
 {
@@ -18,7 +17,6 @@ abstract class Jelly_Field_Float extends Jelly_Field
 	 *
 	 * @param string $value 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{

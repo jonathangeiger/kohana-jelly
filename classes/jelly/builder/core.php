@@ -1,6 +1,22 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
+/**
+ * Jelly_Builder is a class used for query building. It handles
+ * automatic aliasing of all models and columns (but also supports
+ * unknown models and fields).
+ * 
+ * Because of the limitations of PHP and Kohana's class structure,
+ * it must extend a Database_Query_Builder_Select. However, the 
+ * instance is properly transposed into its actual type when compiled
+ * or executed.
+ * 
+ * It is possible to use un-executed() query builder instances in other
+ * query builder statements, just as you would with Kohana's native
+ * facilities.
+ *
+ * @package Jelly
+ */
+abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 {	
 	/**
 	 * @var Jelly_Meta The first model to come in a from is cached here and used as the canonical model
@@ -41,7 +57,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 *
 	 * @param string $model
 	 */
-	public function __construct($model = NULL, $type = NULL)
+	public function __construct($model = NULL, $type = NULL, $cond = NULL)
 	{
 		parent::__construct();
 		
@@ -51,7 +67,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		}
 		
 		// Hopefully we have a model to work with
-		$this->_meta = Jelly_Meta::get($model);
+		$this->_meta = Jelly::meta($model);
 		
 		// Can we set the default from?
 		if ($this->_meta)
@@ -69,6 +85,27 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 				foreach ($this->_meta->load_with() as $relationship)
 				{
 					$this->with($this->_meta->load_with());
+				}
+				
+				// Do we need to apply an initial condition?
+				if ($cond)
+				{
+					// When conditions are passed, they're automatically limited to 1
+					$this->limit(1);
+					
+					// Primary key
+					if (is_int($cond) || is_string($cond))
+					{
+						$this->where($this->_meta->primary_key(), '=', $cond);
+					}
+					// Simple where clause
+					else if (is_array($cond))
+					{
+						foreach($cond as $column => $value)
+						{
+							$this->where($column, '=', $value);
+						}
+					}
 				}
 			}
 		}
@@ -107,16 +144,15 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 			// Hand it over to Jelly_Result if it's a select
 			if ($this->_type === Database::SELECT)
 			{
-				if ($this->_meta)
-				{
-					$model = $this->_meta->model();
-				}
-				else
-				{
-					$model = NULL;
-				}
-				
+				$model = ($this->_meta) ? $this->_meta->model() : NULL;
 				$this->_result = new Jelly_Result($model, $this->_result);
+				
+				// If the record was limited to 1, we only return that model
+				// Otherwise we return the whole result set.
+				if ($this->_limit === 1)
+				{
+					$this->_result = $this->_result->current();
+				}
 			}
 		}
 		
@@ -129,7 +165,6 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 *
 	 * @param Database $db 
 	 * @return void
-	 * @author Expressway Video
 	 */
 	public function compile(Database $db)
 	{
@@ -140,7 +175,6 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 * Returns a count with the current where clauses applied.
 	 *
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function count()
 	{
@@ -238,7 +272,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 					$model = $model[0];
 				}
 				
-				if ($model = Jelly_Meta::get($model))
+				if ($model = Jelly::meta($model))
 				{
 					$this->_meta = $model;
 				}
@@ -444,9 +478,9 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		
 		foreach ($paths as $iteration => $path)
 		{
-			$field = Jelly_Meta::get($parent)->fields($path);
+			$field = Jelly::meta($parent)->fields($path);
 
-			if (!($field instanceof Jelly_Behavior_Field_Joinable))
+			if (!($field instanceof Jelly_Field_Behavior_Joinable))
 			{
 				// Entire list is invalid
 				break;
@@ -467,7 +501,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 					
 			// Set the next iteration's parent
 			$model = $field->foreign['model'];
-			$meta = Jelly_Meta::get($model);
+			$meta = Jelly::meta($model);
 			
 			// Select all of the model's fields
 			foreach ($meta->fields() as $alias => $select)
@@ -503,7 +537,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 	 */
 	protected function _table($model)
 	{
-		if ($meta = Jelly_Meta::get($model))
+		if ($meta = Jelly::meta($model))
 		{
 			$model = $meta->table();
 		}
@@ -559,7 +593,7 @@ abstract class Jelly_Core_Builder extends Database_Query_Builder_Select
 		$column = $field;
 		
 		// See if the model is register
-		if ($meta = Jelly_Meta::get($model))
+		if ($meta = Jelly::meta($model))
 		{
 			$table = $meta->table();
 			

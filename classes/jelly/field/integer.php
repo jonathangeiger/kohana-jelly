@@ -4,7 +4,6 @@
  * Handles integer data-types
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Integer extends Jelly_Field
 {
@@ -13,7 +12,6 @@ abstract class Jelly_Field_Integer extends Jelly_Field
 	 *
 	 * @param  mixed $value 
 	 * @return int
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{

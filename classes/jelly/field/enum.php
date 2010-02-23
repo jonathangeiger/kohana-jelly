@@ -4,7 +4,6 @@
  * Handles enumerated lists
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Enum extends Jelly_Field
 {
@@ -17,7 +16,6 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 	 * Ensures there is a choices array set
 	 *
 	 * @param  array $options 
-	 * @author Jonathan Geiger
 	 */
 	public function __construct($options = array())
 	{
@@ -35,7 +33,6 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 	 *
 	 * @param  string $value 
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{

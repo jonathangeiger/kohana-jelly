@@ -4,9 +4,8 @@
  * Handles belongs to relationships
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
-abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Behavior_Field_Joinable
+abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Field_Behavior_Joinable
 {	
 	/**
 	 * @var boolean Defaults belongs_to's to in the database
@@ -35,7 +34,6 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	 * @param  string $model 
 	 * @param  string $column 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function initialize($model, $column)
 	{
@@ -68,7 +66,6 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	 * 
 	 * @param  mixed $value
 	 * @return int|string
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{
@@ -86,7 +83,6 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	 * @param  string $model 
 	 * @param  string $value 
 	 * @return Jelly
-	 * @author Jonathan Geiger
 	 */
 	public function get($model, $value)
 	{
@@ -97,18 +93,17 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Joinable
+	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
 	 * @param  Jelly  $model 
 	 * @param  string $relation 
 	 * @param  string $target_path 
 	 * @param  string $parent_path 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function with($model, $relation, $target_path, $parent_path)
 	{
-		$meta = Jelly_meta::get($this->foreign['model']);
+		$meta = Jelly::meta($this->foreign['model']);
 
 		// Fields have to be aliased since we don't necessarily know the model from the path
 		$target_column = Jelly_Meta::column($this->foreign['model'], $meta->primary_key, FALSE);

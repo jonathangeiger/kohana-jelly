@@ -4,7 +4,6 @@
  * Handles files and file uploads
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_File extends Jelly_Field
 {	
@@ -12,7 +11,6 @@ abstract class Jelly_Field_File extends Jelly_Field
 	 * Ensures there is a path for saving set
 	 *
 	 * @param  array $options 
-	 * @author Jonathan Geiger
 	 */
 	public function __construct($options = array())
 	{
@@ -34,7 +32,6 @@ abstract class Jelly_Field_File extends Jelly_Field
 	 * @param  Jelly  $model 
 	 * @param  mixed $value 
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function save($model, $value)
 	{		

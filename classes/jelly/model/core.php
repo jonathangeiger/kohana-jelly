@@ -1,88 +1,14 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Jelly is a Kohana 3.0 ORM. It itself is a conceptual fork of Kohana's ORM 
- * and Sprig. Some code and ideas are borrowed from both projects.
+ * Jelly_Model is the class all models must extend. It handles loading a single 
+ * record based on a primary key or simple where clause and allows that record
+ * to have various CRUD operations, and other more complex actions performed on it.
  * 
  * @package Jelly
- * 
- * @author Jonathan Geiger
- * @author Paul Banks
- * @author Woody Gilk
- * @author Kohana Team
- * 
- * @link http://github.com/shadowhand/sprig/
- * @link http://github.com/jheathco/kohana-orm
- * 
- * @license http://kohanaphp.com/license.html
  */
-abstract class Jelly_Core_Model
+abstract class Jelly_Model_Core
 {
-	/**
-	 * Factory for generating models. Fields are initialized only 
-	 * on the first instantiation of the model, and never again.
-	 * 
-	 * Model's do not have to be instantiated through here; they 
-	 * can be constructed directly.
-	 *
-	 * @param	mixed  $model  A model name or another Jelly to create
-	 * @param	mixed  $id	   The id or where clause to load upon construction
-	 * @return	Jelly
-	 */
-	public static function factory($model, $id = NULL)
-	{	
-		$class = Jelly_Meta::class_name($model);
-		
-		return new $class($id);
-	}
-	
-	/**
-	 * Returns a query builder that can be used for selecting many records.
-	 *
-	 * @param  string $model 
-	 * @return Jelly_Builder
-	 */
-	public static function select($model)
-	{
-		return new Jelly_Builder($model, Database::SELECT);
-	}
-	
-	/**
-	 * Returns a query builder that can be used for inserting a record.
-	 * 
-	 * This method is only here for completeness. However it doesn't serve
-	 * much purpose over instantiating a model directly.
-	 *
-	 * @param  string $model 
-	 * @return Jelly_Builder
-	 */
-	public static function insert($model)
-	{
-		return new Jelly_Builder($model, Database::INSERT);
-	}
-	
-	/**
-	 * Returns a query builder that can be used for updating many records.
-	 *
-	 * @param  string $model 
-	 * @return Jelly_Builder
-	 */
-	public static function update($model)
-	{
-		return new Jelly_Builder($model, Database::UPDATE);
-	}
-	
-	/**
-	 * Returns a query builder that can be used for deleting many records.
-	 *
-	 * @param  string $model 
-	 * @return Jelly_Builder
-	 */
-	public static function delete($model)
-	{
-		return new Jelly_Builder($model, Database::DELETE);
-	}
-
 	/**
 	 * @var array The original data set on the object
 	 */
@@ -140,7 +66,7 @@ abstract class Jelly_Core_Model
 	public function __construct($cond = NULL)
 	{
 		// Load the object's meta data for quick access
-		$this->_meta = Jelly_Meta::get($this);
+		$this->_meta = Jelly::meta($this);
 		
 		// Copy over the defaults into the original data. This also has 
 		// the added benefit of registering the model's metadata, if it does not exist yet
@@ -314,13 +240,19 @@ abstract class Jelly_Core_Model
 		{
 			$values = array($values => $value);
 		}
-
-		// Why this way? Because it allows the model to have 
-		// multiple fields that are based on the same column
+		
 		foreach($values as $key => $value)
 		{
-			$field = $this->_meta->field($key);
+			$field = $this->_meta->fields($key);
+			$value = $field->set($value);
 			
+			// Ensure data is really changed
+			if ($field->in_db AND $this->_original[$field->name] == $value)
+			{
+				continue;
+			}
+			
+			// Data has changed
 			$this->_changed[$field->name] = $field->set($value);
 			
 			// Invalidate the cache
@@ -328,6 +260,9 @@ abstract class Jelly_Core_Model
 			{
 				unset($this->_retrieved[$field->name]);
 			}
+			
+			// Model is no longer saved
+			$this->_saved = FALSE;
 		}
 		
 		return $this;
@@ -336,12 +271,12 @@ abstract class Jelly_Core_Model
 	/**
 	 * Clears the object and loads an array of values into the object.
 	 * 
-	 * This should only be used for setting database results.
+	 * This should only be used for setting from database results 
+	 * since the model declares itself as saved and loaded after.
 	 *
 	 * @param  array   $values 
 	 * @param  boolean $alias 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function load_values(array $values, $alias = TRUE)
 	{
@@ -382,6 +317,11 @@ abstract class Jelly_Core_Model
 				$this->_original[$field->name] = $field->set($value);
 			}
 		}
+		
+		// Model is now saved and loaded
+		$this->_saved = $this->_loaded = TRUE;
+		
+		return $this;
 	}
 	
 	/**
@@ -500,27 +440,28 @@ abstract class Jelly_Core_Model
 			$this->_loaded = $this->_saved = TRUE;
 			$this->_changed = $this->_retrieved = array();
 		}
+		// Model doesn't exist, clear to an empty model
+		else
+		{
+			$this->clear();
+		}
 		
 		return $this;
 	}
 	
 	/**
-	 * Creates a new record based on the current model. If save related is TRUE
-	 * any changes made to relations will be updated as well.
+	 * Creates or updates the current record. 
 	 * 
-	 * Keep in mind, however, that only the relation to the other model will be saved,
-	 * and not the actual model that it is related to.
-	 * 
-	 * If the model's meta data is set to validate on save, then 
-	 * this could potentially throw a Validate_Exception.
+	 * If $primary_key is passed, the record will be assumed to exist
+	 * and an update will be executed, even if the model isn't loaded().
 	 *
-	 * @param  bool	  Whether or not to save related changes
+	 * @param  mixed  $primary_key
 	 * @return Jelly  Returns $this
 	 **/
-	public function save()
+	public function save($primary_key = NULL)
 	{
 		// Determine whether or not we're updating
-		$data = ($this->_loaded) ? $this->_changed : $this->_changed + $this->_original;
+		$data = ($this->_loaded || $primary_key) ? $this->_changed : $this->_changed + $this->_original;
 		
 		// Run validation
 		$data = $this->validate($data);
@@ -538,7 +479,7 @@ abstract class Jelly_Core_Model
 			{
 				$values[$field->column] = $field->save($value);
 			}
-			else if ($field instanceof Jelly_Behavior_Field_Saveable)
+			else if ($field instanceof Jelly_Field_Behavior_Saveable)
 			{
 				$relations[$column] = $value;
 			}
@@ -612,7 +553,6 @@ abstract class Jelly_Core_Model
 	 * Sets a model to its original state, as if freshly instantiated
 	 *
 	 * @return $this
-	 * @author Jonathan Geiger
 	 */
 	public function clear()
 	{
@@ -640,7 +580,7 @@ abstract class Jelly_Core_Model
 		$field = $this->_meta->fields($name);
 		
 		// Don't continue without knowing we have something to work with
-		if ($field instanceof Jelly_Behavior_Field_Haveable)
+		if ($field instanceof Jelly_Field_Behavior_Haveable)
 		{
 			return $field->has($this, $this->_ids($models));
 		}
@@ -827,7 +767,7 @@ abstract class Jelly_Core_Model
 	{
 		$field = $this->fields($name);
 		
-		if ($field instanceof Jelly_Behavior_Field_Changeable)
+		if ($field instanceof Jelly_Field_Behavior_Changeable)
 		{
 			$name = $field->name;
 		}

@@ -4,7 +4,6 @@
  * Handles passwords
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Password extends Field_String
 {
@@ -19,7 +18,6 @@ abstract class Jelly_Field_Password extends Field_String
 	 * @param string $model 
 	 * @param string $value 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function save($model, $value)
 	{
