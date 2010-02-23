@@ -520,35 +520,25 @@ abstract class Jelly_Core_Model
 	public function save()
 	{
 		// Determine whether or not we're updating
-		$values = ($this->_loaded) ? $this->_changed : $this->_changed + $this->_original;
+		$data = ($this->_loaded) ? $this->_changed : $this->_changed + $this->_original;
 		
 		// Run validation
-		$values = $this->validate($values);
+		$data = $this->validate($data);
 		
 		// These will be processed later
 		$relations = array();
 		
 		// Run through the main table data
-		foreach ($values as $column => $value)
+		foreach ($data as $column => $value)
 		{
 			$field = $this->_meta->fields($column);
 			
-			// We'll determine whether there's user for this column later on
-			unset($values[$column]);
-			
-			// Skip NULL primary keys
-			if ($field->primary && empty($value))
-			{
-				continue;
-			}
-			
+			// Only save in_db values
 			if ($field->in_db)
 			{
-				// Update the column with the saved value
-				$values[$field->column] = $field->save($this, $value);
+				$values[$field->column] = $field->save($value);
 			}
-			
-			if ($field instanceof Jelly_Behavior_Field_Saveable)
+			else if ($field instanceof Jelly_Behavior_Field_Saveable)
 			{
 				$relations[$column] = $value;
 			}
