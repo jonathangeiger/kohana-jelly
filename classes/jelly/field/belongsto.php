@@ -106,19 +106,16 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	 * @return void
 	 * @author Jonathan Geiger
 	 */
-	public function with($model, $relation, $target_path, $parent_path)
+	public function with($model)
 	{
 		$meta = Jelly_meta::get($this->foreign['model']);
 
 		// Fields have to be aliased since we don't necessarily know the model from the path
-		$target_column = Jelly_Meta::column($this->foreign['model'], $meta->primary_key, FALSE);
-		$parent_column = Jelly_Meta::column($this->model, $this->foreign['column'], FALSE);
-		
-		$join_col1 = $target_path.'.'.$target_column;
-		$join_col2 = $parent_path.'.'.$parent_column;
+		$join_col1 = Jelly_Meta::column($this->foreign['model'], $meta->primary_key, TRUE);
+		$join_col2 = Jelly_Meta::column($this->model, $this->foreign['column'], TRUE);
 				
 		$model
-			->join(array($meta->table, $target_path), 'LEFT')
+			->join($meta->table, 'LEFT')
 			->on($join_col1, '=', $join_col2);
 	}
 }

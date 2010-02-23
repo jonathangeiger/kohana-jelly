@@ -841,7 +841,7 @@ abstract class Jelly_Core_Model
 		{
 			// We'll start with the first one and work our way down
 			$paths = explode(":", $target_path);
-			$parent = $this;
+			$parent = Jelly_Meta::model_name($this);
 			$chain = '';
 			
 			foreach ($paths as $iteration => $path)
@@ -858,7 +858,7 @@ abstract class Jelly_Core_Model
 				// name of the model, otherwise we use the chain
 				if ($iteration === 0)
 				{
-					$prev_chain = Jelly_Meta::model_name($this);
+					$prev_chain = $parent;
 				}
 				else
 				{
@@ -879,12 +879,12 @@ abstract class Jelly_Core_Model
 						$column = Jelly_Meta::column($model, $alias);
 						
 						// We have to manually alias, since the path does not necessarily correspond to the path
-						$this->select(array($chain.'.'.$column, $chain.':'.$alias));
+						$this->select(array($model.'.'.$column, $chain.':'.$alias));
 					}
 				}
 				
 				// Let the field finish the rest
-				$field->with($this, $path, $chain, $prev_chain);
+				$field->with($this, $path, $model, $parent);
 				
 				// Model now becomes the parent
 				$parent = $model;
