@@ -81,6 +81,28 @@ abstract class Jelly_Core
 	{
 		return Jelly::builder($model, Database::DELETE);
 	}
+	
+	/**
+	 * Returns the builder class to use for the specified model
+	 *
+	 * @param  string $model 
+	 * @param  int    $type
+	 * @return string
+	 */
+ 	public static function builder($model, $type = NULL)
+	{
+		$builder = 'Jelly_Builder';
+		
+		if ($meta = Jelly::meta($model))
+		{
+			if ($meta->builder())
+			{
+				$builder = $meta->builder();
+			}
+		}
+		
+		return new $builder($model, $type);
+	}
 
 	/**
 	 * Gets a particular set of metadata about a model
@@ -199,26 +221,5 @@ abstract class Jelly_Core
 	public static function prefix()
 	{
 		return Jelly::$_prefix;
-	}
-
-	/**
-	 * Returns the builder class to use for the specified model
-	 *
-	 * @param  string $model 
-	 * @return string
-	 */
- 	protected static function builder($model, $type)
-	{
-		$builder = 'Jelly_Builder';
-		
-		if ($meta = Jelly::meta($model))
-		{
-			if ($meta->builder())
-			{
-				$builder = $meta->builder();
-			}
-		}
-		
-		return new $builder($model, $type);
 	}
 }

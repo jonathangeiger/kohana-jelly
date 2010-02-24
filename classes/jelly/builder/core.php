@@ -19,6 +19,11 @@
 abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 {	
 	/**
+	 * @var string The inital model used to construct the builder
+	 */
+	protected $_model = NULL;
+	
+	/**
 	 * @var Jelly_Meta The first model to come in a from is cached here and used as the canonical model
 	 */	
 	protected $_meta = NULL;
@@ -41,19 +46,18 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	/**
 	 * @var int The query type
 	 */
-	protected $_type;
+	protected $_type = NULL;
 	
 	/**
 	 * @var boolean The result, if the query has been executed
 	 */
-	protected $_result = FALSE;
+	protected $_result = NULL;
 	
 	/**
 	 * Constructs a new Jelly_Builder instance. 
 	 * 
-	 * $model and $type are not actually allowed to be NULL, they 
-	 * are just set so because PHP throws errors otherwise, since
-	 * it doesn't conform the parent's definition.
+	 * $model is not actually allowed to be NULL. It has
+	 * a default because PHP throws strict errors otherwise.
 	 *
 	 * @param string $model
 	 */
@@ -61,37 +65,14 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	{
 		parent::__construct();
 		
-		if ( ! $model OR !$type)
+		if ( ! $model)
 		{
 			throw new Kohana_Exception(get_class($this) . ' requires $model and $type to be set in the constructor');
 		}
 		
-		// Hopefully we have a model to work with
-		$this->_meta = Jelly::meta($model);
-		
-		// Can we set the default from?
-		if ($this->_meta)
-		{
-			$this->from($this->_meta->table());
-			
-			// Apply sorting and with if necessary
-			if ($type === Database::SELECT)
-			{
-				foreach ($this->_meta->sorting() as $column => $direction)
-				{
-					$this->order_by($column, $direction);
-				}
-				
-				foreach ($this->_meta->load_with() as $relationship)
-				{
-					$this->with($relationship);
-				}
-			}
-		}
-		else
-		{
-			$this->from($model);
-		}
+		// Set the model and the initial from()
+		$this->_model = $model;
+		$this->_register_model();
 		
 		// Default to loading as arrays
 		$this->as_object(FALSE);
@@ -117,6 +98,20 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				$db = $this->_meta->db();
 			}
 			
+			// Apply sorting and with if necessary
+			if ($this->_type === Database::SELECT)
+			{
+				foreach ($this->_meta->sorting() as $column => $direction)
+				{
+					$this->order_by($column, $direction);
+				}
+				
+				foreach ($this->_meta->load_with() as $relationship)
+				{
+					$this->with($relationship);
+				}
+			}
+			
 			// We've now left the Jelly
 			$this->_result = $this->_build()->execute($db);
 			
@@ -137,6 +132,27 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		
 		// Hand off the result to the Jelly_Result
 		return $this->_result;
+	}
+	
+	/**
+	 * Gets or sets the type of the query.
+	 * 
+	 * Since Jelly_Builder can be compiled down to any type of 
+	 * query builder, it is possible to dynamically set the 
+	 * type anytime before execute() is called.
+	 *
+	 * @return  integer
+	 */
+	public function type($type = NULL)
+	{
+		if ($type)
+		{
+			$this->_type = $type;
+			
+			return $this;
+		}
+		
+		return $this->_type;
 	}
 	
 	/**
@@ -506,6 +522,51 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	}
 	
 	/**
+	 * Resets the query builder to an empty state.
+	 * 
+	 * The query type is not reset, but can be changed with type().
+	 *
+	 * @return $this
+	 */
+	public function reset()
+	{
+		parent::reset();
+		
+		$this->_set     =
+		$this->_columns = 
+		$this->_values  = array();
+		$this->_result = NULL;
+		
+		// Re-register the model
+		$this->_register_model();
+		
+		return $this;
+	}
+	
+	/**
+	 * Sets the model and the initial from() clause
+	 *
+	 * @param string $model 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	protected function _register_model()
+	{
+		// Hopefully we have a model to work with
+		$this->_meta = Jelly::meta($this->_model);
+		
+		// Can we set the default from?
+		if ($this->_meta)
+		{
+			$this->from($this->_meta->table());
+		}
+		else
+		{
+			$this->from($this->_model);
+		}
+	}
+	
+	/**
 	 * This is an internal method used for aliasing only things coming 
 	 * to the query builder, since they can come in so many formats.
 	 * 
@@ -634,7 +695,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				break;
 				
 			default:
-				throw new Kohana_Exception("Unsupported database constant");
+				throw new Kohana_Exception("Jelly_Builder compiled without a query type specified");
 				break;
 		}
 		
