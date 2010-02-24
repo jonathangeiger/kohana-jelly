@@ -233,8 +233,13 @@ abstract class Jelly_Meta_Core
 	 * Returns the builder attached to this object or FALSE of none is assigned
 	 * @return string
 	 */
-	public function builder()
+	public function builder($value = NULL)
 	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('builder', $value);
+		}
+		
 		return $this->builder;
 	}
 	
