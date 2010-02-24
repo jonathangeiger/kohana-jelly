@@ -57,7 +57,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 *
 	 * @param string $model
 	 */
-	public function __construct($model = NULL, $type = NULL, $cond = NULL)
+	public function __construct($model = NULL, $type = NULL)
 	{
 		parent::__construct();
 		
@@ -85,27 +85,6 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				foreach ($this->_meta->load_with() as $relationship)
 				{
 					$this->with($this->_meta->load_with());
-				}
-				
-				// Do we need to apply an initial condition?
-				if ($cond)
-				{
-					// When conditions are passed, they're automatically limited to 1
-					$this->limit(1);
-					
-					// Primary key
-					if (is_int($cond) OR is_string($cond))
-					{
-						$this->where($this->_meta->primary_key(), '=', $cond);
-					}
-					// Simple where clause
-					elseif (is_array($cond))
-					{
-						foreach($cond as $column => $value)
-						{
-							$this->where($column, '=', $value);
-						}
-					}
 				}
 			}
 		}
