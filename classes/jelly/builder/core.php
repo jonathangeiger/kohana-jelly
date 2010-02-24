@@ -213,15 +213,15 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function select_array(array $columns)
 	{
-		foreach ($columns as $i => $table)
+		foreach ($columns as $i => $column)
 		{
-			if (is_array($table))
+			if (is_array($column))
 			{
-				$args[$i][0] = $this->_column($table[0], TRUE);
+				$columns[$i][0] = $this->_column($column[0], TRUE);
 			}
 			else
 			{
-				$args[$i] = $this->_column($table, TRUE);
+				$columns[$i] = $this->_column($column, TRUE);
 			}
 		}
 		
