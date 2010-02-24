@@ -104,7 +104,7 @@ abstract class Jelly_Meta_Core
 		// See if we have a special builder class to use
 		$builder = Jelly::prefix().'builder_'.$model;
 		
-		if (class_exists($builder, FALSE) OR Kohana::auto_load($builder))
+		if (class_exists($builder))
 		{
 			$this->builder = $builder;
 		}
@@ -230,10 +230,8 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the builder attached to this 
-	 *
-	 * @return void
-	 * @author Expressway Video
+	 * Returns the builder attached to this object or FALSE of none is assigned
+	 * @return string
 	 */
 	public function builder()
 	{

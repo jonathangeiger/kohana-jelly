@@ -125,7 +125,7 @@ abstract class Jelly_Core
 		}
 				
 		 // Can we find the class?
-		if (class_exists($class, FALSE) OR Kohana::auto_load($class))
+		if (class_exists($class))
 		{
 			// Prevent accidentally trying to load ORM or Sprig models
 			if ( ! is_subclass_of($class, "Jelly_Model"))
