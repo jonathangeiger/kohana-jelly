@@ -130,78 +130,6 @@ abstract class Jelly_Model_Core
 	}
 	
 	/**
-	 * Gets the internally represented value from a field or unmapped column.
-	 * 
-	 * * If an array or TRUE is passed for $name, an array of fields will be returned.
-	 * * If $changed is FALSE, only original data for the field will be returned.
-	 *
-	 * @param	mixed    $name	   The field's name
-	 * @param	boolean	 $changed
-	 * @return	mixed
-	 */
-	public function get($name, $changed = TRUE)
-	{	
-		// Passing TRUE or an array of fields to get returns them as an array
-		if (is_array($name) OR $name === TRUE)	
-		{
-			$fields = ($name === TRUE) ? array_keys($this->_meta->fields()) : $name;
-			$result = array();
-
-			foreach($fields as $field)
-			{
-				if ($changed)
-				{
-					$result[$field] = $this->__get($field);
-				}
-				else
-				{
-					$result[$field] = $this->get($field, FALSE);
-				}
-			}
-
-			return $result;
-		}
-		else 
-		{
-			if ($field = $this->_meta->fields($name))
-			{	
-				// Alias the name to its actual name
-				$name = $field->name;
-				
-				// Changes trump with() and original values
-				if ($changed AND array_key_exists($name, $this->_changed))
-				{	
-					$value = $field->get($this, $this->_changed[$name]);
-				}
-				elseif ($changed AND array_key_exists($name, $this->_with))
-				{
-					$model = Jelly::factory($field->foreign['model'])->values($this->_with[$name]);
-					
-					// Try and verify that it's actually loaded
-					if ($model->id())
-					{
-						$model->_loaded = TRUE;
-						$model->_saved = TRUE;
-					}
-					
-					$value = $model;
-				}
-				else
-				{
-					$value = $field->get($this, $this->_original[$name]);
-				}
-				
-				return $value;
-			}
-			// Return unmapped data from custom queries
-			elseif (isset($this->_unmapped[$name]))
-			{
-				return $this->_unmapped[$name];
-			}
-		}
-	}
-	
-	/**
 	 * Allows members to be set on the object.
 	 * 
 	 * Under the hood, this is just proxying to set()
@@ -221,6 +149,142 @@ abstract class Jelly_Model_Core
 		}
 		
 		$this->set($name, $value);
+	}
+	
+	/**
+	 * Returns true if $name is a field of the model or an unmapped column.
+	 *
+	 * @param  string	$name 
+	 * @return boolean
+	 */
+	public function __isset($name)
+	{
+		return (bool)($this->_meta->fields($name) OR array_key_exists($name, $this->_unmapped));
+	}
+	
+	/**
+	 * This doesn't unset fields. Rather, it sets them to their default 
+	 * value. Unmapped, changed, and retrieved values are unset.
+	 * 
+	 * In essence, unsetting a field sets it as if you never made any changes 
+	 * to it, and clears the cache if the value has been retrieved with those changes.
+	 *
+	 * @param  string $name 
+	 * @return void
+	 */
+	public function __unset($name)
+	{
+		if ($field = $this->_meta->fields($name, TRUE))
+		{
+			// We don't want to unset the keys, because 
+			// they are assumed to exist. Just set them back to defaults
+			$this->_original[$field] = $this->_meta->defaults($field);
+			
+			// Ensure changed and retrieved data is cleared
+			// This effectively clears the cache and any changes
+			if (array_key_exists($name, $this->_changed))
+			{
+				unset($this->_changed[$name]);
+			}
+			
+			if (array_key_exists($name, $this->_retrieved))
+			{
+				unset($this->_retrieved[$name]);
+			}
+		}
+		
+		// This doesn't matter
+		if (array_key_exists($name, $this->_unmapped))
+		{
+			unset($this->_unmapped[$name]);
+		}
+	}
+
+	/**
+	 * Allows serialization of a model and all of its retrieved and related properties.
+	 * 
+	 * This fixes a bug with retrieved MySQL results.
+	 *
+	 * @return array
+	 * @author Paul Banks
+	 */
+	public function __sleep()
+	{
+		foreach ($this->_retrieved as $field => $object)
+		{
+			if ($object instanceof Database_MySQL_Result)
+			{
+				// Database_MySQL_Results handle results differenly, so they must be converted
+				// Otherwise they are invalide when they wake up.
+				$this->_retrieved[$field] = new Database_Result_Cached($object->as_array(), '');				
+			}
+		}		
+
+		// Return array of all properties to get them serialised
+		return array_keys(get_object_vars($this));
+	}
+	
+	/**
+	 * Gets the internally represented value from a field or unmapped column.
+	 *
+	 * @param	mixed    $name	   The field's name
+	 * @param	boolean	 $changed
+	 * @return	mixed
+	 */
+	public function get($name)
+	{	
+		if ($field = $this->_meta->fields($name))
+		{	
+			// Alias the name to its actual name
+			$name = $field->name;
+			
+			if (array_key_exists($name, $this->_changed))
+			{	
+				$value = $field->get($this, $this->_changed[$name]);
+			}
+			elseif (array_key_exists($name, $this->_with))
+			{
+				$value = Jelly::factory($field->foreign['model'])->values($this->_with[$name]);
+				
+				// Try and verify that it's actually loaded
+				if (!$value->id())
+				{
+					$value->_loaded = FALSE;
+					$value->_saved = FALSE;
+				}
+			}
+			else
+			{
+				$value = $field->get($this, $this->_original[$name]);
+			}
+			
+			return $value;
+		}
+		// Return unmapped data from custom queries
+		elseif (isset($this->_unmapped[$name]))
+		{
+			return $this->_unmapped[$name];
+		}
+	}
+	
+	/**
+	 * Returns an array of values in the fields 
+	 *
+	 * @param  string $fields 
+	 * @param  ...
+	 * @return array
+	 */
+	public function as_array($fields = NULL)
+	{
+		$fields = func_num_args() ? func_get_args() : array_keys($this->_meta->fields());
+		$result = array();
+		
+		foreach($fields as $field)
+		{
+			$result[$field] = $this->__get($field);
+		}
+		
+		return $result;
 	}
 	
 	/**
@@ -337,79 +401,6 @@ abstract class Jelly_Model_Core
 		$this->_saved = $this->_loaded = TRUE;
 		
 		return $this;
-	}
-	
-	/**
-	 * Returns true if $name is a field of the model or an unmapped column.
-	 *
-	 * @param  string	$name 
-	 * @return boolean
-	 */
-	public function __isset($name)
-	{
-		return (bool)($this->_meta->fields($name) OR array_key_exists($name, $this->_unmapped));
-	}
-	
-	/**
-	 * This doesn't unset fields. Rather, it sets them to their default 
-	 * value. Unmapped, changed, and retrieved values are unset.
-	 * 
-	 * In essence, unsetting a field sets it as if you never made any changes 
-	 * to it, and clears the cache if the value has been retrieved with those changes.
-	 *
-	 * @param  string $name 
-	 * @return void
-	 */
-	public function __unset($name)
-	{
-		if ($field = $this->_meta->fields($name, TRUE))
-		{
-			// We don't want to unset the keys, because 
-			// they are assumed to exist. Just set them back to defaults
-			$this->_original[$field] = $this->_meta->defaults($field);
-			
-			// Ensure changed and retrieved data is cleared
-			// This effectively clears the cache and any changes
-			if (array_key_exists($name, $this->_changed))
-			{
-				unset($this->_changed[$name]);
-			}
-			
-			if (array_key_exists($name, $this->_retrieved))
-			{
-				unset($this->_retrieved[$name]);
-			}
-		}
-		
-		// This doesn't matter
-		if (array_key_exists($name, $this->_unmapped))
-		{
-			unset($this->_unmapped[$name]);
-		}
-	}
-
-	/**
-	 * Allows serialization of a model and all of its retrieved and related properties.
-	 * 
-	 * This fixes a bug with retrieved MySQL results.
-	 *
-	 * @return array
-	 * @author Paul Banks
-	 */
-	public function __sleep()
-	{
-		foreach ($this->_retrieved as $field => $object)
-		{
-			if ($object instanceof Database_MySQL_Result)
-			{
-				// Database_MySQL_Results handle results differenly, so they must be converted
-				// Otherwise they are invalide when they wake up.
-				$this->_retrieved[$field] = new Database_Result_Cached($object->as_array(), '');				
-			}
-		}		
-
-		// Return array of all properties to get them serialised
-		return array_keys(get_object_vars($this));
 	}
 	
 	/**
@@ -567,6 +558,17 @@ abstract class Jelly_Model_Core
 		}
 		
 		return $this->clear();
+	}
+	
+	/**
+	 * Returns a boolean as to whether or not the particular field has changed
+	 *
+	 * @param  string $field 
+	 * @return boolean
+	 */
+	public function changed($field)
+	{
+		return array_key_exists($this->_meta->fields($field, TRUE), $this->_changed);
 	}
 	
 	/**

@@ -24,7 +24,7 @@ abstract class Jelly_Field_Password extends Field_String
 		if ($this->hash_with)
 		{
 			// Verify value has changed
-			if ($model->get($this->name, FALSE) != $model->get($this->name))
+			if ($model->changed($this->name))
 			{
 				$value = call_user_func($this->hash_with, $value);
 			}
