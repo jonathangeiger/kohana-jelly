@@ -40,12 +40,12 @@ abstract class Jelly_Model_Core
 	protected $_saved = FALSE;
 	
 	/**
-	 * @var Jelly_Meta a copy of this object's meta object
+	 * @var Jelly_Meta A copy of this object's meta object
 	 */
 	protected $_meta = NULL;
 	
 	/**
-	 * @var array Data set by mysql_fetch_object. Daggers to ye who overloads this.
+	 * @var array Data set by the result. Daggers to ye who overloads this.
 	 */
 	protected $_preload_data = array();
 	
@@ -56,12 +56,10 @@ abstract class Jelly_Model_Core
 
 	/**
 	 * An optional conditional can be passed. If it is an integer 
-	 * or a string, it will be assumed to be a primary key and 
+	 * or a string, it will be assumed to be a unique key and 
 	 * the record will be loaded automatically into the model.
-	 * If it is an associative array, it is used in constructing 
-	 * a where clause and the record is loaded automatically.
 	 *
-	 * @param	mixed  $cond  A primary key or where clause to use for auto-loading a particular record
+	 * @param	mixed  $cond
 	 **/
 	public function __construct($cond = NULL)
 	{
@@ -202,9 +200,12 @@ abstract class Jelly_Model_Core
 	
 	/**
 	 * Gets the internally represented value from a field or unmapped column.
+	 * 
+	 * Relationships that are returned are raw Jelly_Builders, and must be
+	 * execute()d before they can be used. This allows you to chain
+	 * extra statements on to them.
 	 *
 	 * @param	mixed    $name	   The field's name
-	 * @param	boolean	 $changed
 	 * @return	mixed
 	 */
 	public function get($name)
@@ -268,13 +269,6 @@ abstract class Jelly_Model_Core
 	 * is converted to an internally represented value.
 	 * 
 	 * The conversion is done in the field and returned.
-	 * 
-	 * A few things to note:
-	 * 
-	 *	- If $values is a string, $alias will be used as the value 
-	 *	  and $alias will be set to False.
-	 *	- If $original is TRUE, the data will be set as original 
-	 *	  (not changed) as if it came from the database.
 	 *
 	 * @param  string  $name 
 	 * @param  string  $value 
@@ -382,7 +376,7 @@ abstract class Jelly_Model_Core
 	/**
 	 * Loads a single row into the current object. 
 	 *
-	 * @param  mixed  $where  an array or id to load 
+	 * @param  mixed  $key
 	 * @return $this
 	 */
 	public function load($key = NULL)
@@ -433,7 +427,7 @@ abstract class Jelly_Model_Core
 	/**
 	 * Creates or updates the current record. 
 	 * 
-	 * If $primary_key is passed, the record will be assumed to exist
+	 * If $key is passed, the record will be assumed to exist
 	 * and an update will be executed, even if the model isn't loaded().
 	 *
 	 * @param  mixed  $key
