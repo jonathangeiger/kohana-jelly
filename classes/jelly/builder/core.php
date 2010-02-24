@@ -99,7 +99,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 						$this->where($this->_meta->primary_key(), '=', $cond);
 					}
 					// Simple where clause
-					else if (is_array($cond))
+					elseif (is_array($cond))
 					{
 						foreach($cond as $column => $value)
 						{

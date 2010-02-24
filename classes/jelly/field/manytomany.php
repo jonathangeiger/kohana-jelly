@@ -104,36 +104,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 */
 	public function set($value)
 	{
-		// Can be set in only one go
-		$return = array();
-		
-		// Handle Database Results
-		if ($value instanceof Iterator OR is_array($value))
-		{
-			foreach($value as $row)
-			{
-				if (is_object($row))
-				{
-					$return[] = $row->id();
-				}
-				else
-				{
-					$return[] = $row;
-				}
-			}
-		}
-		// And individual models
-		else if (is_object($value))
-		{
-			$return = array($value->id());
-		}
-		// And everything else
-		else
-		{
-			$return = (array)$value;
-		}
-		
-		return $return;
+		return $this->_ids($value);
 	}
 	
 	/**

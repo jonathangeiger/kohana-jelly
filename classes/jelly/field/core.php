@@ -80,7 +80,7 @@ abstract class Jelly_Field_Core
 		{
 			$this->column = $options;
 		}
-		else if (is_array($options))
+		elseif (is_array($options))
 		{
 			// Just throw them into the class as public variables
 			foreach ($options as $name => $value)
@@ -238,5 +238,52 @@ abstract class Jelly_Field_Core
 				$data->error($field, 'unique');
 			}
 		}
+	}
+	
+	/**
+	 * Converts a bunch of types to an array of ids
+	 *
+	 * @param  mixed $models 
+	 * @return array
+	 */
+	protected function _ids($models)
+	{
+		$ids = array();
+				
+		// Handle Database Results
+		if ($models instanceof Iterator OR is_array($models))
+		{
+			foreach($models as $row)
+			{
+				if (is_object($row))
+				{
+					// Ignore unloaded relations
+					if ($row->loaded())
+					{
+						$ids[] = $row->id();
+					}
+				}
+				else
+				{
+					$ids[] = $row;
+				}
+			}
+		}
+		// And individual models
+		elseif (is_object($models))
+		{
+			// Ignore unloaded relations
+			if ($models->loaded())
+			{
+				$ids[] = $models->id();
+			}
+		}
+		// And everything else
+		else
+		{
+			$ids[] = $models;
+		}
+		
+		return $ids;
 	}
 }

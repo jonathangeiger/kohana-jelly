@@ -173,7 +173,7 @@ abstract class Jelly_Model_Core
 				{	
 					$value = $field->get($this, $this->_changed[$name]);
 				}
-				else if ($changed AND array_key_exists($name, $this->_with))
+				elseif ($changed AND array_key_exists($name, $this->_with))
 				{
 					$model = Jelly::factory($name)->values($this->_with[$name]);
 					
@@ -194,7 +194,7 @@ abstract class Jelly_Model_Core
 				return $value;
 			}
 			// Return unmapped data from custom queries
-			else if (isset($this->_unmapped[$name]))
+			elseif (isset($this->_unmapped[$name]))
 			{
 				return $this->_unmapped[$name];
 			}
@@ -317,7 +317,7 @@ abstract class Jelly_Model_Core
 				$this->_with[$relationship][$target] = $value;
 			}
 			// Key is coming from a database result
-			else if ($alias === TRUE AND $columns = $this->_meta->columns($key))
+			elseif ($alias === TRUE AND $columns = $this->_meta->columns($key))
 			{
 				// Contains an array of fields that the column is mapped to
 				// This allows multiple fields to get data from the same column
@@ -327,7 +327,7 @@ abstract class Jelly_Model_Core
 				}
 			}
 			// Standard setting of a field 
-			else if ($alias === FALSE AND $field = $this->_meta->fields($key))
+			elseif ($alias === FALSE AND $field = $this->_meta->fields($key))
 			{
 				$this->_original[$field->name] = $field->set($value);
 			}
@@ -499,7 +499,7 @@ abstract class Jelly_Model_Core
 			{
 				$values[$field->column] = $field->save($this, $value, (bool) $key);
 			}
-			else if ($field instanceof Jelly_Field_Behavior_Saveable)
+			elseif ($field instanceof Jelly_Field_Behavior_Saveable)
 			{
 				$relations[$column] = $value;
 			}
@@ -868,7 +868,7 @@ abstract class Jelly_Model_Core
 			}
 		}
 		// And individual models
-		else if (is_object($models))
+		elseif (is_object($models))
 		{
 			// Ignore unloaded relations
 			if ($models->loaded())

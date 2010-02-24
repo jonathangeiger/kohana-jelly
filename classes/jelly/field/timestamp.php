@@ -40,7 +40,7 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 			return strtotime($value);
 		}
 		// Already a timestamp?
-		else if (is_numeric($value))
+		elseif (is_numeric($value))
 		{
 			return (int) $value;
 		}
