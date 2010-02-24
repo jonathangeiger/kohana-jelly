@@ -93,7 +93,14 @@ class Jelly_Result_Core implements Iterator, Countable, SeekableIterator, ArrayA
 	{
 		if ($object)
 		{
-	        return $this->_model->values($this->_result->current(), TRUE);
+			if ($this->_result->current())
+			{
+		        return $this->_model->values($this->_result->current(), TRUE);	
+			}
+			else
+			{
+				return $this->_model->clear();
+			}
 		}
 		else
 		{
