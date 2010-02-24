@@ -84,7 +84,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				
 				foreach ($this->_meta->load_with() as $relationship)
 				{
-					$this->with($this->_meta->load_with());
+					$this->with($relationship);
 				}
 			}
 		}
