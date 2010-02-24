@@ -23,14 +23,14 @@ abstract class Jelly_Core
 	 * can be constructed directly.
 	 *
 	 * @param	mixed  $model
-	 * @param	mixed  $cond
+	 * @param	mixed  $key
 	 * @return	Jelly
 	 */
-	public static function factory($model, $cond = NULL)
+	public static function factory($model, $key = NULL)
 	{	
 		$class = Jelly::class_name($model);
 		
-		return new $class($id);
+		return new $class($key);
 	}
 
 	/**
