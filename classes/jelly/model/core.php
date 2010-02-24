@@ -175,7 +175,7 @@ abstract class Jelly_Model_Core
 				}
 				elseif ($changed AND array_key_exists($name, $this->_with))
 				{
-					$model = Jelly::factory($name)->values($this->_with[$name]);
+					$model = Jelly::factory($field->foreign['model'])->values($this->_with[$name]);
 					
 					// Try and verify that it's actually loaded
 					if ($model->id())
