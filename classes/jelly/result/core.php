@@ -85,7 +85,7 @@ class Jelly_Result_Core implements Iterator, Countable, SeekableIterator, ArrayA
 	{
 		if ($this->_result instanceof Database_MySQL_Result)
 		{
-			$this->_result = new Database_Result_Cached($this->_result->as_array(), '')
+			$this->_result = new Database_Result_Cached($this->_result->as_array(), '');
 		}
 	}
 	
