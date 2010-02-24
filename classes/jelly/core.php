@@ -32,7 +32,7 @@ abstract class Jelly_Core
 		
 		return new $class($id);
 	}
-	
+
 	/**
 	 * Returns a query builder that can be used for selecting records.
 	 * 
@@ -46,9 +46,9 @@ abstract class Jelly_Core
 	 */
 	public static function select($model)
 	{
-		return new Jelly_Builder($model, Database::SELECT);
+		return Jelly::builder($model, Database::SELECT);
 	}
-	
+
 	/**
 	 * Returns a query builder that can be used for inserting record(s).
 	 *
@@ -57,9 +57,9 @@ abstract class Jelly_Core
 	 */
 	public static function insert($model)
 	{
-		return new Jelly_Builder($model, Database::INSERT);
+		return Jelly::builder($model, Database::INSERT);
 	}
-	
+
 	/**
 	 * Returns a query builder that can be used for updating many records.
 	 *
@@ -68,9 +68,9 @@ abstract class Jelly_Core
 	 */
 	public static function update($model)
 	{
-		return new Jelly_Builder($model, Database::UPDATE);
+		return Jelly::builder($model, Database::UPDATE);
 	}
-	
+
 	/**
 	 * Returns a query builder that can be used for deleting many records.
 	 *
@@ -79,7 +79,7 @@ abstract class Jelly_Core
 	 */
 	public static function delete($model)
 	{
-		return new Jelly_Builder($model, Database::DELETE);
+		return Jelly::builder($model, Database::DELETE);
 	}
 
 	/**
@@ -103,7 +103,7 @@ abstract class Jelly_Core
 		
 		return Jelly::$_models[$model];
 	}
-		
+
 	/**
 	 * Automatically loads a model, if it exists, into the meta table.
 	 * 
@@ -144,50 +144,12 @@ abstract class Jelly_Core
 		// Let the intialize() method override defaults.
 		call_user_func(array($class, 'initialize'), $meta);
 		
-		// Initialize all of the fields with their column and the model name
-		foreach($meta->fields as $column => $field)
-		{
-			// Allow aliasing fields
-			if (is_string($field))
-			{
-				if (isset($meta->fields[$field]))
-				{
-					$meta->aliases[$column] = $field;
-				}
-									
-				// Aliases shouldn't pollute fields
-				unset($meta->fields[$column]);
-				
-				continue;
-			}
-			
-			$field->initialize($model, $column);
-			
-			// Ensure a default primary key is set
-			if ($field->primary AND empty($meta->primary_key))
-			{
-				$meta->primary_key = $column;
-			}
-			
-			// Set the defaults so they're actually persistent
-			$meta->defaults[$column] = $field->default;
-			
-			// Set the columns, so that we can access reverse database results properly
-			if ( ! array_key_exists($field->column, $meta->columns))
-			{
-				$meta->columns[$field->column] = array();
-			}
-			
-			$meta->columns[$field->column][] = $column;
-		}
-			
-		// Meta object is initialized and no longer writable
-		$meta->initialized = TRUE;
+		// Finalize the changes
+		$meta->finalize($model);
 		
 		return TRUE;
 	}
-	
-	
+
 	/**
 	 * Returns the class name of a model
 	 *
@@ -205,7 +167,7 @@ abstract class Jelly_Core
 			return strtolower(Jelly::$_prefix.$model);
 		}
 	}
-	
+
 	/**
 	 * Returns the model name of a class
 	 *
@@ -230,4 +192,33 @@ abstract class Jelly_Core
 		return strtolower($model);
 	}
 	
+	/**
+	 * Returns the prefix to use for all models and builders.
+	 * @return string
+	 */
+	public static function prefix()
+	{
+		return Jelly::$_prefix;
+	}
+
+	/**
+	 * Returns the builder class to use for the specified model
+	 *
+	 * @param  string $model 
+	 * @return string
+	 */
+ 	protected static function builder($model, $type)
+	{
+		$builder = 'Jelly_Builder';
+		
+		if ($meta = Jelly::meta($model))
+		{
+			if ($meta->builder())
+			{
+				$builder = $meta->builder();
+			}
+		}
+		
+		return new $builder($model, $type);
+	}
 }

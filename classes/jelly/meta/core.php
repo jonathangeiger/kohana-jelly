@@ -63,6 +63,11 @@ abstract class Jelly_Meta_Core
 	protected $aliases = array();
 	
 	/**
+	 * @var string The builder class the model is associated with
+	 */
+	protected $builder = FALSE;
+	
+	/**
 	 * @var array A list of columns and how they relate to fields
 	 */
 	protected $columns = array();
@@ -78,19 +83,71 @@ abstract class Jelly_Meta_Core
 	protected $field_cache = array();
 	
 	/**
-	 * Constructor.
+	 * This is called after initialization to finalize any changes to the meta object
 	 *
-	 * @param string $model 
+	 * @return void
 	 */
-	public function __construct($model)
+	public function finalize($model)
 	{
+		if ($this->initialized) 
+			return;
+		
+		// This cannot be overridden
+		$this->model = $model;
+		
 		// Table should be a sensible default
 		if (empty($this->table))
 		{
 			$this->table = inflector::plural($model);
 		}
 		
-		$this->model = $model;
+		// See if we have a special builder class to use
+		$builder = Jelly::prefix().'builder_'.$model;
+		
+		if (class_exists($builder, FALSE) OR Kohana::auto_load($builder))
+		{
+			$this->builder = $builder;
+		}
+		
+		// Initialize all of the fields with their column and the model name
+		foreach($this->fields as $column => $field)
+		{
+			// Allow aliasing fields
+			if (is_string($field))
+			{
+				if (isset($this->fields[$field]))
+				{
+					$this->aliases[$column] = $field;
+				}
+									
+				// Aliases shouldn't pollute fields
+				unset($this->fields[$column]);
+				
+				continue;
+			}
+			
+			$field->initialize($model, $column);
+			
+			// Ensure a default primary key is set
+			if ($field->primary AND empty($this->primary_key))
+			{
+				$this->primary_key = $column;
+			}
+			
+			// Set the defaults so they're actually persistent
+			$this->defaults[$column] = $field->default;
+			
+			// Set the columns, so that we can access reverse database results properly
+			if ( ! array_key_exists($field->column, $this->columns))
+			{
+				$this->columns[$field->column] = array();
+			}
+			
+			$this->columns[$field->column][] = $column;
+		}
+			
+		// Meta object is initialized and no longer writable
+		$this->initialized = TRUE;
 	}
 	
 	/**
@@ -170,6 +227,17 @@ abstract class Jelly_Meta_Core
 		}
 		
 		return $this->table;
+	}
+	
+	/**
+	 * Returns the builder attached to this 
+	 *
+	 * @return void
+	 * @author Expressway Video
+	 */
+	public function builder()
+	{
+		return $this->builder;
 	}
 	
 	/**
