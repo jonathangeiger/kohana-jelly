@@ -76,6 +76,20 @@ class Jelly_Result_Core implements Iterator, Countable, SeekableIterator, ArrayA
 	}
 	
 	/**
+	 * Converts MySQL Results to Cached Results, since MySQL resources are not serializable.
+	 *
+	 * @return array
+	 * @author Paul Banks
+	 */
+	public function __sleep()
+	{
+		if ($this->_result instanceof Database_MySQL_Result)
+		{
+			$this->_result = new Database_Result_Cached($this->_result->as_array(), '')
+		}
+	}
+	
+	/**
 	 * Implementation of the Iterator interface
 	 * @return $this
 	 */

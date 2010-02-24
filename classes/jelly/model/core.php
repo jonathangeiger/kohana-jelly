@@ -199,30 +199,6 @@ abstract class Jelly_Model_Core
 			unset($this->_unmapped[$name]);
 		}
 	}
-
-	/**
-	 * Allows serialization of a model and all of its retrieved and related properties.
-	 * 
-	 * This fixes a bug with retrieved MySQL results.
-	 *
-	 * @return array
-	 * @author Paul Banks
-	 */
-	public function __sleep()
-	{
-		foreach ($this->_retrieved as $field => $object)
-		{
-			if ($object instanceof Database_MySQL_Result)
-			{
-				// Database_MySQL_Results handle results differenly, so they must be converted
-				// Otherwise they are invalide when they wake up.
-				$this->_retrieved[$field] = new Database_Result_Cached($object->as_array(), '');				
-			}
-		}		
-
-		// Return array of all properties to get them serialised
-		return array_keys(get_object_vars($this));
-	}
 	
 	/**
 	 * Gets the internally represented value from a field or unmapped column.
