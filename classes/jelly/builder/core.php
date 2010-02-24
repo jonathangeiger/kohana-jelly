@@ -450,6 +450,9 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function with($relationship)
 	{
+		// Ensure the main table is selected
+		$this->select('*');
+		
 		// We'll start with the first one and work our way down
 		$paths = explode(":", $relationship);
 		$parent = $this->_meta->model();
