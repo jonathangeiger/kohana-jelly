@@ -113,13 +113,13 @@ abstract class Jelly_Field_Core
 		// This is for naming form fields
 		$this->name = $column;
 		
-		if (!$this->column)
+		if ( ! $this->column)
 		{
 			$this->column = $column;
 		}
 		
 		// Check for a name, because we can easily provide a default
-		if (!$this->label)
+		if ( ! $this->label)
 		{
 			$this->label = inflector::humanize($column);
 		}

@@ -63,7 +63,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		$return = array();
 		
 		// Handle Database Results
-		if ($value instanceof Iterator || is_array($value))
+		if ($value instanceof Iterator OR is_array($value))
 		{
 			foreach($value as $row)
 			{
@@ -122,7 +122,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 			->execute();
 						
 		// Set the new relations
-		if (!empty($value) && is_array($value))
+		if ( ! empty($value) AND is_array($value))
 		{			
 			// Update the ones in our list
 			Jelly::update($this->foreign['model'])

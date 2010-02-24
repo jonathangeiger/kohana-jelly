@@ -58,7 +58,7 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 	 */
 	public function save($model, $value, $loaded)
 	{
-		if ((!$loaded && $this->auto_now_create) || ($loaded && $this->auto_now_update))
+		if (( ! $loaded AND $this->auto_now_create) OR ($loaded AND $this->auto_now_update))
 		{
 			$value = time();
 		}

@@ -61,7 +61,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	{
 		parent::__construct();
 		
-		if (!$model OR !$type)
+		if ( ! $model OR !$type)
 		{
 			throw new Kohana_Exception(get_class($this) . ' requires $model and $type to be set in the constructor');
 		}
@@ -94,7 +94,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 					$this->limit(1);
 					
 					// Primary key
-					if (is_int($cond) || is_string($cond))
+					if (is_int($cond) OR is_string($cond))
 					{
 						$this->where($this->_meta->primary_key(), '=', $cond);
 					}
@@ -130,7 +130,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	public function execute($db = 'default')
 	{
 		// Don't repeat queries
-		if (!$this->_result)
+		if ( ! $this->_result)
 		{
 			// See if we can use a better $db group
 			if ($this->_meta)
@@ -263,7 +263,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		foreach ($tables as $i => $table)
 		{
 			// Cache the first meta
-			if (!$this->_meta)
+			if ( ! $this->_meta)
 			{
 				$model = $table;
 				
@@ -480,7 +480,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		{
 			$field = Jelly::meta($parent)->fields($path);
 
-			if (!($field instanceof Jelly_Field_Behavior_Joinable))
+			if ( ! ($field instanceof Jelly_Field_Behavior_Joinable))
 			{
 				// Entire list is invalid
 				break;
@@ -581,7 +581,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		
 		// If the model is NULL, $this's table name or model name
 		// We just replace if with the current model's name
-		if ($this->_meta && ($model === NULL || $model == $this->_meta->table()))
+		if ($this->_meta AND ($model === NULL OR $model == $this->_meta->table()))
 		{
 			$model = $this->_meta->model();
 		}
@@ -602,7 +602,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		}
 		
 		// Only join when we actually have a table
-		if ($join && $table)
+		if ($join AND $table)
 		{
 			return $table.'.'.$column;
 		}
@@ -660,7 +660,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		$query->_where = $this->_where;
 		
 		// Convert sets
-		if ($this->_columns && $this->_values && $type === Database::INSERT)
+		if ($this->_columns AND $this->_values AND $type === Database::INSERT)
 		{
 			$query->columns($this->_columns);
 			
@@ -668,7 +668,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			call_user_func_array(array($query, 'values'), $this->_values);
 		}
 		
-		if ($this->_set && $type === Database::UPDATE)
+		if ($this->_set AND $type === Database::UPDATE)
 		{
 			$query->set($this->_set);
 		}

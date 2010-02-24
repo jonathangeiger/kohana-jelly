@@ -108,7 +108,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		$return = array();
 		
 		// Handle Database Results
-		if ($value instanceof Iterator || is_array($value))
+		if ($value instanceof Iterator OR is_array($value))
 		{
 			foreach($value as $row)
 			{
@@ -198,7 +198,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		
 		foreach ($ids as $id)
 		{
-			if (!in_array($id, $in))
+			if ( ! in_array($id, $in))
 			{
 				return FALSE;
 			}

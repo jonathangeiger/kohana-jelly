@@ -73,7 +73,7 @@ abstract class Jelly_Model_Core
 		$this->_original = $this->_meta->defaults();
 		
 		// Add the values stored by mysql_set_object
-		if (!empty($this->_preload_data) && is_array($this->_preload_data))
+		if ( ! empty($this->_preload_data) AND is_array($this->_preload_data))
 		{
 			$this->values($this->_preload_data, TRUE);
 			$this->_preload_data = array();
@@ -113,7 +113,7 @@ abstract class Jelly_Model_Core
 		// name, rather than under its alias name
 		$name = $this->_meta->fields($name, TRUE);
 		
-		if (!array_key_exists($name, $this->_retrieved))
+		if ( ! array_key_exists($name, $this->_retrieved))
 		{
 			$value = $this->get($name);
 			
@@ -142,7 +142,7 @@ abstract class Jelly_Model_Core
 	public function get($name, $changed = TRUE)
 	{	
 		// Passing TRUE or an array of fields to get returns them as an array
-		if (is_array($name) || $name === TRUE)	
+		if (is_array($name) OR $name === TRUE)	
 		{
 			$fields = ($name === TRUE) ? array_keys($this->_meta->fields()) : $name;
 			$result = array();
@@ -169,11 +169,11 @@ abstract class Jelly_Model_Core
 				$name = $field->name;
 				
 				// Changes trump with() and original values
-				if ($changed && array_key_exists($name, $this->_changed))
+				if ($changed AND array_key_exists($name, $this->_changed))
 				{	
 					$value = $field->get($this, $this->_changed[$name]);
 				}
-				else if ($changed && array_key_exists($name, $this->_with))
+				else if ($changed AND array_key_exists($name, $this->_with))
 				{
 					$model = Jelly::factory($name)->values($this->_with[$name]);
 					
@@ -243,7 +243,7 @@ abstract class Jelly_Model_Core
 	public function set($values, $value = NULL)
 	{
 		// Accept set('name', 'value');
-		if (!is_array($values))
+		if ( ! is_array($values))
 		{
 			$values = array($values => $value);
 		}
@@ -301,7 +301,7 @@ abstract class Jelly_Model_Core
 				// with alaised field names
 				$relationship = $this->_meta->fields(array_shift($targets), TRUE);
 
-				if (!array_key_exists($relationship, $this->_with))
+				if ( ! array_key_exists($relationship, $this->_with))
 				{
 					$this->_with[$relationship] = array();
 				}
@@ -317,7 +317,7 @@ abstract class Jelly_Model_Core
 				$this->_with[$relationship][$target] = $value;
 			}
 			// Key is coming from a database result
-			else if ($alias === TRUE && $columns = $this->_meta->columns($key))
+			else if ($alias === TRUE AND $columns = $this->_meta->columns($key))
 			{
 				// Contains an array of fields that the column is mapped to
 				// This allows multiple fields to get data from the same column
@@ -327,7 +327,7 @@ abstract class Jelly_Model_Core
 				}
 			}
 			// Standard setting of a field 
-			else if ($alias === FALSE && $field = $this->_meta->fields($key))
+			else if ($alias === FALSE AND $field = $this->_meta->fields($key))
 			{
 				$this->_original[$field->name] = $field->set($value);
 			}
@@ -347,7 +347,7 @@ abstract class Jelly_Model_Core
 	 */
 	public function __isset($name)
 	{
-		return (bool)($this->_meta->fields($name) || array_key_exists($name, $this->_unmapped));
+		return (bool)($this->_meta->fields($name) OR array_key_exists($name, $this->_unmapped));
 	}
 	
 	/**
@@ -475,7 +475,7 @@ abstract class Jelly_Model_Core
 	public function save($key = NULL)
 	{
 		// Determine whether or not we're updating
-		$data = ($this->_loaded || $key) ? $this->_changed : $this->_changed + $this->_original;
+		$data = ($this->_loaded OR $key) ? $this->_changed : $this->_changed + $this->_original;
 		
 		// Set the key to our id if it isn't set
 		if ($this->_loaded)
@@ -554,7 +554,7 @@ abstract class Jelly_Model_Core
 	public function delete($key = NULL)
 	{
 		// Are we loaded? Then we're just deleting this record
-		if ($this->_loaded || $key)
+		if ($this->_loaded OR $key)
 		{
 			if ($this->_loaded)
 			{
@@ -683,7 +683,7 @@ abstract class Jelly_Model_Core
 		foreach ($this->_meta->fields() as $column => $field)
 		{
 			// Do not add any rules for this field
-			if (!$data->offsetExists($column))
+			if ( ! $data->offsetExists($column))
 			{
 				continue;
 			}
@@ -694,7 +694,7 @@ abstract class Jelly_Model_Core
 			$data->callbacks($column, $field->callbacks);
 		}
 
-		if (!$data->check())
+		if ( ! $data->check())
 		{
 			throw new Validate_Exception($data);
 		}
@@ -809,7 +809,7 @@ abstract class Jelly_Model_Core
 		}
 		
 		// If this is set, we don't need to re-retrieve the values
-		if (!array_key_exists($name, $this->_changed))
+		if ( ! array_key_exists($name, $this->_changed))
 		{
 			$current = array();
 			$value = $this->_ids($this->__get($name));
@@ -849,7 +849,7 @@ abstract class Jelly_Model_Core
 		$ids = array();
 				
 		// Handle Database Results
-		if ($models instanceof Iterator || is_array($models))
+		if ($models instanceof Iterator OR is_array($models))
 		{
 			foreach($models as $row)
 			{

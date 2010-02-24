@@ -17,7 +17,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 		parent::__construct($options);
 		
 		// Ensure we have path to save to 
-		if (empty($this->path) || !is_writable($this->path))
+		if (empty($this->path) OR !is_writable($this->path))
 		{
 			throw new Kohana_Exception(get_class($this).' must have a `path` property set that points to a writable directory');
 		}

@@ -93,9 +93,9 @@ abstract class Jelly_Core
 	{
 		$model = Jelly::model_name($model);
 		
-		if (!isset(Jelly::$_models[$model]))
+		if ( ! isset(Jelly::$_models[$model]))
 		{
-			if (!Jelly::register($model))
+			if ( ! Jelly::register($model))
 			{
 				return FALSE;
 			}
@@ -125,10 +125,10 @@ abstract class Jelly_Core
 		}
 				
 		 // Can we find the class?
-		if (class_exists($class, FALSE) || Kohana::auto_load($class))
+		if (class_exists($class, FALSE) OR Kohana::auto_load($class))
 		{
 			// Prevent accidentally trying to load ORM or Sprig models
-			if (!is_subclass_of($class, "Jelly_Model"))
+			if ( ! is_subclass_of($class, "Jelly_Model"))
 			{
 				return FALSE;
 			}
@@ -164,7 +164,7 @@ abstract class Jelly_Core
 			$field->initialize($model, $column);
 			
 			// Ensure a default primary key is set
-			if ($field->primary && empty($meta->primary_key))
+			if ($field->primary AND empty($meta->primary_key))
 			{
 				$meta->primary_key = $column;
 			}
@@ -173,7 +173,7 @@ abstract class Jelly_Core
 			$meta->defaults[$column] = $field->default;
 			
 			// Set the columns, so that we can access reverse database results properly
-			if (!array_key_exists($field->column, $meta->columns))
+			if ( ! array_key_exists($field->column, $meta->columns))
 			{
 				$meta->columns[$field->column] = array();
 			}

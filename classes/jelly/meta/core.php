@@ -101,7 +101,7 @@ abstract class Jelly_Meta_Core
 	 */
 	public function &__get($key)
 	{
-		if (!$this->initialized)
+		if ( ! $this->initialized)
 		{
 			return $this->$key;
 		}
@@ -127,7 +127,7 @@ abstract class Jelly_Meta_Core
 	 */
 	protected function set($key, $value)
 	{
-		if (!$this->initialized)
+		if ( ! $this->initialized)
 		{
 			$this->$key = $value;
 		}
@@ -188,7 +188,7 @@ abstract class Jelly_Meta_Core
 		
 		if (is_array($field))
 		{
-			if (!$this->initialized)
+			if ( ! $this->initialized)
 			{
 				// Allows fields to be appended
 				$this->fields += $field;
@@ -196,7 +196,7 @@ abstract class Jelly_Meta_Core
 			}
 		}
 		
-		if (!isset($this->field_cache[$field]))
+		if ( ! isset($this->field_cache[$field]))
 		{
 			$resolved_name = $field;
 			

@@ -45,7 +45,7 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	public function has($model, $id)
 	{
 		// Only accept the first record
-		if (is_array($id) || $id instanceof Iterator)
+		if (is_array($id) OR $id instanceof Iterator)
 		{
 			$id = array(current($id));
 		}
