@@ -113,7 +113,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 * @param   mixed $value
 	 * @return  void
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
 		// Empty relations to the default value
 		Jelly::update($this->foreign['model'])

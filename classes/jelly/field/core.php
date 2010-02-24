@@ -160,7 +160,7 @@ abstract class Jelly_Field_Core
 	 * @param  mixed  $value
 	 * @return mixed
 	 */
-	public function save($model, $value) 
+	public function save($model, $value, $loaded) 
 	{
 		return $value;
 	}

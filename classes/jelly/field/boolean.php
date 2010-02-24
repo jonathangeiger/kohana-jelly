@@ -45,7 +45,7 @@ abstract class Jelly_Field_Boolean extends Jelly_Field
 	 * @param  mixed  $value
 	 * @return mixed
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
 		return ($value) ? $this->true : $this->false;
 	}

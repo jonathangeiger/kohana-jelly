@@ -56,9 +56,9 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 	 * @param  mixed $value
 	 * @return mixed
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
-		if ((!$model->loaded() && $this->auto_now_create) || ($model->loaded() && $this->auto_now_update))
+		if ((!$loaded && $this->auto_now_create) || ($loaded && $this->auto_now_update))
 		{
 			$value = time();
 		}

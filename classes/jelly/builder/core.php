@@ -508,16 +508,13 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			{
 				if ($select->in_db)
 				{
-					// Withs have to manually alias
-					$column = $meta->fields($alias)->column;
-					
 					// We have to manually alias, since the path does not necessarily correspond to the path
-					$this->select(array($chain.'.'.$column, $chain.':'.$alias));
+					$this->select(array($model.'.'.$alias, $chain.':'.$alias));
 				}
 			}
 			
 			// Let the field finish the rest
-			$field->with($this, $path, $chain, $prev_chain);
+			$field->with($this);
 			
 			// Model now becomes the parent
 			$parent = $model;

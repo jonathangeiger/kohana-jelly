@@ -19,7 +19,7 @@ abstract class Jelly_Field_Password extends Field_String
 	 * @param string $value 
 	 * @return void
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
 		if ($this->hash_with)
 		{

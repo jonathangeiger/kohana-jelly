@@ -32,7 +32,7 @@ abstract class Jelly_Field_Serialized extends Jelly_Field
 	 * @param  mixed  $value
 	 * @return string
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
 		return @serialize($value);
 	}

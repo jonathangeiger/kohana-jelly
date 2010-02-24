@@ -33,7 +33,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 	 * @param  mixed $value 
 	 * @return mixed
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{		
 		// Upload a file?
 		if (upload::valid($value))

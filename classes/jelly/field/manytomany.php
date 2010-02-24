@@ -156,13 +156,13 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 * @param  mixed $value 
 	 * @return void
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
 		// Find all current records so that we can calculate what's changed
-		$in = $this->_in($model, TRUE);
+		$in = ($loaded) ? $this->_in($model, TRUE) : array();
 		
 		// Find old relationships that must be deleted
-		if ($old = array_diff($in, $value))
+		if ($old = array_diff($in, (array)$value))
 		{
 			Jelly::delete($this->through['model'])
 				->where($this->through['columns'][0], '=', $model->id())
@@ -171,7 +171,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		}
 
 		// Find new relationships that must be inserted
-		if ($new = array_diff($value, $in))
+		if ($new = array_diff((array)$value, $in))
 		{
 			$query = Jelly::insert($this->through['model'])
 						 ->columns($this->through['columns']);
@@ -208,6 +208,25 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	}
 		
 	/**
+	 * Adds the "ids" variable to the view data
+	 *
+	 * @param  string $prefix
+	 * @param  array  $data
+	 * @return View
+	 */
+	public function input($prefix = 'jelly/field', $data = array())
+	{
+		$data['ids'] = array();
+		
+		foreach ($data['value'] as $model)
+		{
+			$data['ids'][] = $model->id();
+		}
+		
+		return parent::input($prefix, $data);
+	}
+		
+	/**
 	 * Returns either an array or unexecuted query to find 
 	 * which columns the model is "in" in the join table
 	 *
@@ -229,24 +248,5 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		}
 		
 		return $result;
-	}
-	
-	/**
-	 * Adds the "ids" variable to the view data
-	 *
-	 * @param  string $prefix
-	 * @param  array  $data
-	 * @return View
-	 */
-	public function input($prefix = 'jelly/field', $data = array())
-	{
-		$data['ids'] = array();
-		
-		foreach ($data['value'] as $model)
-		{
-			$data['ids'][] = $model->id();
-		}
-		
-		return parent::input($prefix, $data);
 	}
 }

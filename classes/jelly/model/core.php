@@ -75,15 +75,22 @@ abstract class Jelly_Model_Core
 		// Add the values stored by mysql_set_object
 		if (!empty($this->_preload_data) && is_array($this->_preload_data))
 		{
-			$this->load_values($this->_preload_data);
-			$this->_loaded = $this->_saved = TRUE;
+			$this->values($this->_preload_data, TRUE);
 			$this->_preload_data = array();
 		}
-		
+				
 		// Have an id? Attempt to load it
-		if ($cond && (is_int($cond) || is_string($cond) || is_array($cond)))
+		if ($cond)
 		{
-			$this->load($cond);
+			// Arrays are loaded as values, but not load()ed
+			if (is_array($cond))
+			{
+				$this->values($cond);
+			}
+			else
+			{
+				$this->load($cond);
+			}
 		}
 	}
 	
@@ -168,7 +175,7 @@ abstract class Jelly_Model_Core
 				}
 				else if ($changed && array_key_exists($name, $this->_with))
 				{
-					$model = Jelly::factory($name)->load_values($this->_with[$name], FALSE);
+					$model = Jelly::factory($name)->values($this->_with[$name]);
 					
 					// Try and verify that it's actually loaded
 					if ($model->id())
@@ -278,7 +285,7 @@ abstract class Jelly_Model_Core
 	 * @param  boolean $alias 
 	 * @return void
 	 */
-	public function load_values(array $values, $alias = TRUE)
+	public function values(array $values, $alias = FALSE)
 	{
 		// Clear the object
 		$this->clear();
@@ -406,32 +413,35 @@ abstract class Jelly_Model_Core
 	}
 	
 	/**
-	 * Loads a single row or multiple rows. If $where is a string or integer
-	 * it is assumed that you are searching for the model's primary key. In
-	 * which case, $limit will be automatically set to 1 and the result
-	 * will be loaded into $this.
-	 * 
-	 * If $limit is 1 the result is always loaded into $this. Otherwise,
-	 * a database_result is returned.
+	 * Loads a single row into the current object. 
 	 *
 	 * @param  mixed  $where  an array or id to load 
-	 * @return mixed
+	 * @return $this
 	 */
-	public function load($where = NULL)
+	public function load($key = NULL)
 	{
-		$query = Jelly::select($this)->as_object(FALSE);
+		$query = Jelly::select($this);
 		
 		// Apply the limit
-		if (is_int($where) || is_string($where))
+		if ($key)
 		{
-			$query->where($this->_meta->primary_key(), '=', $where);
+			$query->where($this->unique_key($key), '=', $key);
 		}
-		// Simple where clause
-		else if (is_array($where))
+		else
 		{
-			foreach($where as $column => $value)
+			// Construct the query from original values
+			foreach ($this->_original as $field => $value)
 			{
-				$query->where($column, '=', $value);
+				$field = $this->_meta->fields($field);
+				
+				// Only use in_db values
+				if ($field->in_db)
+				{
+					if ($value != $field->default)
+					{
+						$query->where($field->name, '=', $value);
+					}
+				}
 			}
 		}
 		
@@ -442,15 +452,11 @@ abstract class Jelly_Model_Core
 		if ($result->count())
 		{			
 			// Insert the original values
-			$this->load_values($result->current(FALSE));
-			
-			// We're good!
-			$this->_loaded = $this->_saved = TRUE;
-			$this->_changed = $this->_retrieved = array();
+			$this->values($result->current(FALSE), TRUE);
 		}
-		// Model doesn't exist, clear to an empty model
 		else
 		{
+			// Clear the object so it appears empty since nothing was found
 			$this->clear();
 		}
 		
@@ -463,19 +469,25 @@ abstract class Jelly_Model_Core
 	 * If $primary_key is passed, the record will be assumed to exist
 	 * and an update will be executed, even if the model isn't loaded().
 	 *
-	 * @param  mixed  $primary_key
+	 * @param  mixed  $key
 	 * @return Jelly  Returns $this
 	 **/
-	public function save($primary_key = NULL)
+	public function save($key = NULL)
 	{
 		// Determine whether or not we're updating
-		$data = ($this->_loaded || $primary_key) ? $this->_changed : $this->_changed + $this->_original;
+		$data = ($this->_loaded || $key) ? $this->_changed : $this->_changed + $this->_original;
+		
+		// Set the key to our id if it isn't set
+		if ($this->_loaded)
+		{
+			$key = $this->id();
+		}
 		
 		// Run validation
 		$data = $this->validate($data);
 		
 		// These will be processed later
-		$relations = array();
+		$values = $relations = array();
 		
 		// Run through the main table data
 		foreach ($data as $column => $value)
@@ -485,7 +497,7 @@ abstract class Jelly_Model_Core
 			// Only save in_db values
 			if ($field->in_db)
 			{
-				$values[$field->column] = $field->save($value);
+				$values[$field->column] = $field->save($this, $value, (bool) $key);
 			}
 			else if ($field instanceof Jelly_Field_Behavior_Saveable)
 			{
@@ -493,13 +505,14 @@ abstract class Jelly_Model_Core
 			}
 		}
 		
-		if ($this->_loaded)
+		// If we have a key, we're updating
+		if ($key)
 		{
 			// Do we even have to update anything in the row?
 			if ($values)
 			{
 				Jelly::update($this)
-					->where($this->_meta->primary_key(), '=', $this->_original[$this->_meta->primary_key()])
+					->where($this->unique_key($key), '=', $key)
 					->set($values)
 					->execute();
 			}
@@ -517,7 +530,7 @@ abstract class Jelly_Model_Core
 		
 		// Set the changed data back as original
 		// @TODO: Fix this. It's wrong.
-		$this->load_values($values, FALSE);
+		$this->_original = array_merge($this->_original, $this->_changed, $data);
 		
 		// We're good!
 		$this->_loaded = $this->_saved = TRUE;
@@ -526,31 +539,30 @@ abstract class Jelly_Model_Core
 		// Save the relations
 		foreach($relations as $column => $value)
 		{	
-			$this->_meta->fields($column)->save($this, $value);
+			$this->_meta->fields($column)->save($this, $value, (bool) $key);
 		}
-		
-		// Enter relations back in
-		$this->load_values($relations, FALSE);
 		
 		return $this;
 	}
 	
 	/**
-	 * Deletes a single or multiple records
-	 * 
-	 * If we're loaded(), it just deletes this object, otherwise it deletes 
-	 * whatever the query matches. 
+	 * Deletes a single record.
 	 *
-	 * @param  $where  A simple where statement
+	 * @param  $key    A key to use for non-loaded records
 	 * @return Jelly   Returns $this
 	 **/
-	public function destroy()
+	public function delete($key = NULL)
 	{
 		// Are we loaded? Then we're just deleting this record
-		if ($this->_loaded)
+		if ($this->_loaded || $key)
 		{
-			$result = Jelly::delete($this)
-				->where($this->_meta->primary_key(), '=', $this->id())
+			if ($this->_loaded)
+			{
+				$key = $this->id();
+			}
+				
+			Jelly::delete($this)
+				->where($this->unique_key($key), '=', $key)
 				->execute();
 		}
 		
@@ -721,6 +733,18 @@ abstract class Jelly_Model_Core
 		$data['model'] = $this;
 		
 		return $field->input($prefix, $data);
+	}
+	
+	/**
+	 * Returns the unique key for a specific value. This method is expected 
+	 * to be overloaded in models if the model has other unique columns.
+	 *
+	 * @param  mixed  $value 
+	 * @return string
+	 */
+	public function unique_key($value)
+	{
+		return $this->_meta->primary_key();
 	}
 
 	/**

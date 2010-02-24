@@ -76,7 +76,7 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	 * @param  string $parent_path 
 	 * @return void
 	 */
-	public function with($model, $relation, $target_path, $parent_path)
+	public function with($model)
 	{
 		$meta = Jelly::meta($this->foreign['model']);
 		

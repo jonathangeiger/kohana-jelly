@@ -22,11 +22,11 @@ abstract class Jelly_Core
 	 * Model's do not have to be instantiated through here; they 
 	 * can be constructed directly.
 	 *
-	 * @param	mixed  $model  A model name or another Jelly to create
-	 * @param	mixed  $id	   The id or where clause to load upon construction
+	 * @param	mixed  $model
+	 * @param	mixed  $cond
 	 * @return	Jelly
 	 */
-	public static function factory($model, $id = NULL)
+	public static function factory($model, $cond = NULL)
 	{	
 		$class = Jelly::class_name($model);
 		
@@ -40,13 +40,13 @@ abstract class Jelly_Core
 	 * If $cond is passed and is an int or string, it will be used as the primary key.
 	 * If it is an array, it will be used in constructing a where() clause.
 	 *
-	 * @param  string $model 
-	 * @param  mixed $cond
+	 * @param  string  $model 
+	 * @param  mixed   $cond
 	 * @return Jelly_Builder
 	 */
-	public static function select($model, $cond = NULL)
+	public static function select($model)
 	{
-		return new Jelly_Builder($model, Database::SELECT, $cond);
+		return new Jelly_Builder($model, Database::SELECT);
 	}
 	
 	/**
