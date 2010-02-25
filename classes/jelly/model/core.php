@@ -466,12 +466,14 @@ abstract class Jelly_Model_Core
 				$key = $this->id();
 			}
 				
-			Jelly::delete($this)
-				->where(':unique_key', '=', $key)
-				->execute();
+			$result = Jelly::delete($this)
+			               ->where(':unique_key', '=', $key)
+			               ->execute();
+			
+			$this->clear();
 		}
 		
-		return $this->clear();
+		return FALSE;
 	}
 	
 	/**
