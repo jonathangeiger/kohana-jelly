@@ -64,7 +64,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		
 		if (empty($this->foreign['column']))
 		{
-			$this->foreign['column'] = 'id';
+			$this->foreign['column'] = ':primary_key';
 		}
 		
 		if (empty($this->through['columns'][0]))

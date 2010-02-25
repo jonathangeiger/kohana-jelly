@@ -65,7 +65,7 @@ abstract class Jelly_Meta_Core
 	/**
 	 * @var string The builder class the model is associated with
 	 */
-	protected $builder = FALSE;
+	protected $builder = 'Jelly_Builder';
 	
 	/**
 	 * @var array A list of columns and how they relate to fields

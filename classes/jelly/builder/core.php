@@ -99,7 +99,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			}
 			
 			// Apply sorting and with if necessary
-			if ($this->_type === Database::SELECT)
+			if ($this->_type === Database::SELECT && $this->_meta)
 			{
 				foreach ($this->_meta->sorting() as $column => $direction)
 				{
@@ -135,27 +135,6 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	}
 	
 	/**
-	 * Gets or sets the type of the query.
-	 * 
-	 * Since Jelly_Builder can be compiled down to any type of 
-	 * query builder, it is possible to dynamically set the 
-	 * type anytime before execute() is called.
-	 *
-	 * @return  integer
-	 */
-	public function type($type = NULL)
-	{
-		if ($type)
-		{
-			$this->_type = $type;
-			
-			return $this;
-		}
-		
-		return $this->_type;
-	}
-	
-	/**
 	 * Compiles the builder into a usable expression
 	 *
 	 * @param Database $db 
@@ -182,6 +161,40 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 						->execute($db)
 						->get('total');
 	}
+	
+	/**
+	 * Returns the current query limited to 1 and 
+	 * executed, if it is a Database::SELECT.
+	 *
+	 * @param  string $key 
+	 * @return Jelly_Model
+	 */
+	public function load($key = NULL)
+	{
+		if ($this->_type === Database::SELECT)
+		{
+			if ($key)
+			{
+				$this->where(':unique_key', '=', $key);
+			}
+
+			return $this->limit(1)->execute();
+		}
+		
+		return $this;
+	}
+	
+	/**
+	 * Returns the unique key for a specific value. This method is expected 
+	 * to be overloaded in builders if the table has other unique columns.
+	 *
+	 * @param  mixed  $value 
+	 * @return string
+	 */
+	public function unique_key($value)
+	{
+		return $this->_meta->primary_key();
+	}
 
 	/**
 	 * Creates a new "AND WHERE" condition for the query.
@@ -193,7 +206,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function and_where($column, $op, $value)
 	{
-		return parent::and_where($this->_column($column, TRUE), $op, $value);
+		return parent::and_where($this->_column($column, TRUE, $value), $op, $value);
 	}
 
 	/**
@@ -206,7 +219,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function or_where($column, $op, $value)
 	{
-		return parent::or_where($this->_column($column, TRUE), $op, $value);
+		return parent::or_where($this->_column($column, TRUE, $value), $op, $value);
 	}
 	
 	/**
@@ -358,7 +371,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function and_having($column, $op, $value = NULL)
 	{
-		return parent::and_having($this->_column($column), $op, $value);
+		return parent::and_having($this->_column($column, NULL, $value), $op, $value);
 	}
 
 	/**
@@ -371,7 +384,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function or_having($column, $op, $value = NULL)
 	{
-		return parent::or_having($this->_column($column), $op, $value);
+		return parent::or_having($this->_column($column, NULL, $value), $op, $value);
 	}
 
 	/**
@@ -413,7 +426,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	{
 		if ($alias)
 		{
-			$column = $this->_column($column);
+			$column = $this->_column($column, NULL, $value);
 		}
 		
 		$this->_set[$column] = $value;
@@ -591,9 +604,10 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 *
 	 * @param  string	$field 
 	 * @param  boolean	$join
+	 * @param  mixed    $value
 	 * @return string
 	 */
-	protected function _column($field, $join = NULL)
+	protected function _column($field, $join = NULL, $value = NULL)
 	{
 		$model = NULL;
 		
@@ -602,12 +616,6 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		{
 			// Quote the column in FUNC("ident") identifiers
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
-		}
-		
-		// with() call, aliasing is already completed
-		if (strpos($field, ':') !== FALSE)
-		{			
-			return $field;
 		}
 		
 		if (strpos($field, '.') !== FALSE)
@@ -637,6 +645,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		{
 			$table = $meta->table();
 			
+			// Check for a meta-alias
+			if (substr($field, 0, 1) === ':')
+			{
+				$field = $this->_meta_alias($meta, $field, $value);
+			}
+			
 			// Find the field
 			if ($field = $meta->fields($field))
 			{
@@ -653,6 +667,32 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		{
 			return $column;
 		}
+	}
+	
+	/**
+	 * Expands meta-aliases into their actual field name
+	 *
+	 * @param  string  $alias
+	 * @return string
+	 */
+	protected function _meta_alias($meta, $field, $value = NULL)
+	{
+		switch ($field)
+		{
+			case ':primary_key':
+				$field = $meta->primary_key();
+				break;
+			case ':name_key':
+				$field = $meta->name_key();
+				break;
+			case ':unique_key':
+				$builder = $meta->builder();
+				$builder = new $builder($meta->model());
+				$field = $builder->unique_key($value);
+				break;
+		}
+		
+		return $field;
 	}
 	
 	/**

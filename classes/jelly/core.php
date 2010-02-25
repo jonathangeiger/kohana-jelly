@@ -35,18 +35,21 @@ abstract class Jelly_Core
 
 	/**
 	 * Returns a query builder that can be used for selecting records.
-	 * 
-	 * When $cond is passed, the query is automatically limited to 1.
-	 * If $cond is passed and is an int or string, it will be used as the primary key.
-	 * If it is an array, it will be used in constructing a where() clause.
 	 *
 	 * @param  string  $model 
 	 * @param  mixed   $cond
 	 * @return Jelly_Builder
 	 */
-	public static function select($model)
+	public static function select($model, $key = NULL)
 	{
-		return Jelly::builder($model, Database::SELECT);
+		$builder = Jelly::builder($model, Database::SELECT);
+		
+		if ($key)
+		{
+			return $builder->load($key);
+		}
+		
+		return $builder;
 	}
 
 	/**
@@ -89,7 +92,7 @@ abstract class Jelly_Core
 	 * @param  int    $type
 	 * @return string
 	 */
- 	public static function builder($model, $type = NULL)
+ 	protected static function builder($model, $type = NULL)
 	{
 		$builder = 'Jelly_Builder';
 		

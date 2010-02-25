@@ -61,7 +61,7 @@ abstract class Jelly_Model_Core
 	 *
 	 * @param	mixed  $cond
 	 **/
-	public function __construct($cond = NULL)
+	public function __construct($preload = array())
 	{
 		// Load the object's meta data for quick access
 		$this->_meta = Jelly::meta($this);
@@ -78,16 +78,12 @@ abstract class Jelly_Model_Core
 		}
 				
 		// Have an id? Attempt to load it
-		if ($cond)
+		if ($preload)
 		{
 			// Arrays are loaded as values, but not load()ed
 			if (is_array($cond))
 			{
 				$this->values($cond);
-			}
-			else
-			{
-				$this->load($cond);
 			}
 		}
 	}
@@ -374,57 +370,6 @@ abstract class Jelly_Model_Core
 	}
 	
 	/**
-	 * Loads a single row into the current object. 
-	 *
-	 * @param  mixed  $key
-	 * @return $this
-	 */
-	public function load($key = NULL)
-	{
-		$query = Jelly::select($this);
-		
-		// Apply the limit
-		if ($key)
-		{
-			$query->where($this->unique_key($key), '=', $key);
-		}
-		else
-		{
-			// Construct the query from original values
-			foreach ($this->_original as $field => $value)
-			{
-				$field = $this->_meta->fields($field);
-				
-				// Only use in_db values
-				if ($field->in_db)
-				{
-					if ($value != $field->default)
-					{
-						$query->where($field->name, '=', $value);
-					}
-				}
-			}
-		}
-		
-		// All good
-		$result = $query->execute();
-		
-		// Ensure we have something
-		if ($result->count())
-		{			
-			// Insert the original values
-			$this->values($result->current(FALSE), TRUE);
-		}
-		else
-		{
-			// Clear the object so it appears empty since nothing was found
-			$this->clear();
-		}
-		
-		return $this;
-	}
-	
-	/**
 	 * Creates or updates the current record. 
 	 * 
 	 * If $key is passed, the record will be assumed to exist
@@ -473,24 +418,23 @@ abstract class Jelly_Model_Core
 			if ($values)
 			{
 				Jelly::update($this)
-					->where($this->unique_key($key), '=', $key)
-					->set($values)
-					->execute();
+					 ->where(':unique_key', '=', $key)
+					 ->set($values)
+					 ->execute();
 			}
 		}
 		else
 		{
 			list($id) = Jelly::insert($this)
-							->columns(array_keys($values))
-							->values(array_values($values))
-							->execute();
+							 ->columns(array_keys($values))
+							 ->values(array_values($values))
+							 ->execute();
 							
 			// Gotta make sure to set this
 			$values[$this->_meta->primary_key()] = $id;
 		}
 		
 		// Set the changed data back as original
-		// @TODO: Fix this. It's wrong.
 		$this->_original = array_merge($this->_original, $this->_changed, $data);
 		
 		// We're good!
@@ -523,7 +467,7 @@ abstract class Jelly_Model_Core
 			}
 				
 			Jelly::delete($this)
-				->where($this->unique_key($key), '=', $key)
+				->where(':unique_key', '=', $key)
 				->execute();
 		}
 		
@@ -536,9 +480,14 @@ abstract class Jelly_Model_Core
 	 * @param  string $field 
 	 * @return boolean
 	 */
-	public function changed($field)
+	public function changed($field = NULL)
 	{
-		return array_key_exists($this->_meta->fields($field, TRUE), $this->_changed);
+		if ($field)
+		{
+			return array_key_exists($this->_meta->fields($field, TRUE), $this->_changed);
+		}
+		
+		return $this->_changed;
 	}
 	
 	/**
@@ -705,18 +654,6 @@ abstract class Jelly_Model_Core
 		$data['model'] = $this;
 		
 		return $field->input($prefix, $data);
-	}
-	
-	/**
-	 * Returns the unique key for a specific value. This method is expected 
-	 * to be overloaded in models if the model has other unique columns.
-	 *
-	 * @param  mixed  $value 
-	 * @return string
-	 */
-	public function unique_key($value)
-	{
-		return $this->_meta->primary_key();
 	}
 
 	/**

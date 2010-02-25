@@ -97,7 +97,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		{			
 			// Update the ones in our list
 			Jelly::update($this->foreign['model'])
-				->where(Jelly::meta($foreign)->primary_key(), 'IN', $value)
+				->where(':primary_key', 'IN', $value)
 				->set(array($this->foreign['column'] => $model->id()))
 				->execute();
 		}
@@ -114,7 +114,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	{
 		return (bool) Jelly::select($this->foreign['model'])
 			->where($this->foreign['column'], '=', $model->id())
-			->where($foreign->meta()->primary_key, 'IN', $ids)
+			->where(':primary_key', 'IN', $ids)
 			->count();
 	}
 	

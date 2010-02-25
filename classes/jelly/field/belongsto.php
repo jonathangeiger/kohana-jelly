@@ -52,7 +52,7 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 		// Default to 'id'
 		if (empty($this->foreign['column']))
 		{
-			$this->foreign['column'] = 'id';
+			$this->foreign['column'] = ':primary_key';
 		}
 		
 		// Column is set and won't be overridden
@@ -96,9 +96,6 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
 	 * @param  Jelly  $model 
-	 * @param  string $relation 
-	 * @param  string $target_path 
-	 * @param  string $parent_path 
 	 * @return void
 	 */
 	public function with($model)
