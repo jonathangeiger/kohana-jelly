@@ -531,7 +531,7 @@ abstract class Jelly_Model_Core
 	 * 
 	 *  * A primary key
 	 *  * Another model
-	 *  * A Jelly_Result
+	 *  * A Jelly_Collection
 	 *  * An array of primary keys or models
 	 *
 	 * @param  string	$name 

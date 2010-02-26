@@ -27,11 +27,11 @@ have to first locate it!
 ### Finding many records
 
 If you want to load many records, you end your query building with the
-`execute()` method, which returns a `Jelly_Result`. A Jelly_Result contains a
+`execute()` method, which returns a `Jelly_Collection`. A Jelly_Collection contains a
 collection of records that, when iterated over returns individual models for
 you to work with.
 
-[!!] **Note**: A Jelly_Result has the same API as a Database\_Result, except it returns Jelly models
+[!!] **Note**: A Jelly_Collection has the same API as a Database\_Result, except it returns Jelly models
 
 ##### Example - Finding many records
 
@@ -44,7 +44,7 @@ you to work with.
     }
     
 
-[!!] **Note**: Whenever you limit() to 1, execute() returns the model directly, instead of returning a Jelly_Result
+[!!] **Note**: Whenever you limit() to 1, execute() returns the model directly, instead of returning a Jelly_Collection
 
 ### Counting records
 

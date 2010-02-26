@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Jelly_Result encapsulates a Database_Result object. It has the exact same API.
+ * Jelly_Collection encapsulates a Database_Result object. It has the exact same API.
  * 
  * It offers a few special features that make it useful:
  * 
@@ -10,13 +10,13 @@
  *  * It is easily extensible, so things like polymorphism and 
  *    recursive result sets can be easily implemented.
  * 
- * Jelly_Result likes to know what model its result set is related to,
+ * Jelly_Collection likes to know what model its result set is related to,
  * though it's not required. Some features may disappear, however, if 
  * it doesn't know the model it's working with.
  *
  * @package Jelly
  */
-class Jelly_Result_Core implements Iterator, Countable, SeekableIterator, ArrayAccess
+class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, ArrayAccess
 {
 	/**
 	 * @var Jelly The current model we're placing results into

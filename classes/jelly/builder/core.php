@@ -115,11 +115,11 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			// We've now left the Jelly
 			$this->_result = $this->_build()->execute($db);
 			
-			// Hand it over to Jelly_Result if it's a select
+			// Hand it over to Jelly_Collection if it's a select
 			if ($this->_type === Database::SELECT)
 			{
 				$model = ($this->_meta) ? $this->_meta->model() : NULL;
-				$this->_result = new Jelly_Result($model, $this->_result);
+				$this->_result = new Jelly_Collection($model, $this->_result);
 				
 				// If the record was limited to 1, we only return that model
 				// Otherwise we return the whole result set.
@@ -130,7 +130,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			}
 		}
 		
-		// Hand off the result to the Jelly_Result
+		// Hand off the result to the Jelly_Collection
 		return $this->_result;
 	}
 	
