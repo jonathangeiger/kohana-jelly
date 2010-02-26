@@ -31,7 +31,7 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 	/**
 	 * If $value is in the $choices array, then it is used, otherwise $default is used
 	 *
-	 * @param  string $value 
+	 * @param  mixed  $value
 	 * @return mixed
 	 */
 	public function set($value)

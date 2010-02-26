@@ -15,22 +15,22 @@ abstract class Jelly_Field_Boolean extends Jelly_Field
 	/**
 	 * @var string How TRUE is represented to users (mainly in forms)
 	 */
-	public $pretty_true = "Yes";
+	public $label_true = "Yes";
 	
 	/**
-	 * @var stringHow FALSE is represented in the database
+	 * @var mixed How FALSE is represented in the database
 	 */
 	public $false = 0;
 	
 	/**
 	 * @var string How FALSE is represented to users (mainly in forms)
 	 */
-	public $pretty_false = "No";
+	public $label_false = "No";
 	
 	/**
 	 * Validates a boolean out of the value with filter_var
 	 *
-	 * @param mixed $value 
+	 * @param  mixed $value 
 	 * @return void
 	 */
 	public function set($value)
@@ -41,8 +41,9 @@ abstract class Jelly_Field_Boolean extends Jelly_Field
 	/**
 	 * Returns the value as it should be represented in the database
 	 *
-	 * @param  Jelly  $model 
-	 * @param  mixed  $value
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return mixed
 	 */
 	public function save($model, $value, $loaded)

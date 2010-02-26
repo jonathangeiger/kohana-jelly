@@ -15,8 +15,8 @@ abstract class Jelly_Field_Float extends Jelly_Field
 	/**
 	 * Converts to float and rounds the number if necessary
 	 *
-	 * @param string $value 
-	 * @return void
+	 * @param  mixed  $value
+	 * @return mixed
 	 */
 	public function set($value)
 	{

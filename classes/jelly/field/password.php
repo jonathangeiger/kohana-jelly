@@ -15,9 +15,9 @@ abstract class Jelly_Field_Password extends Field_String
 	/**
 	 * Hashes the password on save only if it's changed
 	 *
-	 * @param string $model 
-	 * @param string $value 
-	 * @return void
+	 * @param  string $model 
+	 * @param  string $value 
+	 * @return string
 	 */
 	public function save($model, $value, $loaded)
 	{

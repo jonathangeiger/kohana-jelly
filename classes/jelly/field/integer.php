@@ -10,7 +10,7 @@ abstract class Jelly_Field_Integer extends Jelly_Field
 	/**
 	 * Converts the value to an integer
 	 *
-	 * @param  mixed $value 
+	 * @param  mixed  $value 
 	 * @return int
 	 */
 	public function set($value)

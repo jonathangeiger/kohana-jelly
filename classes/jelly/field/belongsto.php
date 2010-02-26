@@ -21,7 +21,6 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	 * singularized name of the field. If 'column' is empty, it is set to 'id'.
 	 * 
 	 * `'model' => 'a model to use as the foreign association'`
-	 * 
 	 * `'column' => 'the column (or alias) that is the foreign model's primary key'`
 	 *
 	 * @var array
@@ -62,10 +61,8 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	/**
 	 * Returns the primary key of the model passed. 
 	 * 
-	 * Straight primary keys are also accepted.
-	 * 
 	 * @param  mixed $value
-	 * @return int|string
+	 * @return mixed
 	 */
 	public function set($value)
 	{
@@ -80,13 +77,12 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	/**
 	 * Returns the jelly model that this model belongs to
 	 *
-	 * @param  string $model 
-	 * @param  string $value 
-	 * @return Jelly
+	 * @param  Jelly_Model  $model 
+	 * @param  mixed        $value 
+	 * @return Jelly_Builder
 	 */
 	public function get($model, $value)
 	{
-		// Return a real category object
 		return Jelly::select($this->foreign['model'])
 				->where($this->foreign['column'], '=', $value)
 				->limit(1);
@@ -95,7 +91,7 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	/**
 	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
-	 * @param  Jelly  $model 
+	 * @param  Jelly_Model  $model
 	 * @return void
 	 */
 	public function with($model)

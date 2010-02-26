@@ -8,8 +8,8 @@
 abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Behavior_Joinable
 {		
 	/**
-	 * @param string $value 
-	 * @return void
+	 * @param  mixed  $value
+	 * @return mixed
 	 */
 	public function set($value)
 	{	
@@ -25,12 +25,15 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	}
 	
 	/**
-	 * @param string $object 
+	 * Returns the record that the model has
+	 * 
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return mixed
 	 */
 	public function get($model, $value)
 	{
-		// Return a real object
 		return Jelly::select($this->foreign['model'])
 				->where($this->foreign['column'], '=', $model->id())
 				->limit(1);
@@ -70,7 +73,7 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	/**
 	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
-	 * @param  Jelly  $model 
+	 * @param  Jelly_Model  $model
 	 * @return void
 	 */
 	public function with($model)

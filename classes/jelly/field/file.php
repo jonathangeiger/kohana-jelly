@@ -29,8 +29,9 @@ abstract class Jelly_Field_File extends Jelly_Field
 	/**
 	 * Either uploads a file
 	 *
-	 * @param  Jelly  $model 
-	 * @param  mixed $value 
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return mixed
 	 */
 	public function save($model, $value, $loaded)

@@ -15,9 +15,9 @@ interface Jelly_Field_Behavior_Saveable
 	 * 
 	 * This will only be called if the field has changed somehow.
 	 *
-	 * @param string   $model 
-	 * @param string   $value 
-	 * @param boolean  $loaded
+	 * @param  Jelly_Model   $model 
+	 * @param  mixed         $value 
+	 * @param  boolean       $loaded
 	 * @return void
 	 */
 	public function save($model, $value, $loaded);

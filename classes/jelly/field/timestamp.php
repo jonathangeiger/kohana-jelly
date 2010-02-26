@@ -30,7 +30,7 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 	/**
 	 * Converts the time to a UNIX timestamp
 	 *
-	 * @param  mixed $value 
+	 * @param  mixed  $value 
 	 * @return mixed
 	 */
 	public function set($value)

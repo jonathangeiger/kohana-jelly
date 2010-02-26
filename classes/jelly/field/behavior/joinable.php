@@ -15,10 +15,7 @@ interface Jelly_Field_Behavior_Joinable
 	 * 
 	 * For examples, check out belongsTo and hasOne's implementations.
 	 * 
-	 * @param Jelly  $model       The model to apply the join to
-	 * @param string $relation    The name of the model that you are joining
-	 * @param string $target_path The target's alias in the join clause
-	 * @param string $parent_path The parent's alias in the join clause
+	 * @param  Jelly_Model  $model
 	 * @return void
 	 */
 	public function with($model);

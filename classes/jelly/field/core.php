@@ -129,7 +129,7 @@ abstract class Jelly_Field_Core
 	 * Sets a particular value processed according 
 	 * to the class's standards.
 	 *
-	 * @param  mixed
+	 * @param  mixed $value
 	 * @return mixed
 	 **/
 	public function set($value)
@@ -141,8 +141,9 @@ abstract class Jelly_Field_Core
 	 * Returns a particular value processed according 
 	 * to the class's standards.
 	 *
-	 * @param  object $model  A copy of the current model is always passed
-	 * @param  mixed  $value  The value as it's currently set in the model
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return mixed
 	 **/
 	public function get($model, $value)

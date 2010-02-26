@@ -12,8 +12,8 @@ abstract class Jelly_Field_Slug extends Field_String
 	 * 
 	 * We could validate it by setting a rule, but for the most part, who cares?
 	 *
-	 * @param string $value 
-	 * @return void
+	 * @param  mixed  $value
+	 * @return mixed
 	 */
 	public function set($value)
 	{

@@ -21,8 +21,8 @@ interface Jelly_Field_Behavior_Haveable
 	 * The $model should not be modified by the time this method 
 	 * has finished.
 	 *
-	 * @param  Jelly $model 
-	 * @param  array $ids 
+	 * @param  Jelly_Model $model 
+	 * @param  array       $ids 
 	 * @return bool
 	 */
 	public function has($model, $ids);

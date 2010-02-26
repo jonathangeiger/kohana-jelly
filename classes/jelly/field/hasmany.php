@@ -54,7 +54,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	/**
 	 * Converts a Database_Result, Jelly, array of ids, or an id to an array of ids
 	 *
-	 * @param  mixed $value 
+	 * @param  mixed  $value
 	 * @return array
 	 */
 	public function set($value)
@@ -66,8 +66,9 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 * Returns a Jelly model that, when load()ed will return a database 
 	 * result of the models that this field has.
 	 *
-	 * @param  string $model 
-	 * @param  string $value 
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return Jelly
 	 */
 	public function get($model, $value)

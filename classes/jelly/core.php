@@ -1,7 +1,8 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * This core class is the main interface
+ * This core class is the main interface to all 
+ * models, builders, and meta data.
  */
 abstract class Jelly_Core
 {
