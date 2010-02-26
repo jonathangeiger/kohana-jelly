@@ -24,27 +24,27 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	protected $_model = NULL;
 	
 	/**
-	 * @var Jelly_Meta The first model to come in a from is cached here and used as the canonical model
+	 * @var Jelly_Meta The meta object (if found) that is attached to this builder
 	 */	
 	protected $_meta = NULL;
 	
 	/**
-	 * @var array Data to be updated
+	 * @var array Data to be UPDATEd
 	 */
 	protected $_set = array();
 	
 	/**
-	 * @var array Columns to be inserted
+	 * @var array Columns to be INSERTed
 	 */
 	protected $_columns = array();
 	
 	/**
-	 * @var array Values to be inserted
+	 * @var array Values to be INSERTed
 	 */
 	protected $_values = array();
 	
 	/**
-	 * @var int The query type
+	 * @var int The query type, one of the Database constants
 	 */
 	protected $_type = NULL;
 	
@@ -65,7 +65,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	{
 		parent::__construct();
 		
-		if ( ! $model)
+		if ( ! $model || !$type)
 		{
 			throw new Kohana_Exception(get_class($this) . ' requires $model and $type to be set in the constructor');
 		}
@@ -137,8 +137,8 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	/**
 	 * Compiles the builder into a usable expression
 	 *
-	 * @param Database $db 
-	 * @return void
+	 * @param  Database $db 
+	 * @return Database_Query
 	 */
 	public function compile(Database $db)
 	{
@@ -146,9 +146,9 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	}
 	
 	/**
-	 * Returns a count with the current where clauses applied.
+	 * Counts the current query builder result
 	 *
-	 * @return void
+	 * @return int
 	 */
 	public function count()
 	{
@@ -166,7 +166,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 * Returns the current query limited to 1 and 
 	 * executed, if it is a Database::SELECT.
 	 *
-	 * @param  string $key 
+	 * @param  mixed $key 
 	 * @return Jelly_Model
 	 */
 	public function load($key = NULL)
@@ -473,6 +473,17 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	
 	/**
 	 * Allows joining 1:1 relationships in a single query.
+	 * 
+	 * It is possible to join a relationship to a join using
+	 * the following syntax:
+	 * 
+	 * $post->join("author:role");
+	 * 
+	 * Assuming a post belongs to an author and an author has one role.
+	 * 
+	 * Currently, no checks are made to see if a join has already 
+	 * been made, so joining a model twice will result in 
+	 * a failed query.
 	 *
 	 * @param  string $alias 
 	 * @return $this
@@ -537,7 +548,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	/**
 	 * Resets the query builder to an empty state.
 	 * 
-	 * The query type is not reset, but can be changed with type().
+	 * The query type and model is not reset.
 	 *
 	 * @return $this
 	 */
@@ -559,9 +570,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	/**
 	 * Sets the model and the initial from() clause
 	 *
-	 * @param string $model 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	protected function _register_model()
 	{
@@ -580,10 +589,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	}
 	
 	/**
-	 * This is an internal method used for aliasing only things coming 
-	 * to the query builder, since they can come in so many formats.
-	 * 
-	 * This method aliases tables
+	 * This method aliases models to tables.
 	 *
 	 * @param  string	$table 
 	 * @return string
@@ -601,6 +607,8 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	/**
 	 * This is an internal method used for aliasing only things coming 
 	 * to the query builder, since they can come in so many formats.
+	 * 
+	 * $value is passed so the :unique_key meta alias can be used.
 	 *
 	 * @param  string	$field 
 	 * @param  boolean	$join
@@ -670,7 +678,11 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	}
 	
 	/**
-	 * Expands meta-aliases into their actual field name
+	 * Expands meta-aliases into their actual field name.
+	 * 
+	 * This can be overridden to add meta aliases to your
+	 * model's query builder. Keep in mind that they can
+	 * only be used in query building and not in the model.
 	 *
 	 * @param  string  $alias
 	 * @return string
@@ -696,9 +708,10 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	}
 	
 	/**
-	 * Builders the instance into a usable Database_Query_Builder_* instance.
+	 * Builders the instance into a usable 
+	 * Database_Query_Builder_* instance.
 	 *
-	 * @return void
+	 * @return Database_Query_Builder
 	 */
 	protected function _build($type = NULL)
 	{

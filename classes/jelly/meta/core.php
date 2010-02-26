@@ -8,7 +8,7 @@
 abstract class Jelly_Meta_Core
 {			
 	/**
-	 * @var string If this is FALSE, properties can still be set on it
+	 * @var boolean If this is FALSE, properties can still be set on the meta object
 	 */
 	protected $initialized = FALSE;
 	
@@ -23,37 +23,38 @@ abstract class Jelly_Meta_Core
 	protected $db = 'default';
 	
 	/**
-	 * @var string The table this model represents
+	 * @var string The table this model represents, defaults to the model name pluralized
 	 */
 	protected $table = '';
 	
 	/**
-	 * @var string The primary key
+	 * @var string The primary key, defaults to the first Field_Primary found.
+	 *             This can be referenced in query building as :primary_key
 	 */
 	protected $primary_key = '';
 	
 	/**
-	 * @var string The title key
+	 * @var string The title key. This can be referenced in query building as :name_key
 	 */
 	protected $name_key = 'name';
 	
 	/**
-	 * @var array An array of ordering options for selects
+	 * @var array An array of ordering options for SELECTs
 	 */
 	protected $sorting = array();
 	
 	/**
-	 * @var array An array of options to pass to with for every load()
+	 * @var array An array of 1:1 relationships to pass to with() for every SELECT
 	 */
 	protected $load_with = array();
 	
 	/**
-	 * @var string Prefix to apply to input generation
+	 * @var string Prefix to apply to input view generation
 	 */
 	protected $input_prefix = 'jelly/field';
 	
 	/**
-	 * @var array A map to the resource's fields and how to process each column.
+	 * @var array A map to the models's fields and how to process each column.
 	 */
 	protected $fields = array();
 	
@@ -63,9 +64,10 @@ abstract class Jelly_Meta_Core
 	protected $aliases = array();
 	
 	/**
-	 * @var string The builder class the model is associated with
+	 * @var string The builder class the model is associated with. This defaults to
+	 *             Jelly_Builder_Modelname, if that particular class is found.
 	 */
-	protected $builder = 'Jelly_Builder';
+	protected $builder = '';
 	
 	/**
 	 * @var array A list of columns and how they relate to fields
@@ -83,7 +85,8 @@ abstract class Jelly_Meta_Core
 	protected $field_cache = array();
 	
 	/**
-	 * This is called after initialization to finalize any changes to the meta object
+	 * This is called after initialization to 
+	 * finalize any changes to the meta object.
 	 *
 	 * @return void
 	 */
@@ -92,8 +95,12 @@ abstract class Jelly_Meta_Core
 		if ($this->initialized) 
 			return;
 		
-		// This cannot be overridden
+		// Ensure certain fields are not overridden
 		$this->model = $model;
+		$this->columns     = 
+		$this->defaults    =
+		$this->field_cache = 
+		$this->aliases     = array()
 		
 		// Table should be a sensible default
 		if (empty($this->table))
@@ -102,11 +109,18 @@ abstract class Jelly_Meta_Core
 		}
 		
 		// See if we have a special builder class to use
-		$builder = Jelly::prefix().'builder_'.$model;
-		
-		if (class_exists($builder))
+		if (empty($this->builder))
 		{
-			$this->builder = $builder;
+			$builder = Jelly::prefix().'builder_'.$model;
+
+			if (class_exists($builder))
+			{
+				$this->builder = $builder;
+			}
+			else
+			{
+				$this->builder = 'Jelly_Builder';
+			}
 		}
 		
 		// Initialize all of the fields with their column and the model name
@@ -153,7 +167,7 @@ abstract class Jelly_Meta_Core
 	/**
 	 * Allows dynamic retrieval of members when initializing
 	 *
-	 * @param string $key 
+	 * @param  string $key 
 	 * @return void
 	 */
 	public function &__get($key)
@@ -167,7 +181,7 @@ abstract class Jelly_Meta_Core
 	/**
 	 * Allows dynamic setting of members when initializing
 	 *
-	 * @param string $key 
+	 * @param  string $key 
 	 * @return void
 	 */
 	public function __set($key, $value)
@@ -176,7 +190,7 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Allows setting a variable only when initalized
+	 * Allows setting a variable only when initialized
 	 *
 	 * @param  string $key 
 	 * @param  string $value 
@@ -193,8 +207,9 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the meta object db group
-	 * @return string
+	 * Gets or sets the db group
+	 * @param  string  $value
+	 * @return string|$this
 	 */
 	public function db($value = NULL)
 	{
@@ -207,7 +222,7 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the meta object's model
+	 * Returns the model name this object is attached to
 	 * @return string
 	 */
 	public function model()
@@ -216,8 +231,9 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the meta object's table
-	 * @return string
+	 * Gets or sets the table 
+	 * @param  string  $value
+	 * @return string|$this
 	 */
 	public function table($value = NULL)
 	{
@@ -230,8 +246,9 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the builder attached to this object or FALSE of none is assigned
-	 * @return string
+	 * Gets or sets the builder attached to this object
+	 * @param  string  $value
+	 * @return string|$this
 	 */
 	public function builder($value = NULL)
 	{
@@ -248,6 +265,13 @@ abstract class Jelly_Meta_Core
 	 * 
 	 * If $field is specified, only the particular field is returned.
 	 * If $name is TRUE, the name of the field specified is returned.
+	 * 
+	 * You can pass an array for $field to set more fields. Calling
+	 * this multiple times while setting will append fields, not 
+	 * overwrite fields.
+	 * 
+	 * @param  $field  string
+	 * @param  $name   boolean
 	 * @return array
 	 */
 	public function fields($field = NULL, $name = FALSE)
@@ -303,6 +327,8 @@ abstract class Jelly_Meta_Core
 	 * is an array of fields the column maps to.
 	 * 
 	 * If $name is specified, only the particular column is returned.
+	 * 
+	 * @param  string  $name
 	 * @return array
 	 */
 	public function columns($name = NULL)
@@ -324,21 +350,22 @@ abstract class Jelly_Meta_Core
 	 * If $name is specified, then the defaults 
 	 * for that field are returned.
 	 *
-	 * @param string $field 
-	 * @return void
+	 * @param  string  $name 
+	 * @return mixed
 	 */
-	public function defaults($field = NULL)
+	public function defaults($name = NULL)
 	{
-		if ($field === NULL)
+		if ($name === NULL)
 		{
 			return $this->defaults;
 		}
 		
-		return $this->fields($field)->default;
+		return $this->fields($name)->default;
 	}
 	
 	/**
-	 * Returns the object's primary key.
+	 * Gets or sets the model's primary key.
+	 * @param  string  $value
 	 * @return mixed
 	 */
 	public function primary_key($value = NULL)
@@ -352,7 +379,8 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the object's name key
+	 * Gets or sets the model's name key
+	 * @param  string  $value
 	 * @return string
 	 */
 	public function name_key($value = NULL)
@@ -366,7 +394,8 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the object's sorting properties
+	 * Gets or sets the object's sorting properties
+	 * @param  array  $value
 	 * @return array
 	 */
 	public function sorting($value = NULL)
@@ -380,7 +409,8 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the object's load_with properties
+	 * Gets or sets the object's load_with properties
+	 * @param  array  $value
 	 * @return array
 	 */
 	public function load_with($value = NULL)
@@ -394,7 +424,8 @@ abstract class Jelly_Meta_Core
 	}
 	
 	/**
-	 * Returns the object's input prefix
+	 * Gets or sets the object's input prefix
+	 * @param  string  $value
 	 * @return string
 	 */
 	public function input_prefix($value = NULL)

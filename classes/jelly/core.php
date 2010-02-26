@@ -7,6 +7,8 @@ abstract class Jelly_Core
 {
 	/**
 	 * @var string The prefix to use for all model's class names
+	 *             This can be overridden to allow you to place 
+	 *             models and builders in a different location.
 	 */
 	protected static $_prefix = 'model_';
 
@@ -16,25 +18,39 @@ abstract class Jelly_Core
 	protected static $_models = array();
 	
 	/**
-	 * Factory for generating models. Fields are initialized only 
-	 * on the first instantiation of the model, and never again.
+	 * Factory for instantiating models.
 	 * 
-	 * Model's do not have to be instantiated through here; they 
-	 * can be constructed directly.
+	 * If $values is passed and it is an array, it will be 
+	 * applied to the model as if it were a database result.
+	 * The model is then considered to be loaded.
 	 *
 	 * @param	mixed  $model
 	 * @param	mixed  $key
 	 * @return	Jelly
 	 */
-	public static function factory($model, $key = NULL)
+	public static function factory($model, $values = NULL)
 	{	
 		$class = Jelly::class_name($model);
 		
-		return new $class($key);
+		return new $class($values);
 	}
 
 	/**
 	 * Returns a query builder that can be used for selecting records.
+	 * 
+	 * If $key is passed, the key will be passed to unique_key(), the result
+	 * will be limited to 1, and the record will be returned directly.
+	 * 
+	 * In essence, passing a $key is analogous to:
+	 * 
+	 *     Model::select($model)->load($key);
+	 * 
+	 * Which itself is a shortcut for:
+	 * 
+	 *     Model::select($model)
+	 *          ->where(':unique_key', '=', $key)
+	 *          ->limit(1)
+	 *          ->execute();
 	 *
 	 * @param  string  $model 
 	 * @param  mixed   $cond
@@ -54,6 +70,10 @@ abstract class Jelly_Core
 
 	/**
 	 * Returns a query builder that can be used for inserting record(s).
+	 * 
+	 * Generally, you will only want to use Models directly for creating
+	 * new records, since this method doesn't support validation or 
+	 * relations, but it is still here to complete the API.
 	 *
 	 * @param  string $model 
 	 * @return Jelly_Builder
@@ -65,6 +85,10 @@ abstract class Jelly_Core
 
 	/**
 	 * Returns a query builder that can be used for updating many records.
+	 * 
+	 * Similar to Jelly::insert(), you will generally want to use Models for
+	 * updating an individual record, but this method is useful for updating
+	 * columns on multiple rows all at once.
 	 *
 	 * @param  string $model 
 	 * @return Jelly_Builder
@@ -76,6 +100,9 @@ abstract class Jelly_Core
 
 	/**
 	 * Returns a query builder that can be used for deleting many records.
+	 * 
+	 * While you will generally want to use models for deleting single records,
+	 * this method remains useful for deleting multiple rows all at once.
 	 *
 	 * @param  string $model 
 	 * @return Jelly_Builder
@@ -84,35 +111,15 @@ abstract class Jelly_Core
 	{
 		return Jelly::builder($model, Database::DELETE);
 	}
-	
-	/**
-	 * Returns the builder class to use for the specified model
-	 *
-	 * @param  string $model 
-	 * @param  int    $type
-	 * @return string
-	 */
- 	protected static function builder($model, $type = NULL)
-	{
-		$builder = 'Jelly_Builder';
-		
-		if ($meta = Jelly::meta($model))
-		{
-			if ($meta->builder())
-			{
-				$builder = $meta->builder();
-			}
-		}
-		
-		return new $builder($model, $type);
-	}
 
 	/**
-	 * Gets a particular set of metadata about a model
+	 * Gets a particular set of metadata about a model. If the model
+	 * isn't registered, it will attempt to register it.
+	 * 
+	 * FALSE is returned on failure.
 	 *
-	 * @param string|Jelly $model The model to search for
-	 * @param string       $property An optional property to get if the model exists
-	 * @return void
+	 * @param   string|Jelly_Model  $model
+	 * @return  Jelly_Meta
 	 */
 	public static function meta($model)
 	{
@@ -130,12 +137,13 @@ abstract class Jelly_Core
 	}
 
 	/**
-	 * Automatically loads a model, if it exists, into the meta table.
+	 * Automatically loads a model, if it exists, 
+	 * into the meta table.
 	 * 
-	 * Models are not required to register themselves. It 
-	 * happens automatically.
+	 * Models are not required to register 
+	 * themselves; it happens automatically.
 	 *
-	 * @param string $model 
+	 * @param  string  $model 
 	 * @return boolean
 	 */
 	public static function register($model)
@@ -178,8 +186,8 @@ abstract class Jelly_Core
 	/**
 	 * Returns the class name of a model
 	 *
-	 * @param string|Jelly The model to find the class name of
-	 * @package default
+	 * @param   string|Jelly_Model  $model
+	 * @return  string
 	 */
 	public static function class_name($model)
 	{
@@ -196,8 +204,8 @@ abstract class Jelly_Core
 	/**
 	 * Returns the model name of a class
 	 *
-	 * @param string|Jelly The model to find the model name of
-	 * @return void
+	 * @param   string|Jelly_Model  $model
+	 * @return  string
 	 */
 	public static function model_name($model)
 	{
@@ -219,10 +227,33 @@ abstract class Jelly_Core
 	
 	/**
 	 * Returns the prefix to use for all models and builders.
+	 * 
 	 * @return string
 	 */
 	public static function prefix()
 	{
 		return Jelly::$_prefix;
+	}
+	
+	/**
+	 * Returns the builder class to use for the specified model
+	 *
+	 * @param  string $model 
+	 * @param  int    $type
+	 * @return string
+	 */
+ 	protected static function builder($model, $type)
+	{
+		$builder = 'Jelly_Builder';
+		
+		if ($meta = Jelly::meta($model))
+		{
+			if ($meta->builder())
+			{
+				$builder = $meta->builder();
+			}
+		}
+		
+		return new $builder($model, $type);
 	}
 }
