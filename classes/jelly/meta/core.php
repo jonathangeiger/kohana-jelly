@@ -100,7 +100,7 @@ abstract class Jelly_Meta_Core
 		$this->columns     = 
 		$this->defaults    =
 		$this->field_cache = 
-		$this->aliases     = array()
+		$this->aliases     = array();
 		
 		// Table should be a sensible default
 		if (empty($this->table))
