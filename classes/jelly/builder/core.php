@@ -65,9 +65,9 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	{
 		parent::__construct();
 		
-		if ( ! $model || !$type)
+		if ( ! $model)
 		{
-			throw new Kohana_Exception(get_class($this) . ' requires $model and $type to be set in the constructor');
+			throw new Kohana_Exception(get_class($this) . ' requires $model to be set in the constructor');
 		}
 		
 		// Set the model and the initial from()
@@ -371,7 +371,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function and_having($column, $op, $value = NULL)
 	{
-		return parent::and_having($this->_column($column, NULL, $value), $op, $value);
+		return parent::and_having($this->_column($column, TRUE, $value), $op, $value);
 	}
 
 	/**
@@ -384,7 +384,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function or_having($column, $op, $value = NULL)
 	{
-		return parent::or_having($this->_column($column, NULL, $value), $op, $value);
+		return parent::or_having($this->_column($column, TRUE, $value), $op, $value);
 	}
 
 	/**
@@ -396,7 +396,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function order_by($column, $direction = NULL)
 	{
-		return parent::order_by($this->_column($column), $direction);
+		return parent::order_by($this->_column($column, TRUE), $direction);
 	}
 	
 	/**

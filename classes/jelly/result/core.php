@@ -104,8 +104,17 @@ class Jelly_Result_Core implements Iterator, Countable, SeekableIterator, ArrayA
 	 * @return Jelly
 	 */
     public function current($object = TRUE) 
-	{
-		$result = $this->_result->current();
+	{	
+		// Database_Result causes errors if you call current() 
+		// on an object with no results, so we check first.	
+		if ($this->_result->count())
+		{
+			$result = $this->_result->current();
+		}
+		else
+		{
+			$result = array();
+		}
 		
 		if ($object AND $this->_model)
 		{

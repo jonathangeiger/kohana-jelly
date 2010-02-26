@@ -170,7 +170,7 @@ abstract class Jelly_Meta_Core
 	 * @param  string $key 
 	 * @return void
 	 */
-	public function &__get($key)
+	public function __get($key)
 	{
 		if ( ! $this->initialized)
 		{
@@ -187,6 +187,16 @@ abstract class Jelly_Meta_Core
 	public function __set($key, $value)
 	{
 		$this->set($key, $value);
+	}
+	
+	/**
+	 * Returns whether or not the meta object has finished initialization
+	 *
+	 * @return boolean
+	 */
+	public function initialized()
+	{
+		return $this->initialized;
 	}
 	
 	/**
