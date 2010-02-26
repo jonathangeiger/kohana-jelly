@@ -120,7 +120,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 		{
 			// Don't return models when we don't have one
 			$result = ($result) 
-			        ? $this->_model->values($result, TRUE) 
+			        ? $this->_model->load_values($result, TRUE) 
 			        : $this->_model->clear();
 		}
 		

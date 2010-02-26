@@ -78,7 +78,7 @@ abstract class Jelly_Model_Core
 		// Add the values stored by mysql_set_object
 		if ( ! empty($this->_preload_data) AND is_array($this->_preload_data))
 		{
-			$this->values($this->_preload_data, TRUE);
+			$this->load_values($this->_preload_data, TRUE);
 			$this->_preload_data = array();
 		}
 				
@@ -88,7 +88,7 @@ abstract class Jelly_Model_Core
 			// Arrays are loaded as values, but not load()ed
 			if (is_array($values))
 			{
-				$this->values($values);
+				$this->set($values);
 			}
 		}
 	}
@@ -222,7 +222,7 @@ abstract class Jelly_Model_Core
 			}
 			elseif (array_key_exists($name, $this->_with))
 			{
-				$value = Jelly::factory($field->foreign['model'])->values($this->_with[$name]);
+				$value = Jelly::factory($field->foreign['model'])->load_values($this->_with[$name]);
 				
 				// Try and verify that it's actually loaded
 				if (!$value->id())
@@ -323,7 +323,7 @@ abstract class Jelly_Model_Core
 	 * @param  boolean $alias 
 	 * @return $this
 	 */
-	public function values(array $values, $alias = FALSE)
+	public function load_values(array $values, $alias = FALSE)
 	{
 		// Clear the object
 		$this->clear();
