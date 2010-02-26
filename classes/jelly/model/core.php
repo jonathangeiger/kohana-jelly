@@ -462,10 +462,12 @@ abstract class Jelly_Model_Core
 	 * Deletes a single record.
 	 *
 	 * @param  $key    A key to use for non-loaded records
-	 * @return Jelly   Returns $this
+	 * @return boolean
 	 **/
 	public function delete($key = NULL)
 	{
+		$result = FALSE;
+		
 		// Are we loaded? Then we're just deleting this record
 		if ($this->_loaded OR $key)
 		{
@@ -477,11 +479,12 @@ abstract class Jelly_Model_Core
 			$result = Jelly::delete($this)
 			               ->where(':unique_key', '=', $key)
 			               ->execute();
-			
-			$this->clear();
 		}
 		
-		return FALSE;
+		// Clear the object so it appears deleted anyway
+		$this->clear();
+		
+		return (boolean) $result;
 	}
 	
 	/**
