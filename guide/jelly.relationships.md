@@ -146,6 +146,20 @@ For n:1 relations, we just set them as properties
     
     $user->address = Jelly::select('address', 1); // Set by model instance
     
+    $user->address = NULL; // Remove relationship (assuming this is allowed by you validation rules)
+    
     $user->save(); // Saves change to relationship to database
     
-[!!] **Note**: Currently `save()` saves only the changes to the *relationship* and not to the actual models themselves. This means you cannot assign non-saved models as relationships.
+For n:many relations we use `add()` or `remove()`:
+
+    $user->add('posts', 1); // Add single post by unique key value
+    
+    $user->add('posts', $post); // Add post by assinging an instance
+    
+    $user->add('posts', array(1, 2, $post)); // Add multiple relations with a mixture of unique key values and instances.
+    
+    $user->remove('posts', 1); // Takes the same args as add()
+
+Adding relations which already exist and deleting ones that don't has no effect and won't cause errors.
+
+[!!] **Note**: Currently `save()` saves only the changes to the *relationship* and not to the actual models themselves. This means you cannot assign non-saved instances as relationships.
