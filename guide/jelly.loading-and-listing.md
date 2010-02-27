@@ -1,11 +1,11 @@
 # Loading and Listing Records
 
-Jelly extends Kohana's Query Builder. Since it knows all
-about your models, it adds extra features like field and model aliasing and
-automatic joins of 1:1 relationships.
+Jelly extends Kohana's Query Builder. Since it knows all about your models, it
+adds extra features like field and model aliasing and automatic joins of 1:1
+relationships.
 
-It is essentially an Objectified version of Query builder where you query for Jelly objects
-from models rather than rows from tables.
+It is essentially an objectified version of query builder where you query for
+Jelly objects from models rather than rows from tables.
 
 ### Finding a single record
 

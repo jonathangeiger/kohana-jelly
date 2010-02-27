@@ -1,8 +1,11 @@
 # Getting Started
 
-Jelly is built around a hybrid of ActiveRecord and DataMapper patterns. Jelly model instances follow the active record pattern
-but actually do as little as possible and are as small as possible. All loading and listing of models is acheived through a
-natural extension of Kohana's own query builder which autmatically handles model and field aliasing as well as relationship joining.
+Jelly is built around a hybrid of ActiveRecord and DataMapper patterns. Jelly
+model instances follow the active record pattern but actually do as little as
+possible and are as small as possible. All loading and listing of models is
+acheived through a natural extension of Kohana's own query builder which
+automatically handles model and field aliasing as well as relationship
+joining.
 
 The basic operations needed to work with Jelly are:
 
@@ -13,8 +16,9 @@ The basic operations needed to work with Jelly are:
 
 ## More Advanced Use
 
-Jelly is incredibly flexible with almost all aspects of it'bs behavior transparently extendable. The guides below give an overview of some more
+Jelly is incredibly flexible with almost all aspects of it's behavior
+transparently extendable. The guides below give an overview of some more
 advanced usage.
 
 1.  [Extending the query builder](jelly.extending-builder)
-2.  [Defining custom field](jelly.extending-field)
+2.  [Defining custom fields](jelly.extending-field)
