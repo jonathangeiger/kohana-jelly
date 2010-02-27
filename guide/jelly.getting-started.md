@@ -1,34 +1,20 @@
 # Getting Started
 
-The first place to start with any ORM is defining your models. Jelly splits up
-models into a few separate components that make the API more coherent and
-extensible.
+Jelly is built around a hybrid of ActiveRecord and DataMapper patterns. Jelly model instances follow the active record pattern
+but actually do as little as possible and are as small as possible. All loading and listing of models is acheived through a
+natural extension of Kohana's own query builder which autmatically handles model and field aliasing as well as relationship joining.
 
-First, let's start with a sample model:
+The basic operations needed to work with Jelly are:
 
-    class Model_Post extends Jelly_Model
-    {
-        public static function initialize(Jelly_Meta $meta)
-        {
-            $meta->table('posts')
-                 ->fields(array(
-                     'id' => new Field_Primary,
-                     'name' => new Field_String,
-                     'body' => new Field_Text,
-                     'status' => new Field_Enum(array(
-                         'choices' => array('draft', 'review', 'published'))),
-                     'author' => new Field_BelongsTo,
-                     'tags' => new Field_ManyToMany,
-                 ));
-        }
-    }
-    
-As you can see all models must do a few things to be registered with Jelly:
+1.  [Defining models](jelly.defining-models)
+2.  [Loading and listing records](jelly.loading-and-listing)
+3.  [Creating, updating and deleting records](jelly.cud)
+4.  [Accessing and managing relationships](jelly.relationships)
 
- * They must extend Jelly_Model
- * They must define an initialize() method, which is passed a Jelly_Meta object
- * They must add properties to that define the model to that $meta object
+## More Advanced Use
 
-From then on, the model has that specific `$meta` object attached to it.
+Jelly is incredibly flexible with almost all aspects of it'bs behavior transparently extendable. The guides below give an overview of some more
+advanced usage.
 
-[!!] Most of the things we're defining here are optional, but we're just putting them there for reference.
+1.  [Extending the query builder](jelly.extending-builder)
+2.  [Defining custom field](jelly.extending-field)
