@@ -4,30 +4,28 @@
  * Handles has many relationships
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_HasMany 
 extends Jelly_Field_Relationship 
-implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_Behavior_Field_Changeable
+implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
 {	
 	/**
-	 * This is expected to contain an assoc. array containing the key 
-	 * 'model', and the key 'column'
+	 * A string pointing to the foreign model and (optionally, a 
+	 * field, column, or meta-alias).
 	 * 
-	 * If they do not exist, they will be filled in with sensible defaults 
-	 * derived from the field's name.
+	 * Assuming an author has_many posts and the field was named 'posts':
 	 * 
-	 * 'model' => 'a model to use as the foreign association'
+	 *  * '' would default to post.:author:foreign_key
+	 *  * 'post' would expand to post.:author:foreign_key
+	 *  * 'post.author_id' would remain untouched.
 	 * 
-	 * If 'model' is empty it is set to the singularized name of the field.
-	 * 
-	 * 'column' => 'the column (or alias) that is the foreign model's primary key'
-	 * 
-	 * If 'column' is empty, it is set to the name of the model plus '_id'
+	 * The model part of this must point to a valid model, but the 
+	 * field part can point to anything, as long as it's a valid 
+	 * column in the database.
 	 *
-	 * @var array
+	 * @var string
 	 */
-	public $foreign = array();
+	public $foreign = '';
 	
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -35,133 +33,98 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 * @param  string $model 
 	 * @param  string $column 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function initialize($model, $column)
 	{
-		if (empty($this->foreign['model']))
+		// Default to the name of the column
+		if (empty($this->foreign))
 		{
-			$this->foreign['model'] = inflector::singular($column);
+			$this->foreign = inflector::singular($column).'.'.$model.':foreign_key';
+		}
+		// Is it model.field?
+		else if (FALSE === strpos($this->foreign, '.'))
+		{
+			$this->foreign = $this->foreign.'.'.$model.':foreign_key';
 		}
 		
-		if (empty($this->foreign['column']))
-		{
-			$this->foreign['column'] = $model.'_id';
-		}
+		// Split them apart
+		$foreign = explode('.', $this->foreign);
 		
-		// Column is set and won't be overridden
+		// Create an array from them
+		$this->foreign = array(
+			'model' => $foreign[0],
+			'column' => $foreign[1],
+		);
+		
 		parent::initialize($model, $column);
 	}
 	
 	/**
 	 * Converts a Database_Result, Jelly, array of ids, or an id to an array of ids
 	 *
-	 * @param  mixed $value 
+	 * @param  mixed  $value
 	 * @return array
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{
-		// Can be set in only one go
-		$return = array();
-		
-		// Handle Database Results
-		if ($value instanceof Iterator || is_array($value))
-		{
-			foreach($value as $row)
-			{
-				if (is_object($row))
-				{
-					$return[] = $row->id();
-				}
-				else
-				{
-					$return[] = $row;
-				}
-			}
-		}
-		// And individual models
-		else if (is_object($value))
-		{
-			$return = array($value->id());
-		}
-		// And everything else
-		else
-		{
-			$return = (array)$value;
-		}
-		
-		return $return;
+		return $this->_ids($value);
 	}
 	
 	/**
 	 * Returns a Jelly model that, when load()ed will return a database 
 	 * result of the models that this field has.
 	 *
-	 * @param  string $model 
-	 * @param  string $value 
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return Jelly
-	 * @author Jonathan Geiger
 	 */
 	public function get($model, $value)
 	{
 		// Return a real object
-		return Jelly::factory($this->foreign['model'])
+		return Jelly::select($this->foreign['model'])
 				->where($this->foreign['column'], '=', $model->id());
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Saveable
+	 * Implementation of Jelly_Field_Behavior_Saveable
 	 *
 	 * @param   Jelly $model 
 	 * @param   mixed $value
 	 * @return  void
-	 * @author  Jonathan Geiger
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
-		$foreign = Jelly::Factory($this->foreign['model']);
-		
 		// Empty relations to the default value
-		$foreign
+		Jelly::update($this->foreign['model'])
 			->where($this->foreign['column'], '=', $model->id())
-			->execute(Database::UPDATE, array(
-				$this->foreign['column'] => $this->default
-			));
+			->set(array($this->foreign['column'] => $this->default))
+			->execute();
 						
 		// Set the new relations
-		if (!empty($value) && is_array($value))
+		if ( ! empty($value) AND is_array($value))
 		{			
 			// Update the ones in our list
-			$foreign
-				->end()
-				->where(Jelly_Meta::get($foreign, 'primary_key'), 'IN', $value)
-				->execute(Database::UPDATE, array(
-					$this->foreign['column'] => $model->id()
-				));
+			Jelly::update($this->foreign['model'])
+				->where(':primary_key', 'IN', $value)
+				->set(array($this->foreign['column'] => $model->id()))
+				->execute();
 		}
-		
-		return $value;
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Haveable
+	 * Implementation of Jelly_Field_Behavior_Haveable
 	 *
 	 * @param  Jelly $model 
 	 * @param  array $ids 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function has($model, $ids)
 	{
-		$foreign = Jelly::factory($this->foreign['model']);
-		
-		return (bool) $foreign
-			->select(array('COUNT("*")', 'records_found'))
+		return (bool) Jelly::select($this->foreign['model'])
 			->where($this->foreign['column'], '=', $model->id())
-			->where($foreign->meta()->primary_key, 'IN', $ids)
-			->execute(Database::SELECT, FALSE)
-			->get('records_found');
+			->where(':primary_key', 'IN', $ids)
+			->count();
 	}
 	
 	/**
@@ -171,12 +134,11 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	* @param string $prefix
 	* @param string $data
 	* @return void
-	* @author Jonathan Geiger
 	*/
 	public function input($prefix = 'jelly/field', $data = array())
 	{
 		// Kind of a wart here, but since HasOne extends this, we don't always want to iterate
-		if ($data['value'] instanceof Database_Result)
+		if ($data['value'] instanceof Iterator)
 		{
 			$data['ids'] = array();
 

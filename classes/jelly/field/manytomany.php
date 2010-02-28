@@ -4,11 +4,10 @@
  * Handles many to many relationships
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_ManyToMany 
 extends Jelly_Field_Relationship 
-implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_Behavior_Field_Changeable
+implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
 {	
 	/**
 	 * This is expected to contain an assoc. array containing the key 
@@ -28,7 +27,7 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 *
 	 * @var array
 	 */
-	public $through = array();
+	public $through = NULL;
 	
 	/**
 	 * This is expected to contain an assoc. array containing the key 
@@ -47,7 +46,7 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 *
 	 * @var array
 	 */
-	public $foreign = array();
+	public $foreign = NULL;
 		
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -55,44 +54,66 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	 * @param string $model 
 	 * @param string $column 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function initialize($model, $column)
 	{
-		if (empty($this->foreign['model']))
+		// Default to the name of the column
+		if (empty($this->foreign))
 		{
-			$this->foreign['model'] = inflector::singular($column);
+			$this->foreign = inflector::singular($column).'.:primary_key';
+		}
+		// Is it model.field?
+		else if (FALSE === strpos($this->foreign, '.'))
+		{
+			$this->foreign = $this->foreign.'.:primary_key';
 		}
 		
-		if (empty($this->foreign['column']))
-		{
-			$this->foreign['column'] = 'id';
-		}
+		// Split them apart
+		$foreign = explode('.', $this->foreign);
 		
-		if (empty($this->through['columns'][0]))
-		{
-			$this->through['columns'][0] = inflector::singular($model).'_id';
-		}	
+		// Create an array from them
+		$this->foreign = array(
+			'model' => $foreign[0],
+			'column' => $foreign[1],
+		);
 		
-		if (empty($this->through['columns'][1]))
+		// We can work with nothing passed or just a model
+		if (empty($this->through) || is_string($this->through))
 		{
-			$this->through['columns'][1] = inflector::singular($this->foreign['model']).'_id';
-		}
-		
-		if (empty($this->through['model']))
-		{
-			// Find the join table based on the two model names pluralized, 
-			// sorted alphabetically and with an underscore separating them
-			$this->through['model'] = array(
-				inflector::plural($this->foreign['model']), 
-				inflector::plural($model)
+			if (empty($this->through))
+			{
+				// Find the join table based on the two model names pluralized, 
+				// sorted alphabetically and with an underscore separating them
+				$through = array(
+					inflector::plural($this->foreign['model']), 
+					inflector::plural($model)
+				);
+
+				// Sort
+				sort($through);
+
+				// Bring them back together
+				$this->through = implode('_', $through);
+			}
+			
+			$this->through = array(
+				'model' => $this->through,
+				'columns' => array(
+					inflector::singular($this->foreign['model']).':foreign_key',
+		            inflector::singular($model).':foreign_key',
+				)
 			);
-			
-			// Sort
-			sort($this->through['model']);
-			
-			// Bring them back together
-			$this->through['model'] = implode('_', $this->through['model']);
+		}
+		// $this->through is an array of two elements
+		else
+		{
+			// Use the first column as the model
+			list($model) = explode('.', $this->through[0]);
+
+			$this->through = array(
+				'model' => $model,
+				'columns' => $this->through
+			);
 		}
 		
 		parent::initialize($model, $column);
@@ -101,114 +122,78 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	/**
 	 * Converts a Database_Result, Jelly, array of ids, or id to an array of ids
 	 *
-	 * @param  mixed $value 
+	 * @param  mixed  $value 
 	 * @return array
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{
-		// Can be set in only one go
-		$return = array();
-		
-		// Handle Database Results
-		if ($value instanceof Iterator || is_array($value))
-		{
-			foreach($value as $row)
-			{
-				if (is_object($row))
-				{
-					$return[] = $row->id();
-				}
-				else
-				{
-					$return[] = $row;
-				}
-			}
-		}
-		// And individual models
-		else if (is_object($value))
-		{
-			$return = array($value->id());
-		}
-		// And everything else
-		else
-		{
-			$return = (array)$value;
-		}
-		
-		return $return;
+		return $this->_ids($value);
 	}
 	
 	/**
 	 * Returns a pre-built Jelly model ready to be loaded
 	 *
-	 * @param  Jelly  $model 
-	 * @param  mixed $value 
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function get($model, $value)
 	{
-		return Jelly::factory($this->foreign['model'])
-				->where($this->foreign['column'], 'IN', $this->in($model));
+		return Jelly::select($this->foreign['model'])
+				->where($this->foreign['column'], 'IN', $this->_in($model));
 	}
 	
 	/**
-	 * Implementation for Jelly_Behavior_Field_Saveable.
+	 * Implementation for Jelly_Field_Behavior_Saveable.
 	 *
 	 * @param  Jelly $model 
 	 * @param  mixed $value 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
 		// Find all current records so that we can calculate what's changed
-		$in = $this->in($model, TRUE);
-				
-		// Grab all of the actual columns
-		$through_table = Jelly_Meta::table($this->through['model']);
-		$through_columns = array(
-			Jelly_Meta::column($this->through['model'].'.'.$this->through['columns'][0], FALSE),
-			Jelly_Meta::column($this->through['model'].'.'.$this->through['columns'][1], FALSE),
-		);
+		$in = ($loaded) ? $this->_in($model, TRUE) : array();
 		
 		// Find old relationships that must be deleted
-		if ($old = array_diff($in, $value))
+		if ($old = array_diff($in, (array)$value))
 		{
-			DB::delete($through_table)
-				->where($through_columns[0], '=', $model->id())
-				->where($through_columns[1], 'IN', $old)
-				->execute(Jelly_Meta::get($model, 'db'));
+			Jelly::delete($this->through['model'])
+				->where($this->through['columns'][0], '=', $model->id())
+				->where($this->through['columns'][1], 'IN', $old)
+				->execute(Jelly::meta($model)->db());
 		}
 
 		// Find new relationships that must be inserted
-		if ($new = array_diff($value, $in))
+		if ($new = array_diff((array)$value, $in))
 		{
+			$query = Jelly::insert($this->through['model'])
+						 ->columns($this->through['columns']);
+				
 			foreach ($new as $new_id)
 			{
-				DB::insert($through_table, $through_columns)
-					->values(array($model->id(), $new_id))
-					->execute(Jelly_Meta::get($model, 'db'));
+				$query->values(array($model->id(), $new_id));
 			}
+			
+			$query->execute();
 		}
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Haveable
+	 * Implementation of Jelly_Field_Behavior_Haveable
 	 *
 	 * @param  Jelly   $model 
 	 * @param  array   $ids
 	 * @return boolean
-	 * @author Jonathan Geiger
 	 */
 	public function has($model, $ids)
 	{
-		$in = $this->in($model, TRUE);
+		$in = $this->_in($model, TRUE);
 		
 		foreach ($ids as $id)
 		{
-			if (!in_array($id, $in))
+			if ( ! in_array($id, $in))
 			{
 				return FALSE;
 			}
@@ -218,48 +203,11 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 	}
 		
 	/**
-	 * Returns either an array or unexecuted query to find 
-	 * which columns the model is "in" in the join table
-	 *
-	 * @param  Jelly   $model 
-	 * @param  boolean $as_array 
-	 * @return mixed
-	 * @author Jonathan Geiger
-	 */
-	protected function in($model, $as_array = FALSE)
-	{
-		// Grab all of the actual columns
-		$through_table = Jelly_Meta::table($this->through['model']);
-		$through['columns'] = array(
-			Jelly_Meta::column($this->through['model'].'.'.$this->through['columns'][0], FALSE),
-			Jelly_Meta::column($this->through['model'].'.'.$this->through['columns'][1], FALSE),
-		);
-						
-		if (!$as_array)
-		{
-			return DB::Select()
-					->select($through['columns'][1])
-					->from($through_table)
-					->where($through['columns'][0], '=', $model->id());
-		}
-		else
-		{
-			return DB::Select()
-					->select($through['columns'][1])
-					->from($through_table)
-					->where($through['columns'][0], '=', $model->id())
-					->execute(Jelly_Meta::get($model, 'db'))
-					->as_array(NULL, $through['columns'][1]);
-		}
-	}
-	
-	/**
 	 * Adds the "ids" variable to the view data
 	 *
 	 * @param  string $prefix
 	 * @param  array  $data
 	 * @return View
-	 * @author Jonathan Geiger
 	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{
@@ -271,5 +219,29 @@ implements Jelly_Behavior_Field_Saveable, Jelly_Behavior_Field_Haveable, Jelly_B
 		}
 		
 		return parent::input($prefix, $data);
+	}
+		
+	/**
+	 * Returns either an array or unexecuted query to find 
+	 * which columns the model is "in" in the join table
+	 *
+	 * @param  Jelly   $model 
+	 * @param  boolean $as_array 
+	 * @return mixed
+	 */
+	protected function _in($model, $as_array = FALSE)
+	{
+		$result = Jelly::select($this->through['model'])
+				->select($this->through['columns'][0])
+				->where($this->through['columns'][1], '=', $model->id());
+				
+		if ($as_array)
+		{
+			$result = $result
+						->execute(Jelly::meta($model)->db())
+						->as_array(NULL, $this->through['columns'][1]);
+		}
+		
+		return $result;
 	}
 }

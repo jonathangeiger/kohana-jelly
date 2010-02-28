@@ -4,7 +4,6 @@
  * Handles passwords
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Password extends Field_String
 {
@@ -16,17 +15,16 @@ abstract class Jelly_Field_Password extends Field_String
 	/**
 	 * Hashes the password on save only if it's changed
 	 *
-	 * @param string $model 
-	 * @param string $value 
-	 * @return void
-	 * @author Jonathan Geiger
+	 * @param  string $model 
+	 * @param  string $value 
+	 * @return string
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
 		if ($this->hash_with)
 		{
 			// Verify value has changed
-			if ($model->get($this->name, FALSE) != $model->get($this->name))
+			if ($model->changed($this->name))
 			{
 				$value = call_user_func($this->hash_with, $value);
 			}

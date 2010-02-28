@@ -4,7 +4,6 @@
  * Handles "slugs"
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Slug extends Field_String
 {
@@ -13,9 +12,8 @@ abstract class Jelly_Field_Slug extends Field_String
 	 * 
 	 * We could validate it by setting a rule, but for the most part, who cares?
 	 *
-	 * @param string $value 
-	 * @return void
-	 * @author Jonathan Geiger
+	 * @param  mixed  $value
+	 * @return mixed
 	 */
 	public function set($value)
 	{

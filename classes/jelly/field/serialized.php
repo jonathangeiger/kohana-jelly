@@ -4,7 +4,6 @@
  * Handles serialized data
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Serialized extends Jelly_Field
 {
@@ -15,7 +14,6 @@ abstract class Jelly_Field_Serialized extends Jelly_Field
 	 *
 	 * @param  mixed $value 
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function set($value)
 	{		
@@ -33,9 +31,8 @@ abstract class Jelly_Field_Serialized extends Jelly_Field
 	 * @param  Jelly  $model
 	 * @param  mixed  $value
 	 * @return string
-	 * @author Jonathan Geiger
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $loaded)
 	{
 		return @serialize($value);
 	}

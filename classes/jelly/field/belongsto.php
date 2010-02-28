@@ -4,9 +4,8 @@
  * Handles belongs to relationships
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
-abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Behavior_Field_Joinable
+abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Field_Behavior_Joinable
 {	
 	/**
 	 * @var boolean Defaults belongs_to's to in the database
@@ -14,20 +13,22 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	public $in_db = TRUE;
 	
 	/**
-	 * This is expected to contain an assoc. array containing the key 
-	 * 'model', and the key 'column'
+	 * A string pointing to the foreign model and (optionally, a 
+	 * field, column, or meta-alias).
 	 * 
-	 * If they do not exist, they will be filled in with sensible defaults 
-	 * derived from the field's name. If 'model' is empty it is set to the 
-	 * singularized name of the field. If 'column' is empty, it is set to 'id'.
+	 * Assuming an author belongs to a role named 'role':
 	 * 
-	 * `'model' => 'a model to use as the foreign association'`
+	 *  * '' would default to role.:primary_key
+	 *  * 'role' would expand to role.:primary_key
+	 *  * 'role.id' would remain untouched.
 	 * 
-	 * `'column' => 'the column (or alias) that is the foreign model's primary key'`
+	 * The model part of this must point to a valid model, but the 
+	 * field part can point to anything, as long as it's a valid 
+	 * column in the database.
 	 *
-	 * @var array
+	 * @var string
 	 */
-	public $foreign = array();
+	public $foreign = '';
 	
 	/**
 	 * Automatically sets foreign to sensible defaults
@@ -35,26 +36,33 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	 * @param  string $model 
 	 * @param  string $column 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function initialize($model, $column)
 	{
 		// Default to the name of the column
-		if (empty($this->foreign['model']))
+		if (empty($this->foreign))
 		{
-			$this->foreign['model'] = $column;
+			$this->foreign = $column.'.:primary_key';
+		}
+		// Is it model.field?
+		else if (FALSE === strpos($this->foreign, '.'))
+		{
+			$this->foreign = $this->foreign.'.:primary_key';
 		}
 		
-		// Default to foreign['model'] plus _id
+		// Split them apart
+		$foreign = explode('.', $this->foreign);
+		
+		// Create an array from them
+		$this->foreign = array(
+			'model' => $foreign[0],
+			'column' => $foreign[1],
+		);
+		
+		// Default to the foreign model's primary key
 		if (empty($this->column))
 		{
 			$this->column = $this->foreign['model'].'_id';
-		}
-		
-		// Default to 'id'
-		if (empty($this->foreign['column']))
-		{
-			$this->foreign['column'] = 'id';
 		}
 		
 		// Column is set and won't be overridden
@@ -64,11 +72,8 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	/**
 	 * Returns the primary key of the model passed. 
 	 * 
-	 * Straight primary keys are also accepted.
-	 * 
 	 * @param  mixed $value
-	 * @return int|string
-	 * @author Jonathan Geiger
+	 * @return mixed
 	 */
 	public function set($value)
 	{
@@ -83,39 +88,30 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	/**
 	 * Returns the jelly model that this model belongs to
 	 *
-	 * @param  string $model 
-	 * @param  string $value 
-	 * @return Jelly
-	 * @author Jonathan Geiger
+	 * @param  Jelly_Model  $model 
+	 * @param  mixed        $value 
+	 * @return Jelly_Builder
 	 */
 	public function get($model, $value)
 	{
-		// Return a real category object
-		return Jelly::factory($this->foreign['model'])
-				->limit(1, TRUE)
-				->where($this->foreign['column'], '=', $value);
+		return Jelly::select($this->foreign['model'])
+				->where($this->foreign['column'], '=', $value)
+				->limit(1);
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Joinable
+	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
-	 * @param  Jelly  $model 
-	 * @param  string $relation 
-	 * @param  string $target_path 
-	 * @param  string $parent_path 
+	 * @param  Jelly_Model  $model
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function with($model)
 	{
-		$meta = Jelly_meta::get($this->foreign['model']);
-
-		// Fields have to be aliased since we don't necessarily know the model from the path
-		$join_col1 = Jelly_Meta::column($this->foreign['model'], $meta->primary_key, TRUE);
-		$join_col2 = Jelly_Meta::column($this->model, $this->foreign['column'], TRUE);
+		$join_col1 = $this->model.'.'.$this->column;
+		$join_col2 = $this->foreign['model'].'.'.$this->foreign['column'];
 				
 		$model
-			->join($meta->table, 'LEFT')
+			->join($this->foreign['model'], 'LEFT')
 			->on($join_col1, '=', $join_col2);
 	}
 }

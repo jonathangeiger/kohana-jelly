@@ -6,7 +6,7 @@
  * @package Jelly
  * @author Jonathan Geiger
  */
-abstract class Jelly_Core_Field
+abstract class Jelly_Field_Core
 {	
 	/**
 	 * @var string The model's name
@@ -58,12 +58,12 @@ abstract class Jelly_Core_Field
 	*/
 	public $filters = array();
 
-	    /**
+	/**
 	* @var array {@link Kohana_Validate} rules for this field.
 	*/
 	public $rules = array();
 
-	    /**
+	/**
 	* @var array {@link Kohana_Validate} callbacks for this field.
 	*/
 	public $callbacks = array();
@@ -72,7 +72,6 @@ abstract class Jelly_Core_Field
 	 * Sets all options
 	 *
 	 * @return void
-	 * @author Jonathan Geiger
 	 **/
 	public function __construct($options = array())
 	{
@@ -81,7 +80,7 @@ abstract class Jelly_Core_Field
 		{
 			$this->column = $options;
 		}
-		else if (is_array($options))
+		elseif (is_array($options))
 		{
 			// Just throw them into the class as public variables
 			foreach ($options as $name => $value)
@@ -105,7 +104,6 @@ abstract class Jelly_Core_Field
 	 * @param  string  $model
 	 * @param  string  $column
 	 * @return void
-	 * @author Jonathan Geiger
 	 **/
 	public function initialize($model, $column)
 	{
@@ -115,13 +113,13 @@ abstract class Jelly_Core_Field
 		// This is for naming form fields
 		$this->name = $column;
 		
-		if (!$this->column)
+		if ( ! $this->column)
 		{
 			$this->column = $column;
 		}
 		
 		// Check for a name, because we can easily provide a default
-		if (!$this->label)
+		if ( ! $this->label)
 		{
 			$this->label = inflector::humanize($column);
 		}
@@ -131,9 +129,8 @@ abstract class Jelly_Core_Field
 	 * Sets a particular value processed according 
 	 * to the class's standards.
 	 *
-	 * @param  mixed
+	 * @param  mixed $value
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 **/
 	public function set($value)
 	{
@@ -144,10 +141,10 @@ abstract class Jelly_Core_Field
 	 * Returns a particular value processed according 
 	 * to the class's standards.
 	 *
-	 * @param  object $model  A copy of the current model is always passed
-	 * @param  mixed  $value  The value as it's currently set in the model
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 **/
 	public function get($model, $value)
 	{
@@ -163,9 +160,8 @@ abstract class Jelly_Core_Field
 	 * @param  Jelly  $model
 	 * @param  mixed  $value
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
-	public function save($model, $value) 
+	public function save($model, $value, $loaded) 
 	{
 		return $value;
 	}
@@ -175,7 +171,6 @@ abstract class Jelly_Core_Field
 	 *
 	 * @param string $prefix The prefix to put before the filename to be rendered
 	 * @return View
-	 * @author Jonathan Geiger
 	 **/
 	public function input($prefix = 'jelly/field', $data = array())
 	{
@@ -229,14 +224,13 @@ abstract class Jelly_Core_Field
 	 * @param  Validate $data 
 	 * @param  string $field 
 	 * @return void
-	 * @author Jonathan Geiger
 	 * @author Woody Gilk
 	 */
 	public function _is_unique(Validate $data, $field)
 	{
 		if ($data[$field])
 		{
-			$count = Model::factory($this->model)
+			$count = Jelly::select($this->model)
 						->where($field, '=', $data[$field])
 						->count();
 
@@ -245,5 +239,52 @@ abstract class Jelly_Core_Field
 				$data->error($field, 'unique');
 			}
 		}
+	}
+	
+	/**
+	 * Converts a bunch of types to an array of ids
+	 *
+	 * @param  mixed $models 
+	 * @return array
+	 */
+	protected function _ids($models)
+	{
+		$ids = array();
+				
+		// Handle Database Results
+		if ($models instanceof Iterator OR is_array($models))
+		{
+			foreach($models as $row)
+			{
+				if (is_object($row))
+				{
+					// Ignore unloaded relations
+					if ($row->loaded())
+					{
+						$ids[] = $row->id();
+					}
+				}
+				else
+				{
+					$ids[] = $row;
+				}
+			}
+		}
+		// And individual models
+		elseif (is_object($models))
+		{
+			// Ignore unloaded relations
+			if ($models->loaded())
+			{
+				$ids[] = $models->id();
+			}
+		}
+		// And everything else
+		else
+		{
+			$ids[] = $models;
+		}
+		
+		return $ids;
 	}
 }

@@ -4,14 +4,12 @@
  * Handles has one relationships
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
-abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Behavior_Field_Joinable
+abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Behavior_Joinable
 {		
 	/**
-	 * @param string $value 
-	 * @return void
-	 * @author Jonathan Geiger
+	 * @param  mixed  $value
+	 * @return mixed
 	 */
 	public function set($value)
 	{	
@@ -27,16 +25,18 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	}
 	
 	/**
-	 * @param string $object 
+	 * Returns the record that the model has
+	 * 
+	 * @param  Jelly_Model  $model
+	 * @param  mixed        $value
+	 * @param  boolean      $loaded
 	 * @return mixed
-	 * @author Jonathan Geiger
 	 */
 	public function get($model, $value)
 	{
-		// Return a real object
-		return Jelly::factory($this->foreign['model'])
-				->limit(1, TRUE)
-				->where($this->foreign['column'], '=', $model->id());
+		return Jelly::select($this->foreign['model'])
+				->where($this->foreign['column'], '=', $model->id())
+				->limit(1);
 	}
 	
 	/**
@@ -44,12 +44,11 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	 *
 	 * @param string $model 
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function has($model, $id)
 	{
 		// Only accept the first record
-		if (is_array($id) || $id instanceof Iterator)
+		if (is_array($id) OR $id instanceof Iterator)
 		{
 			$id = array(current($id));
 		}
@@ -64,7 +63,6 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	 * @param string $prefix
 	 * @param string $data
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{
@@ -73,22 +71,15 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_B
 	}
 	
 	/**
-	 * Implementation of Jelly_Behavior_Field_Joinable
+	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
-	 * @param  Jelly  $model 
-	 * @param  string $relation 
-	 * @param  string $target_path 
-	 * @param  string $parent_path 
+	 * @param  Jelly_Model  $model
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function with($model)
 	{
-		$meta = Jelly_meta::get($this->foreign['model']);
-		
-		// Fields have to be aliased since we don't necessarily know the model from the path
-		$join_col1 = Jelly_Meta::column($this->foreign['model'], $meta->primary_key, TRUE);
-		$join_col2 = Jelly_Meta::column($this->model, $this->foreign['column'], TRUE);
+		$join_col1 = $this->foreign['model'].'.:primary_key';
+		$join_col2 = $this->model.'.'.$this->foreign['column'];
 				
 		$model
 			->join($this->foreign['model'], 'LEFT')

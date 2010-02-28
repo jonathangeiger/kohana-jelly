@@ -6,7 +6,7 @@
  *
  * @package Jelly
  */
-interface Jelly_Behavior_Field_Saveable
+interface Jelly_Field_Behavior_Saveable
 {	
 	/**
 	 * This method is called after an insert or update is finished on 
@@ -15,10 +15,10 @@ interface Jelly_Behavior_Field_Saveable
 	 * 
 	 * This will only be called if the field has changed somehow.
 	 *
-	 * @param string $model 
-	 * @param string $value 
+	 * @param  Jelly_Model   $model 
+	 * @param  mixed         $value 
+	 * @param  boolean       $loaded
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
-	public function save($model, $value);
+	public function save($model, $value, $loaded);
 }

@@ -4,7 +4,6 @@
  * Handles floats
  *
  * @package Jelly
- * @author Jonathan Geiger
  */
 abstract class Jelly_Field_Float extends Jelly_Field
 {
@@ -16,9 +15,8 @@ abstract class Jelly_Field_Float extends Jelly_Field
 	/**
 	 * Converts to float and rounds the number if necessary
 	 *
-	 * @param string $value 
-	 * @return void
-	 * @author Jonathan Geiger
+	 * @param  mixed  $value
+	 * @return mixed
 	 */
 	public function set($value)
 	{

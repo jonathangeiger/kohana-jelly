@@ -7,7 +7,7 @@
  *
  * @package Jelly
  */
-interface Jelly_Behavior_Field_Joinable
+interface Jelly_Field_Behavior_Joinable
 {	
 	/**
 	 * This method should add a join() and on() clause 
@@ -15,9 +15,8 @@ interface Jelly_Behavior_Field_Joinable
 	 * 
 	 * For examples, check out belongsTo and hasOne's implementations.
 	 * 
-	 * @param Jelly  $model       The model to apply the join to
+	 * @param  Jelly_Model  $model
 	 * @return void
-	 * @author Jonathan Geiger
 	 */
 	public function with($model);
 }
