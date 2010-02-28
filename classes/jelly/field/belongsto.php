@@ -13,19 +13,22 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	public $in_db = TRUE;
 	
 	/**
-	 * This is expected to contain an assoc. array containing the key 
-	 * 'model', and the key 'column'
+	 * A string pointing to the foreign model and (optionally, a 
+	 * field, column, or meta-alias).
 	 * 
-	 * If they do not exist, they will be filled in with sensible defaults 
-	 * derived from the field's name. If 'model' is empty it is set to the 
-	 * singularized name of the field. If 'column' is empty, it is set to 'id'.
+	 * Assuming an author belongs to a role named 'role':
 	 * 
-	 * `'model' => 'a model to use as the foreign association'`
-	 * `'column' => 'the column (or alias) that is the foreign model's primary key'`
+	 *  * '' would default to role.:primary_key
+	 *  * 'role' would expand to role.:primary_key
+	 *  * 'role.id' would remain untouched.
+	 * 
+	 * The model part of this must point to a valid model, but the 
+	 * field part can point to anything, as long as it's a valid 
+	 * column in the database.
 	 *
-	 * @var array
+	 * @var string
 	 */
-	public $foreign = array();
+	public $foreign = '';
 	
 	/**
 	 * Automatically sets foreign to sensible defaults
@@ -37,21 +40,29 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	public function initialize($model, $column)
 	{
 		// Default to the name of the column
-		if (empty($this->foreign['model']))
+		if (empty($this->foreign))
 		{
-			$this->foreign['model'] = $column;
+			$this->foreign = $column.'.:primary_key';
+		}
+		// Is it model.field?
+		else if (FALSE === strpos($this->foreign, '.'))
+		{
+			$this->foreign = $this->foreign.'.:primary_key';
 		}
 		
-		// Default to foreign['model'] plus _id
+		// Split them apart
+		$foreign = explode('.', $this->foreign);
+		
+		// Create an array from them
+		$this->foreign = array(
+			'model' => $foreign[0],
+			'column' => $foreign[1],
+		);
+		
+		// Default to the foreign model's primary key
 		if (empty($this->column))
 		{
 			$this->column = $this->foreign['model'].'_id';
-		}
-		
-		// Default to 'id'
-		if (empty($this->foreign['column']))
-		{
-			$this->foreign['column'] = ':primary_key';
 		}
 		
 		// Column is set and won't be overridden

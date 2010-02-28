@@ -652,18 +652,18 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		if ($meta = Jelly::meta($model))
 		{
 			$table = $meta->table();
-			
-			// Check for a meta-alias
-			if (substr($field, 0, 1) === ':')
-			{
-				$field = $this->_meta_alias($meta, $field, $value);
-			}
-			
+
 			// Find the field
-			if ($field = $meta->fields($field))
+			if ($meta->fields($field))
 			{
-				$column = $field->column;
+				$column = $meta->fields($field)->column;
 			}
+		}
+		
+		// Check for a meta-alias
+		if (FALSE !== strpos($field, ':'))
+		{
+			$column = $this->_meta_alias($meta, $field, $value);
 		}
 		
 		// Only join when we actually have a table
@@ -689,20 +689,46 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	protected function _meta_alias($meta, $field, $value = NULL)
 	{
+		// Check for a model operator
+		if (substr($field, 0, 1) !== ':')
+		{
+			list($model, $field) = explode(':', $field);
+			
+			// Append the : back onto $field, it's key for recognizing the alias below
+			$field = ':'.$field;
+
+			if (FALSE == ($meta = Jelly::meta($model)))
+			{
+				throw new Kohana_Exception('Meta data for :model was not found. Trying to locate a :foreign_key', array(
+					':model' => $model));
+			}
+		}
+		
 		switch ($field)
 		{
 			case ':primary_key':
 				$field = $meta->primary_key();
 				break;
-			case ':name_key':
+			case ':name_key';
 				$field = $meta->name_key();
+				break;
+			case ':foreign_key':
+				$field = $meta->foreign_key();
 				break;
 			case ':unique_key':
 				$builder = $meta->builder();
 				$builder = new $builder($meta->model());
 				$field = $builder->unique_key($value);
 				break;
+			default:
+				throw new Kohana_Exception('Unknown meta alias :field', array(
+					':field' => $field));
 		}
+		
+		if ($found = $meta->fields($field))
+		{
+			$field = $found->column;
+		}		
 		
 		return $field;
 	}

@@ -10,23 +10,22 @@ extends Jelly_Field_Relationship
 implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
 {	
 	/**
-	 * This is expected to contain an assoc. array containing the key 
-	 * 'model', and the key 'column'
+	 * A string pointing to the foreign model and (optionally, a 
+	 * field, column, or meta-alias).
 	 * 
-	 * If they do not exist, they will be filled in with sensible defaults 
-	 * derived from the field's name.
+	 * Assuming an author has_many posts and the field was named 'posts':
 	 * 
-	 * 'model' => 'a model to use as the foreign association'
+	 *  * '' would default to post.:author:foreign_key
+	 *  * 'post' would expand to post.:author:foreign_key
+	 *  * 'post.author_id' would remain untouched.
 	 * 
-	 * If 'model' is empty it is set to the singularized name of the field.
-	 * 
-	 * 'column' => 'the column (or alias) that is the foreign model's primary key'
-	 * 
-	 * If 'column' is empty, it is set to the name of the model plus '_id'
+	 * The model part of this must point to a valid model, but the 
+	 * field part can point to anything, as long as it's a valid 
+	 * column in the database.
 	 *
-	 * @var array
+	 * @var string
 	 */
-	public $foreign = array();
+	public $foreign = '';
 	
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -37,17 +36,26 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 */
 	public function initialize($model, $column)
 	{
-		if (empty($this->foreign['model']))
+		// Default to the name of the column
+		if (empty($this->foreign))
 		{
-			$this->foreign['model'] = inflector::singular($column);
+			$this->foreign = inflector::singular($column).'.'.$model.':foreign_key';
+		}
+		// Is it model.field?
+		else if (FALSE === strpos($this->foreign, '.'))
+		{
+			$this->foreign = $this->foreign.'.'.$model.':foreign_key';
 		}
 		
-		if (empty($this->foreign['column']))
-		{
-			$this->foreign['column'] = $model.'_id';
-		}
+		// Split them apart
+		$foreign = explode('.', $this->foreign);
 		
-		// Column is set and won't be overridden
+		// Create an array from them
+		$this->foreign = array(
+			'model' => $foreign[0],
+			'column' => $foreign[1],
+		);
+		
 		parent::initialize($model, $column);
 	}
 	

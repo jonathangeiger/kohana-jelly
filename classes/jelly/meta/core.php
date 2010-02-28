@@ -39,6 +39,11 @@ abstract class Jelly_Meta_Core
 	protected $name_key = 'name';
 	
 	/**
+	 * @var string The foreign key for use in other tables. This can be referenced in query building as :foreign_key
+	 */
+	protected $foreign_key = '';
+	
+	/**
 	 * @var array An array of ordering options for SELECTs
 	 */
 	protected $sorting = array();
@@ -121,6 +126,12 @@ abstract class Jelly_Meta_Core
 			{
 				$this->builder = 'Jelly_Builder';
 			}
+		}
+		
+		// Can we set a sensible foreign key?
+		if (empty($this->foreign_key))
+		{
+			$this->foreign_key = $model.'_id';
 		}
 		
 		// Initialize all of the fields with their column and the model name
@@ -401,6 +412,21 @@ abstract class Jelly_Meta_Core
 		}
 		
 		return $this->name_key;
+	}
+	
+	/**
+	 * Gets or sets the model's foreign key
+	 * @param  string  $value
+	 * @return string
+	 */
+	public function foreign_key($value = NULL)
+	{
+		if (func_num_args() !== 0)
+		{
+			return $this->set('foreign_key', $value);
+		}
+		
+		return $this->foreign_key;
 	}
 	
 	/**

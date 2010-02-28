@@ -27,7 +27,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 *
 	 * @var array
 	 */
-	public $through = array();
+	public $through = NULL;
 	
 	/**
 	 * This is expected to contain an assoc. array containing the key 
@@ -46,7 +46,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 *
 	 * @var array
 	 */
-	public $foreign = array();
+	public $foreign = NULL;
 		
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -57,40 +57,63 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 */
 	public function initialize($model, $column)
 	{
-		if (empty($this->foreign['model']))
+		// Default to the name of the column
+		if (empty($this->foreign))
 		{
-			$this->foreign['model'] = inflector::singular($column);
+			$this->foreign = inflector::singular($column).'.:primary_key';
+		}
+		// Is it model.field?
+		else if (FALSE === strpos($this->foreign, '.'))
+		{
+			$this->foreign = $this->foreign.'.:primary_key';
 		}
 		
-		if (empty($this->foreign['column']))
-		{
-			$this->foreign['column'] = ':primary_key';
-		}
+		// Split them apart
+		$foreign = explode('.', $this->foreign);
 		
-		if (empty($this->through['columns'][0]))
-		{
-			$this->through['columns'][0] = inflector::singular($model).'_id';
-		}	
+		// Create an array from them
+		$this->foreign = array(
+			'model' => $foreign[0],
+			'column' => $foreign[1],
+		);
 		
-		if (empty($this->through['columns'][1]))
+		// We can work with nothing passed or just a model
+		if (empty($this->through) || is_string($this->through))
 		{
-			$this->through['columns'][1] = inflector::singular($this->foreign['model']).'_id';
-		}
-		
-		if (empty($this->through['model']))
-		{
-			// Find the join table based on the two model names pluralized, 
-			// sorted alphabetically and with an underscore separating them
-			$this->through['model'] = array(
-				inflector::plural($this->foreign['model']), 
-				inflector::plural($model)
+			if (empty($this->through))
+			{
+				// Find the join table based on the two model names pluralized, 
+				// sorted alphabetically and with an underscore separating them
+				$through = array(
+					inflector::plural($this->foreign['model']), 
+					inflector::plural($model)
+				);
+
+				// Sort
+				sort($through);
+
+				// Bring them back together
+				$this->through = implode('_', $through);
+			}
+			
+			$this->through = array(
+				'model' => $this->through,
+				'columns' => array(
+					inflector::singular($this->foreign['model']).':foreign_key',
+		            inflector::singular($model).':foreign_key',
+				)
 			);
-			
-			// Sort
-			sort($this->through['model']);
-			
-			// Bring them back together
-			$this->through['model'] = implode('_', $this->through['model']);
+		}
+		// $this->through is an array of two elements
+		else
+		{
+			// Use the first column as the model
+			list($model) = explode('.', $this->through[0]);
+
+			$this->through = array(
+				'model' => $model,
+				'columns' => $this->through
+			);
 		}
 		
 		parent::initialize($model, $column);
@@ -209,8 +232,8 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	protected function _in($model, $as_array = FALSE)
 	{
 		$result = Jelly::select($this->through['model'])
-				->select($this->through['columns'][1])
-				->where($this->through['columns'][0], '=', $model->id());
+				->select($this->through['columns'][0])
+				->where($this->through['columns'][1], '=', $model->id());
 				
 		if ($as_array)
 		{
