@@ -29,7 +29,7 @@ As you can see all models must do a few things to be registered with Jelly:
  * They must define an `initialize()` method, which is passed a `Jelly_Meta` object
  * They must add properties to that `$meta` object to define the fields, table, keys and a number of other things
 
-The `initialize()` method is only called once per execution for ech model and the model's meta object is stored
+The `initialize()` method is only called once per execution for each model and the model's meta object is stored
 statically. If you need to find out anything about a particular model, you can use `Jelly::meta('model')`.
 
 [!!] Most of the things we're defining here are optional and have sensible defaults, but we're just putting them there for reference.
