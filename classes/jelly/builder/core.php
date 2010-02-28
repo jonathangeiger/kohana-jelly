@@ -709,7 +709,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			case ':primary_key':
 				$field = $meta->primary_key();
 				break;
-			case ':name_key';
+			case ':name_key':
 				$field = $meta->name_key();
 				break;
 			case ':foreign_key':
