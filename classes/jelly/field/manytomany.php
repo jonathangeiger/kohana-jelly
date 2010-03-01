@@ -168,15 +168,13 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		// Find new relationships that must be inserted
 		if ($new = array_diff((array)$value, $in))
 		{
-			$query = Jelly::insert($this->through['model'])
-						 ->columns($this->through['columns']);
-				
 			foreach ($new as $new_id)
 			{
-				$query->values(array($model->id(), $new_id));
+				Jelly::insert($this->through['model'])
+					 ->columns($this->through['columns'])
+					 ->values(array($new_id, $model->id()))
+					 ->execute(Jelly::meta($model)->db());
 			}
-			
-			$query->execute();
 		}
 	}
 	

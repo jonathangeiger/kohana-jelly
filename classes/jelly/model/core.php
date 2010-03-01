@@ -439,7 +439,7 @@ abstract class Jelly_Model_Core
 							 ->execute();
 							
 			// Gotta make sure to set this
-			$values[$this->_meta->primary_key()] = $id;
+			$data[$this->_meta->primary_key()] = $id;
 		}
 		
 		// Set the changed data back as original
