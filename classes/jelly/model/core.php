@@ -707,7 +707,7 @@ abstract class Jelly_Model_Core
 	 */
 	protected function _change($name, $models, $add)
 	{
-		$field = $this->fields($name);
+		$field = $this->_meta->fields($name);
 		
 		if ($field instanceof Jelly_Field_Behavior_Changeable)
 		{
