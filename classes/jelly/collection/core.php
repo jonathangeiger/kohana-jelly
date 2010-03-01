@@ -40,7 +40,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	{
 		if ($this->_model)
 		{
-			$meta = Jelly::meta($model);
+			$meta = Jelly::meta($this->_model);
 			
 			foreach (array('key', 'value') as $var)
 			{
