@@ -289,6 +289,14 @@ abstract class Jelly_Model_Core
 		foreach($values as $key => $value)
 		{
 			$field = $this->_meta->fields($key);
+			
+			// If this isn't a field, we just throw it in unmapped
+			if (!$field)
+			{
+				$this->_unmapped[$key] = $value;
+				continue;
+			}
+			
 			$value = $field->set($value);
 			
 			// Ensure data is really changed
