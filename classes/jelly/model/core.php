@@ -377,6 +377,10 @@ abstract class Jelly_Model_Core
 			{
 				$this->_original[$field->name] = $field->set($value);
 			}
+			else
+			{
+				$this->_unmapped[$key] = $value;
+			}
 		}
 		
 		// Model is now saved and loaded
