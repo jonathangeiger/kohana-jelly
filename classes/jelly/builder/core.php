@@ -633,7 +633,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		}
 		
 		// See if the model is register
-		if ($alias = Jelly::alias($field))
+		if ($alias = Jelly::alias($field, $value))
 		{			
 			if ($join)
 			{
