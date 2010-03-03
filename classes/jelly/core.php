@@ -242,7 +242,14 @@ abstract class Jelly_Core
 	 */
 	public static function alias($field, $value = NULL)
 	{
-		list($model, $field) = explode('.', $field);
+		if (FALSE !== strpos($field, '.'))
+		{
+			list($model, $field) = explode('.', $field);
+		}
+		else
+		{
+			$model = NULL;
+		}
 		
 		// We should at least return something now
 		$table = $model;
