@@ -30,31 +30,6 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	protected $_result = NULL;
 	
 	/**
-	 * Return all of the rows in the result as an array.
-	 *
-	 * @param   string  column for associative keys
-	 * @param   string  column for values
-	 * @return  array
-	 */
-	public function as_array($key = NULL, $value = NULL)
-	{
-		if ($this->_model)
-		{
-			$meta = Jelly::meta($this->_model);
-			
-			foreach (array('key', 'value') as $var)
-			{
-				if ($field = $meta->fields($$var))
-				{
-					$$var = $field->column;
-				}
-			}
-		}
-		
-		return $this->_result->as_array($key, $value);
-	}
-	
-	/**
 	 * Tracks a database result
 	 *
 	 * @param  mixed   $model 
@@ -87,6 +62,29 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 		{
 			$this->_result = new Database_Result_Cached($this->_result->as_array(), '');
 		}
+	}
+	
+	/**
+	 * Return all of the rows in the result as an array.
+	 *
+	 * @param   string  column for associative keys
+	 * @param   string  column for values
+	 * @return  array
+	 */
+	public function as_array($key = NULL, $value = NULL)
+	{
+		$model = Jelly::model_name($this->_model);
+		
+		foreach (array('key', 'value') as $var)
+		{
+			if ($$var)
+			{
+				$alias = Jelly::alias($model.'.'.$$var, NULL);
+				$$var = $alias['column'];
+			}
+		}
+		
+		return $this->_result->as_array($key, $value);
 	}
 	
 	/**

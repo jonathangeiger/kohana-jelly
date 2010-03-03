@@ -71,7 +71,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		}
 		
 		// Set the model and the initial from()
-		$this->_model = $model;
+		$this->_model = Jelly::model_name($model);
 		$this->_register_model();
 		
 		// Default to loading as arrays
@@ -615,7 +615,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 * @param  mixed    $value
 	 * @return string
 	 */
-	protected function _column($field, $join = NULL, $value = NULL)
+	protected function _column($field, $join = TRUE, $value = NULL)
 	{
 		$model = NULL;
 		
@@ -626,109 +626,24 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
 		}
 		
-		if (strpos($field, '.') !== FALSE)
+		// If the field doesn't contain a model, we need to supply one
+		if (strpos($field, '.') === FALSE)
 		{			
-			list($model, $field) = explode('.', $field);
-			
-			// If $join is NULL, the column is returned as it came
-			// If it was joined when it came in, it returns joined
-			if ($join === NULL)
-			{
-				$join = TRUE;
-			}
+			$field = $this->_model.'.'.$field;
 		}
-		
-		// If the model is NULL, $this's table name or model name
-		// We just replace if with the current model's name
-		if ($this->_meta AND ($model === NULL OR $model == $this->_meta->table()))
-		{
-			$model = $this->_meta->model();
-		}
-		
-		$table = $model;
-		$column = $field;
 		
 		// See if the model is register
-		if ($meta = Jelly::meta($model))
-		{
-			$table = $meta->table();
-
-			// Find the field
-			if ($meta->fields($field))
+		if ($alias = Jelly::alias($field))
+		{			
+			if ($join)
 			{
-				$column = $meta->fields($field)->column;
+				return implode('.', $alias);
+			}
+			else
+			{
+				return $alias['column'];
 			}
 		}
-		
-		// Check for a meta-alias
-		if (FALSE !== strpos($field, ':'))
-		{
-			$column = $this->_meta_alias($meta, $field, $value);
-		}
-		
-		// Only join when we actually have a table
-		if ($join AND $table)
-		{
-			return $table.'.'.$column;
-		}
-		else
-		{
-			return $column;
-		}
-	}
-	
-	/**
-	 * Expands meta-aliases into their actual field name.
-	 * 
-	 * This can be overridden to add meta aliases to your
-	 * model's query builder. Keep in mind that they can
-	 * only be used in query building and not in the model.
-	 *
-	 * @param  string  $alias
-	 * @return string
-	 */
-	protected function _meta_alias($meta, $field, $value = NULL)
-	{
-		// Check for a model operator
-		if (substr($field, 0, 1) !== ':')
-		{
-			list($model, $field) = explode(':', $field);
-			
-			// Append the : back onto $field, it's key for recognizing the alias below
-			$field = ':'.$field;
-
-			if (FALSE == ($meta = Jelly::meta($model)))
-			{
-				throw new Kohana_Exception('Meta data for :model was not found. Trying to locate a :foreign_key', array(
-					':model' => $model));
-			}
-		}
-		
-		switch ($field)
-		{
-			case ':primary_key':
-				$field = $meta->primary_key();
-				break;
-			case ':name_key':
-				$field = $meta->name_key();
-				break;
-			case ':foreign_key':
-				$field = $meta->foreign_key();
-				break;
-			case ':unique_key':
-				$builder = $meta->builder();
-				$builder = new $builder($meta->model());
-				$field = $builder->unique_key($value);
-				break;
-			default:
-				throw new Kohana_Exception('Unknown meta alias :field', array(
-					':field' => $field));
-		}
-		
-		if ($found = $meta->fields($field))
-		{
-			$field = $found->column;
-		}		
 		
 		return $field;
 	}

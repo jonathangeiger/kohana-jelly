@@ -227,6 +227,105 @@ abstract class Jelly_Core
 	}
 	
 	/**
+	 * Returns the actual column name for a field, field alias, or meta-alias.
+	 * 
+	 * $field must be in the format of "model.field". Supply $value if 
+	 * you want the unique_key meta-alias to work properly.
+	 * 
+	 * An array is returned containing the table and column keys. If the model's meta is found, 
+	 * but the field can't be found, 'column' will contain the field name passed.
+	 * 
+	 * Returns FALSE on failure.
+	 *
+	 * @param  string  $field
+	 * @return array
+	 */
+	public static function alias($field, $value = NULL)
+	{
+		list($model, $field) = explode('.', $field);
+		
+		// We should at least return something now
+		$table = $model;
+		$column = $field;
+		
+		// Hopefully we can find a meta object by now
+		$meta = Jelly::meta($model);
+		
+		// Check for a meta-alias first
+		if (FALSE !== strpos($field, ':'))
+		{
+			$field = $column = Jelly::meta_alias($meta, $field, $value);
+		}
+		
+		if ($meta)
+		{
+			$table = $meta->table();
+
+			// Alias the field
+			if ($field = $meta->fields($field))
+			{
+				$column = $field->column;
+			}
+		}
+		
+		return array(
+			'table' => $table,
+			'column' => $column,
+		);
+	}
+	
+	/**
+	 * Resolves meta-aliases
+	 *
+	 * @param  mixed  $meta 
+	 * @param  string $field 
+	 * @param  mixed  $value 
+	 * @return string
+	 */
+	protected static function meta_alias($meta, $field, $value = NULL)
+	{
+		// Check for a model operator
+		if (substr($field, 0, 1) !== ':')
+		{
+			list($model, $field) = explode(':', $field);
+
+			// Append the : back onto $field, it's key for recognizing the alias below
+			$field = ':'.$field;
+
+			// We should be able to find a valid meta object here
+			if (FALSE == ($meta = Jelly::meta($model)))
+			{
+				throw new Kohana_Exception('Meta data for :model was not found while trying to resolve :field', array(
+					':model' => $model,
+					':field' => $field));
+			}
+		}
+
+		switch ($field)
+		{
+			case ':primary_key':
+				$field = $meta->primary_key();
+				break;
+			case ':name_key':
+				$field = $meta->name_key();
+				break;
+			case ':foreign_key':
+				$field = $meta->foreign_key();
+				break;
+			case ':unique_key':
+				$field = Jelly::builder($meta->model())->unique_key($value);
+				break;
+			default:
+				throw new Kohana_Exception('Unknown meta alias :field', array(
+					':field' => $field));
+		}
+		
+		
+		
+		return $field;
+	}
+	
+	/**
 	 * Returns the prefix to use for all models and builders.
 	 * 
 	 * @return string
@@ -243,7 +342,7 @@ abstract class Jelly_Core
 	 * @param  int    $type
 	 * @return string
 	 */
- 	protected static function builder($model, $type)
+ 	protected static function builder($model, $type = NULL)
 	{
 		$builder = 'Jelly_Builder';
 		

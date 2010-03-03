@@ -6,7 +6,7 @@
  * @package Jelly
  */
 abstract class Jelly_Meta_Core
-{			
+{
 	/**
 	 * @var boolean If this is FALSE, properties can still be set on the meta object
 	 */

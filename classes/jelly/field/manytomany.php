@@ -99,8 +99,8 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 			$this->through = array(
 				'model' => $this->through,
 				'columns' => array(
-					inflector::singular($this->foreign['model']).':foreign_key',
 		            inflector::singular($model).':foreign_key',
+					inflector::singular($this->foreign['model']).':foreign_key',
 				)
 			);
 		}
@@ -172,7 +172,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 			{
 				Jelly::insert($this->through['model'])
 					 ->columns($this->through['columns'])
-					 ->values(array($new_id, $model->id()))
+					 ->values(array($model->id(), $new_id))
 					 ->execute(Jelly::meta($model)->db());
 			}
 		}
@@ -230,8 +230,8 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	protected function _in($model, $as_array = FALSE)
 	{
 		$result = Jelly::select($this->through['model'])
-				->select($this->through['columns'][0])
-				->where($this->through['columns'][1], '=', $model->id());
+				->select($this->through['columns'][1])
+				->where($this->through['columns'][0], '=', $model->id());
 				
 		if ($as_array)
 		{
