@@ -140,8 +140,14 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 */
 	public function get($model, $value)
 	{
+		// If the value hasn't changed, we need to pull from the database
+		if (!$model->changed($this->name))
+		{
+			$value = $this->_in($model);
+		}
+			
 		return Jelly::select($this->foreign['model'])
-				->where($this->foreign['column'], 'IN', $this->_in($model));
+				->where($this->foreign['column'], 'IN', $value);
 	}
 	
 	/**
