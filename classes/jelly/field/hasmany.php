@@ -81,9 +81,17 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 */
 	public function get($model, $value)
 	{
-		// Return a real object
-		return Jelly::select($this->foreign['model'])
-				->where($this->foreign['column'], '=', $model->id());
+		if ($model->changed($this->name))
+		{
+			// Return a real object
+			return Jelly::select($this->foreign['model'])
+					->where(':primary_key', 'IN', $value);
+		}
+		else
+		{
+			return Jelly::select($this->foreign['model'])
+					->where($this->foreign['column'], '=', $model->id());
+		}
 	}
 	
 	/**

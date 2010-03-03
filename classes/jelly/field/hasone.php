@@ -34,9 +34,19 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	 */
 	public function get($model, $value)
 	{
-		return Jelly::select($this->foreign['model'])
-				->where($this->foreign['column'], '=', $model->id())
-				->limit(1);
+		if ($model->changed($this->name))
+		{
+			// Return a real object
+			return Jelly::select($this->foreign['model'])
+					->where(':primary_key', '=', $value)
+					->limit(1);
+		}
+		else
+		{
+			return Jelly::select($this->foreign['model'])
+					->where($this->foreign['column'], '=', $model->id())
+					->limit(1);
+		}
 	}
 	
 	/**
