@@ -708,6 +708,16 @@ abstract class Jelly_Model_Core
 	{
 		return $this->get($this->_meta->name_key());
 	}
+	
+	/**
+	 * Returns the model's meta object
+	 * 
+	 * @return Jelly_Meta
+	 */
+	public function meta()
+	{
+		return $this->_meta;
+	}
 
 	/**
 	 * Changes a relation by adding or removing specific records from the relation.
