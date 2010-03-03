@@ -728,7 +728,7 @@ abstract class Jelly_Model_Core
 	 * @return $this
 	 */
 	protected function _change($name, $models, $add)
-	{
+	{		
 		$field = $this->_meta->fields($name);
 		
 		if ($field instanceof Jelly_Field_Behavior_Changeable)
@@ -740,11 +740,12 @@ abstract class Jelly_Model_Core
 			return $this;
 		}
 		
+		$current = array();
+		
 		// If this is set, we don't need to re-retrieve the values
 		if ( ! array_key_exists($name, $this->_changed))
 		{
-			$current = array();
-			$value = $this->_ids($this->__get($name));
+			$current = $this->_ids($this->__get($name));
 		}
 		else
 		{
