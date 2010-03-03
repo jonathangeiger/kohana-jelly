@@ -446,7 +446,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		{
 			foreach ($columns as $i => $column)
 			{
-				$columns[$i] = $this->_column($column);
+				$columns[$i] = $this->_column($column, FALSE);
 			}
 		}
 		
