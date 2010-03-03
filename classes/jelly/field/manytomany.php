@@ -78,7 +78,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		);
 		
 		// We can work with nothing passed or just a model
-		if (empty($this->through) || is_string($this->through))
+		if (empty($this->through) OR is_string($this->through))
 		{
 			if (empty($this->through))
 			{

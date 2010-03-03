@@ -99,7 +99,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			}
 			
 			// Apply sorting and with if necessary
-			if ($this->_type === Database::SELECT && $this->_meta)
+			if ($this->_type === Database::SELECT AND $this->_meta)
 			{
 				foreach ($this->_meta->sorting() as $column => $direction)
 				{

@@ -225,7 +225,7 @@ abstract class Jelly_Model_Core
 				$value = Jelly::factory($field->foreign['model'])->load_values($this->_with[$name]);
 				
 				// Try and verify that it's actually loaded
-				if (!$value->id())
+				if ( ! $value->id())
 				{
 					$value->_loaded = FALSE;
 					$value->_saved = FALSE;
@@ -291,7 +291,7 @@ abstract class Jelly_Model_Core
 			$field = $this->_meta->fields($key);
 			
 			// If this isn't a field, we just throw it in unmapped
-			if (!$field)
+			if ( ! $field)
 			{
 				$this->_unmapped[$key] = $value;
 				continue;
