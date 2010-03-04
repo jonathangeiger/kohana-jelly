@@ -49,7 +49,7 @@ abstract class Jelly_Field_Core
 	public $in_db = TRUE;
 	
 	/**
-	* @var bool Default value
+	* @var mixed Default value
 	*/
 	public $default = NULL;
 	
