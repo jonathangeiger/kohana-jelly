@@ -415,17 +415,25 @@ abstract class Jelly_Model_Core
 		// These will be processed later
 		$values = $relations = array();
 		
-		// Run through the main table data
-		foreach ($data as $column => $value)
+		// Iterate through all fields in original incase any unchanged fields 
+		// have save() behavior like timestamp updating...
+		foreach ($this->_changed + $this->_original as $column => $value)
 		{
 			$field = $this->_meta->fields($column);
 			
 			// Only save in_db values
 			if ($field->in_db)
-			{
-				$values[$field->column] = $field->save($this, $value, (bool) $key);
+			{	
+				// See if field wants to alter the value on save()
+				$value = $field->save($this, $value, (bool) $key);
+			
+				if ($value !== $this->_original[$column])
+				{
+					// Value has changed (o has be changed by field:save())
+					$values[$field->column] = $field->save($this, $value, (bool) $key);
+				}
 			}
-			elseif ($field instanceof Jelly_Field_Behavior_Saveable)
+			elseif ($this->changed($column) AND $field instanceof Jelly_Field_Behavior_Saveable)
 			{
 				$relations[$column] = $value;
 			}
@@ -444,18 +452,18 @@ abstract class Jelly_Model_Core
 			}
 		}
 		else
-		{
+		{	
 			list($id) = Jelly::insert($this)
 							 ->columns(array_keys($values))
 							 ->values(array_values($values))
 							 ->execute();
 							
 			// Gotta make sure to set this
-			$data[$this->_meta->primary_key()] = $id;
+			$values[$this->_meta->primary_key()] = $id;
 		}
 		
 		// Set the changed data back as original
-		$this->_original = array_merge($this->_original, $this->_changed, $data);
+		$this->_original = array_merge($this->_original, $this->_changed, $values);
 		
 		// We're good!
 		$this->_loaded = $this->_saved = TRUE;
