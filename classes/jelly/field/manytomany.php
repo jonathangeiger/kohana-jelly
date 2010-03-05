@@ -60,12 +60,13 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		// Default to the name of the column
 		if (empty($this->foreign))
 		{
-			$this->foreign = inflector::singular($column).'.:primary_key';
+			$foreign_model = inflector::singular($column);
+			$this->foreign = $foreign_model.'.'.$foreign_model.':primary_key';
 		}
 		// Is it model.field?
 		else if (FALSE === strpos($this->foreign, '.'))
 		{
-			$this->foreign = $this->foreign.'.:primary_key';
+			$this->foreign = $this->foreign.'.'.$this->foreign.':primary_key';
 		}
 		
 		// Split them apart
@@ -141,13 +142,20 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	public function get($model, $value)
 	{
 		// If the value hasn't changed, we need to pull from the database
-		if (!$model->changed($this->name))
+		if ($model->changed($this->name))
 		{
-			$value = $this->_in($model);
+			return Jelly::select($this->foreign['model'])
+					->where($this->foreign['column'], 'IN', $value);
 		}
-			
+		
+		$join_col1 = $this->through['model'].'.'.$this->through['columns'][1];
+		$join_col2 = $this->foreign['model'].'.'.$this->foreign['column'];
+		$where_col = $this->through['model'].'.'.$this->through['columns'][0];
+		
 		return Jelly::select($this->foreign['model'])
-				->where($this->foreign['column'], 'IN', $value);
+					->join($this->through['model'])
+					->on($join_col1, '=', $join_col2)
+					->where($where_col, '=', $model->id());
 	}
 	
 	/**
