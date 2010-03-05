@@ -1,1 +1,1 @@
-<input type="file" name="<?php echo $name?>" value="" id="field-<?php echo $name ?>">
+<?php echo Form::file($name, $attributes + array('id' => 'field-'.$name)); ?>
