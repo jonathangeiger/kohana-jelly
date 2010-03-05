@@ -1,1 +1,1 @@
-<input type="text" name="<?php echo $name?>" value="<?php echo date($pretty_format, $value)?>" id="field-<?php echo $name?>">
+<?php echo Form::input($name, date($pretty_format, $value), $attributes + array('id' => 'field-'.$name)); ?>

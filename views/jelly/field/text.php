@@ -1,1 +1,5 @@
-<textarea name="<?php echo $name?>" id="field-<?php echo $name ?>" rows="8" cols="40"><?php echo $value?></textarea>
+<?php echo Form::textarea($name, $value, $attributes + array(
+	'id' => 'field-'.$name,
+	'rows' => 8,
+	'cols' => 40,
+)); ?>

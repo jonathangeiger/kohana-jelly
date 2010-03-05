@@ -136,13 +136,13 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	}
 	
 	/**
-	* Provides the input with the ids variable. An array of
-	* all the ID's in the foreign model that this record owns.
-	*
-	* @param string $prefix
-	* @param string $data
-	* @return void
-	*/
+	 * Provides the input with the ids variable. An array of
+	 * all the ID's in the foreign model that this record owns.
+	 *
+	 * @param string $prefix
+	 * @param string $data
+	 * @return void
+	 */
 	public function input($prefix = 'jelly/field', $data = array())
 	{
 		// Kind of a wart here, but since HasOne extends this, we don't always want to iterate
@@ -156,7 +156,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 				$data['ids'][] = $model->id();
 			}	
 		}
-
+		
 		return parent::input($prefix, $data);
 	}
 }

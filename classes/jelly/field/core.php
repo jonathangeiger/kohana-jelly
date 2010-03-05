@@ -180,9 +180,12 @@ abstract class Jelly_Field_Core
 		// Grant acces to all of the vars plus the field object
 		$data = array_merge(get_object_vars($this), $data, array('field' => $this));
 		
+		// Make sure there is an 'attrs' array set to prevent error in view
+		$data['attributes'] = Arr::get($data, 'attributes', array());
+		
 		// By default, a view object only needs a few defaults to display it properly
 		return View::factory($view, $data);
-	}	
+	}
 	
 	/**
 	 * Used internally to allow fields to inherit input views from parent classes
