@@ -50,6 +50,32 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	}
 	
 	/**
+	 * Implementation of Jelly_Field_Behavior_Saveable
+	 *
+	 * @param   Jelly $model 
+	 * @param   mixed $value
+	 * @return  void
+	 */
+	public function save($model, $value, $loaded)
+	{
+		// Empty relations to the default value
+		Jelly::update($this->foreign['model'])
+			->where($this->foreign['column'], '=', $model->id())
+			->set(array($this->foreign['column'] => $this->default))
+			->execute();
+						
+		// Set the new relations
+		if ( ! empty($value))
+		{			
+			// Update the ones in our list
+			Jelly::update($this->foreign['model'])
+				->where(':primary_key', '=', $value)
+				->set(array($this->foreign['column'] => $model->id()))
+				->execute();
+		}
+	}
+	
+	/**
 	 * Returns whether or not this field has another model
 	 *
 	 * @param string $model 
