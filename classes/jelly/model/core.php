@@ -406,7 +406,7 @@ abstract class Jelly_Model_Core
 		// Set the key to our id if it isn't set
 		if ($this->_loaded)
 		{
-			$key = $this->id();
+			$key = $this->_original[$this->_meta->primary_key()];
 		}
 		
 		// Run validation
