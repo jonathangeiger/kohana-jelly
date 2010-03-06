@@ -429,8 +429,16 @@ abstract class Jelly_Model_Core
 			
 				if ($value !== $this->_original[$column])
 				{
-					// Value has changed (o has be changed by field:save())
+					// Value has changed (or has been changed by field:save())
 					$values[$field->column] = $field->save($this, $value, (bool) $key);
+				}
+				else
+				{
+					// Insert defaults
+					if ( ! $key AND ! $this->changed($field->name) AND ! $field->primary)
+					{
+						$values[$field->name] = $field->default;
+					}
 				}
 			}
 			elseif ($this->changed($column) AND $field instanceof Jelly_Field_Behavior_Saveable)
