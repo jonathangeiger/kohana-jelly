@@ -430,7 +430,7 @@ abstract class Jelly_Model_Core
 				if ($value !== $this->_original[$column])
 				{
 					// Value has changed (or has been changed by field:save())
-					$values[$field->column] = $field->save($this, $value, (bool) $key);
+					$values[$field->column] = $value;
 				}
 				else
 				{
