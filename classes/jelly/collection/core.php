@@ -114,15 +114,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 			$result = array();
 		}
 		
-		if ($object AND $this->_model)
-		{
-			// Don't return models when we don't have one
-			$result = ($result) 
-			        ? $this->_model->load_values($result, TRUE) 
-			        : $this->_model->clear();
-		}
-		
-		return $result;
+		return $this->_load($result, $object);
     }
 
 	/**
@@ -184,9 +176,9 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	/**
 	 * ArrayAccess: offsetGet
 	 */
-	public function offsetGet($offset)
+	public function offsetGet($offset, $object = TRUE)
 	{
-		return $this->_result->offsetGet($offset);
+		return $this->_load($this->_result->offsetGet($offset), $object);
 	}
 
 	/**
@@ -207,5 +199,24 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	final public function offsetUnset($offset)
 	{
 		throw new Kohana_Exception('Jelly results are read-only');
+	}
+	
+	/**
+	 * Loads values into the model.
+	 *
+	 * @param  array $values 
+	 * @return Jelly_Model|array
+	 */
+	protected function _load($values, $object)
+	{
+		if ($this->_model AND $object)
+		{
+			// Don't return models when we don't have one
+			return ($values) 
+			        ? $this->_model->load_values($values, TRUE) 
+			        : $this->_model->clear();
+		}
+		
+		return $values;
 	}
 }
