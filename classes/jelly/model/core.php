@@ -418,7 +418,7 @@ abstract class Jelly_Model_Core
 		// Iterate through all fields in original incase any unchanged fields 
 		// have save() behavior like timestamp updating...
 		foreach ($this->_changed + $this->_original as $column => $value)
-		{
+		{			
 			$field = $this->_meta->fields($column);
 			
 			// Only save in_db values
@@ -430,7 +430,7 @@ abstract class Jelly_Model_Core
 				if ($value !== $this->_original[$column])
 				{
 					// Value has changed (or has been changed by field:save())
-					$values[$field->column] = $value;
+					$values[$field->name] = $value;
 				}
 				else
 				{
