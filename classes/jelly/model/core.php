@@ -299,8 +299,11 @@ abstract class Jelly_Model_Core
 			
 			$value = $field->set($value);
 			
-			// Ensure data is really changed
-			if ($field->in_db AND $this->_original[$field->name] == $value)
+			// Ensure data is really changed. If the original data is equal to the 
+			// field's default, we're going to go ahead and mark it as changed anyway.
+			if ($field->in_db 
+				AND $field->default !== $this->_original[$field->name] 
+				AND $this->_original[$field->name] == $value)
 			{
 				continue;
 			}
