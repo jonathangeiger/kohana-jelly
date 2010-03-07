@@ -1,1 +1,1 @@
-<?php echo Form::select($name, $choices, $value, $attributes + array('id' => 'field-'.$name)) ?>
+<?php echo Form::select($name, $choices, $value, $attributes + array('id' => 'field-'.$name)); ?>
