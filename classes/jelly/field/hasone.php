@@ -114,8 +114,8 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	 */
 	public function with($model)
 	{
-		$join_col1 = $this->foreign['model'].'.:primary_key';
-		$join_col2 = $this->model.'.'.$this->foreign['column'];
+		$join_col1 = $this->model.'.:primary_key';
+		$join_col2 = $this->foreign['model'].'.'.$this->foreign['column'];
 				
 		$model
 			->join($this->foreign['model'], 'LEFT')
