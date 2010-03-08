@@ -3,20 +3,20 @@
 /**
  * Handles primary keys
  *
- * @package Jelly
+ * @package  Jelly
  */
 abstract class Jelly_Field_Primary extends Jelly_Field
 {
 	/**
-	 * @var boolean Defaults primary keys to primary
+	 * @var  boolean  Defaults primary keys to primary
 	 */
 	public $primary = TRUE;
-	
+
 	/**
 	 * Converts numeric IDs to ints
 	 *
-	 * @param  mixed $value 
-	 * @return int|string
+	 * @param   mixed  $value
+	 * @return  int|string
 	 */
 	public function set($value)
 	{
@@ -33,7 +33,7 @@ abstract class Jelly_Field_Primary extends Jelly_Field
 		}
 		else
 		{
-			// Empty values should be null so 
+			// Empty values should be null so
 			// they are auto-incremented properly
 			return NULL;
 		}

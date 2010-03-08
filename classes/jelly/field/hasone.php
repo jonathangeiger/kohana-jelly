@@ -3,16 +3,16 @@
 /**
  * Handles has one relationships
  *
- * @package Jelly
+ * @package  Jelly
  */
 abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Behavior_Joinable
-{		
+{
 	/**
-	 * @param  mixed  $value
-	 * @return mixed
+	 * @param   mixed  $value
+	 * @return  mixed
 	 */
 	public function set($value)
-	{	
+	{
 		// Handle Database Results
 		if (is_object($value))
 		{
@@ -23,14 +23,14 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 			return $value;
 		}
 	}
-	
+
 	/**
 	 * Returns the record that the model has
 	 * 
-	 * @param  Jelly_Model  $model
-	 * @param  mixed        $value
-	 * @param  boolean      $loaded
-	 * @return mixed
+	 * @param   Jelly_Model  $model
+	 * @param   mixed        $value
+	 * @param   boolean      $loaded
+	 * @return  mixed
 	 */
 	public function get($model, $value)
 	{
@@ -48,12 +48,12 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 					->limit(1);
 		}
 	}
-	
+
 	/**
 	 * Implementation of Jelly_Field_Behavior_Saveable
 	 *
-	 * @param   Jelly $model 
-	 * @param   mixed $value
+	 * @param   Jelly  $model
+	 * @param   mixed  $value
 	 * @return  void
 	 */
 	public function save($model, $value, $loaded)
@@ -63,10 +63,10 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 			->where($this->foreign['column'], '=', $model->id())
 			->set(array($this->foreign['column'] => $this->default))
 			->execute();
-						
+
 		// Set the new relations
 		if ( ! empty($value))
-		{			
+		{
 			// Update the ones in our list
 			Jelly::update($this->foreign['model'])
 				->where(':primary_key', '=', $value)
@@ -74,12 +74,12 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 				->execute();
 		}
 	}
-	
+
 	/**
 	 * Returns whether or not this field has another model
 	 *
-	 * @param string $model 
-	 * @return void
+	 * @param   string  $model
+	 * @return  void
 	 */
 	public function has($model, $id)
 	{
@@ -88,10 +88,10 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 		{
 			$id = array(current($id));
 		}
-		
+
 		return parent::has($model, $id);
 	}
-	
+
 	/**
 	 * Provides the input with the ids variable. An array of
 	 * all the ID's in the foreign model that this record owns.
@@ -105,18 +105,18 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 		$data['id'] = $this->get($data['model'], NULL)->load()->id();
 		return parent::input($prefix, $data);
 	}
-	
+
 	/**
 	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
-	 * @param  Jelly_Model  $model
-	 * @return void
+	 * @param   Jelly_Model  $model
+	 * @return  void
 	 */
 	public function with($model)
 	{
 		$join_col1 = $this->model.'.:primary_key';
 		$join_col2 = $this->foreign['model'].'.'.$this->foreign['column'];
-				
+
 		$model
 			->join($this->foreign['model'], 'LEFT')
 			->on($join_col1, '=', $join_col2);

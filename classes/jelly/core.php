@@ -1,83 +1,83 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * This core class is the main interface to all 
+ * This core class is the main interface to all
  * models, builders, and meta data.
  */
 abstract class Jelly_Core
 {
 	/**
-	 * @var string The prefix to use for all model's class names
-	 *             This can be overridden to allow you to place 
-	 *             models and builders in a different location.
+	 * @var  string  The prefix to use for all model's class names
+	 *               This can be overridden to allow you to place
+	 *               models and builders in a different location.
 	 */
 	protected static $_prefix = 'model_';
 
 	/**
-	 * @var array Contains all of the meta classes related to models
+	 * @var  array  Contains all of the meta classes related to models
 	 */
 	protected static $_models = array();
-	
+
 	/**
 	 * Factory for instantiating models.
-	 * 
-	 * If $values is passed and it is an array, it will be 
+	 *
+	 * If $values is passed and it is an array, it will be
 	 * applied to the model as if it were a database result.
 	 * The model is then considered to be loaded.
 	 *
-	 * @param	mixed  $model
-	 * @param	mixed  $key
-	 * @return	Jelly
+	 * @param   mixed  $model
+	 * @param   mixed  $key
+	 * @return  Jelly
 	 */
 	public static function factory($model, $values = NULL)
-	{	
+	{
 		$class = Jelly::class_name($model);
-		
+
 		return new $class($values);
 	}
 
 	/**
 	 * Returns a query builder that can be used for selecting records.
-	 * 
+	 *
 	 * If $key is passed, the key will be passed to unique_key(), the result
 	 * will be limited to 1, and the record will be returned directly.
-	 * 
+	 *
 	 * In essence, passing a $key is analogous to:
-	 * 
+	 *
 	 *     Model::select($model)->load($key);
-	 * 
+	 *
 	 * Which itself is a shortcut for:
-	 * 
+	 *
 	 *     Model::select($model)
 	 *          ->where(':unique_key', '=', $key)
 	 *          ->limit(1)
 	 *          ->execute();
 	 *
-	 * @param  string  $model 
-	 * @param  mixed   $cond
-	 * @return Jelly_Builder
+	 * @param   string  $model
+	 * @param   mixed   $cond
+	 * @return  Jelly_Builder
 	 */
 	public static function select($model, $key = NULL)
 	{
 		$builder = Jelly::builder($model, Database::SELECT);
-		
+
 		if ($key)
 		{
 			return $builder->load($key);
 		}
-		
+
 		return $builder;
 	}
 
 	/**
 	 * Returns a query builder that can be used for inserting record(s).
-	 * 
+	 *
 	 * Generally, you will only want to use Models directly for creating
-	 * new records, since this method doesn't support validation or 
+	 * new records, since this method doesn't support validation or
 	 * relations, but it is still here to complete the API.
 	 *
-	 * @param  string $model 
-	 * @return Jelly_Builder
+	 * @param   string  $model
+	 * @return  Jelly_Builder
 	 */
 	public static function insert($model)
 	{
@@ -86,13 +86,13 @@ abstract class Jelly_Core
 
 	/**
 	 * Returns a query builder that can be used for updating many records.
-	 * 
+	 *
 	 * Similar to Jelly::insert(), you will generally want to use Models for
 	 * updating an individual record, but this method is useful for updating
 	 * columns on multiple rows all at once.
 	 *
-	 * @param  string $model 
-	 * @return Jelly_Builder
+	 * @param   string  $model
+	 * @return  Jelly_Builder
 	 */
 	public static function update($model)
 	{
@@ -101,7 +101,7 @@ abstract class Jelly_Core
 
 	/**
 	 * Returns a query builder that can be used for deleting many records.
-	 * 
+	 *
 	 * While you will generally want to use models for deleting single records,
 	 * this method remains useful for deleting multiple rows all at once.
 	 *
@@ -116,7 +116,7 @@ abstract class Jelly_Core
 	/**
 	 * Gets a particular set of metadata about a model. If the model
 	 * isn't registered, it will attempt to register it.
-	 * 
+	 *
 	 * FALSE is returned on failure.
 	 *
 	 * @param   string|Jelly_Model  $model
@@ -125,7 +125,7 @@ abstract class Jelly_Core
 	public static function meta($model)
 	{
 		$model = Jelly::model_name($model);
-		
+
 		if ( ! isset(Jelly::$_models[$model]))
 		{
 			if ( ! Jelly::register($model))
@@ -133,31 +133,31 @@ abstract class Jelly_Core
 				return FALSE;
 			}
 		}
-		
+
 		return Jelly::$_models[$model];
 	}
 
 	/**
-	 * Automatically loads a model, if it exists, 
+	 * Automatically loads a model, if it exists,
 	 * into the meta table.
-	 * 
-	 * Models are not required to register 
+	 *
+	 * Models are not required to register
 	 * themselves; it happens automatically.
 	 *
-	 * @param  string  $model 
-	 * @return boolean
+	 * @param   string  $model
+	 * @return  boolean
 	 */
 	public static function register($model)
 	{
 		$class = Jelly::class_name($model);
 		$model = Jelly::model_name($model);
-		
+
 		// Don't re-initialize!
 		if (isset(Jelly::$_models[$model]))
 		{
 			return TRUE;
 		}
-				
+
 		 // Can we find the class?
 		if (class_exists($class))
 		{
@@ -171,16 +171,16 @@ abstract class Jelly_Core
 		{
 			return FALSE;
 		}
-		
+
 		// Load it into the registry
 		Jelly::$_models[$model] = $meta = new Jelly_Meta($model);
 
 		// Let the intialize() method override defaults.
 		call_user_func(array($class, 'initialize'), $meta);
-		
+
 		// Finalize the changes
 		$meta->finalize($model);
-		
+
 		return TRUE;
 	}
 
@@ -214,31 +214,31 @@ abstract class Jelly_Core
 		{
 			$model = get_class($model);
 		}
-		
+
 		$prefix_length = strlen(Jelly::$_prefix);
-		
+
 		// Compare the first parts of the names and chomp if they're the same
 		if (strtolower(substr($model, 0, $prefix_length)) === strtolower(Jelly::$_prefix))
 		{
 			$model = substr($model, $prefix_length);
 		}
-		
+
 		return strtolower($model);
 	}
-	
+
 	/**
 	 * Returns the actual column name for a field, field alias, or meta-alias.
-	 * 
-	 * $field must be in the format of "model.field". Supply $value if 
+	 *
+	 * $field must be in the format of "model.field". Supply $value if
 	 * you want the unique_key meta-alias to work properly.
-	 * 
-	 * An array is returned containing the table and column keys. If the model's meta is found, 
+	 *
+	 * An array is returned containing the table and column keys. If the model's meta is found,
 	 * but the field can't be found, 'column' will contain the field name passed.
-	 * 
+	 *
 	 * Returns FALSE on failure.
 	 *
-	 * @param  string  $field
-	 * @return array
+	 * @param   string  $field
+	 * @return  array
 	 */
 	public static function alias($field, $value = NULL)
 	{
@@ -250,20 +250,20 @@ abstract class Jelly_Core
 		{
 			$model = NULL;
 		}
-		
+
 		// We should at least return something now
 		$table = $model;
 		$column = $field;
-		
+
 		// Hopefully we can find a meta object by now
 		$meta = Jelly::meta($model);
-		
+
 		// Check for a meta-alias first
 		if (FALSE !== strpos($field, ':'))
 		{
 			$field = $column = Jelly::meta_alias($meta, $field, $value);
 		}
-		
+
 		if ($meta)
 		{
 			$table = $meta->table();
@@ -274,20 +274,20 @@ abstract class Jelly_Core
 				$column = $field->column;
 			}
 		}
-		
+
 		return array(
 			'table' => $table,
 			'column' => $column,
 		);
 	}
-	
+
 	/**
 	 * Resolves meta-aliases
 	 *
-	 * @param  mixed  $meta 
-	 * @param  string $field 
-	 * @param  mixed  $value 
-	 * @return string
+	 * @param   mixed   $meta
+	 * @param   string  $field
+	 * @param   mixed   $value
+	 * @return  string
 	 */
 	protected static function meta_alias($meta, $field, $value = NULL)
 	{
@@ -326,33 +326,31 @@ abstract class Jelly_Core
 				throw new Kohana_Exception('Unknown meta alias :field', array(
 					':field' => $field));
 		}
-		
-		
-		
+
 		return $field;
 	}
-	
+
 	/**
 	 * Returns the prefix to use for all models and builders.
-	 * 
-	 * @return string
+	 *
+	 * @return  string
 	 */
 	public static function prefix()
 	{
 		return Jelly::$_prefix;
 	}
-	
+
 	/**
 	 * Returns the builder class to use for the specified model
 	 *
-	 * @param  string $model 
-	 * @param  int    $type
-	 * @return string
+	 * @param   string  $model
+	 * @param   int     $type
+	 * @return  string
 	 */
- 	protected static function builder($model, $type = NULL)
+	protected static function builder($model, $type = NULL)
 	{
 		$builder = 'Jelly_Builder';
-		
+
 		if ($meta = Jelly::meta($model))
 		{
 			if ($meta->builder())
@@ -360,7 +358,7 @@ abstract class Jelly_Core
 				$builder = $meta->builder();
 			}
 		}
-		
+
 		return new $builder($model, $type);
 	}
 }

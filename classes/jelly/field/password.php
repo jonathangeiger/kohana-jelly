@@ -3,21 +3,21 @@
 /**
  * Handles passwords
  *
- * @package Jelly
+ * @package  Jelly
  */
 abstract class Jelly_Field_Password extends Field_String
 {
 	/**
-	 * @var callback A valid callback to use for hashing the password or FALSE to not hash
+	 * @var  callback  A valid callback to use for hashing the password or FALSE to not hash
 	 */
 	public $hash_with = 'sha1';
-	
+
 	/**
 	 * Hashes the password on save only if it's changed
 	 *
-	 * @param  string $model 
-	 * @param  string $value 
-	 * @return string
+	 * @param   string  $model
+	 * @param   string  $value
+	 * @return  string
 	 */
 	public function save($model, $value, $loaded)
 	{
@@ -29,7 +29,7 @@ abstract class Jelly_Field_Password extends Field_String
 				$value = call_user_func($this->hash_with, $value);
 			}
 		}
-		
+
 		return $value;
 	}
 }

@@ -2,5 +2,5 @@
 
 class Field_Integer extends Jelly_Field_Integer
 {
-	
+
 }

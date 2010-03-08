@@ -6,23 +6,23 @@ extensible.
 
 First, let's start with a sample model:
 
-    class Model_Post extends Jelly_Model
-    {
-        public static function initialize(Jelly_Meta $meta)
-        {
-            $meta->table('posts')
-                 ->fields(array(
-                     'id' => new Field_Primary,
-                     'name' => new Field_String,
-                     'body' => new Field_Text,
-                     'status' => new Field_Enum(array(
-                         'choices' => array('draft', 'review', 'published'))),
-                     'author' => new Field_BelongsTo,
-                     'tags' => new Field_ManyToMany,
-                 ));
-        }
-    }
-    
+	class Model_Post extends Jelly_Model
+	{
+		public static function initialize(Jelly_Meta $meta)
+		{
+			$meta->table('posts')
+				 ->fields(array(
+					 'id' => new Field_Primary,
+					 'name' => new Field_String,
+					 'body' => new Field_Text,
+					 'status' => new Field_Enum(array(
+						 'choices' => array('draft', 'review', 'published'))),
+					 'author' => new Field_BelongsTo,
+					 'tags' => new Field_ManyToMany,
+				 ));
+		}
+	}
+
 As you can see all models must do a few things to be registered with Jelly:
 
  * They must extend `Jelly_Model`

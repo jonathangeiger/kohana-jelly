@@ -2,38 +2,38 @@
 
 /**
  * Jelly_Collection encapsulates a Database_Result object. It has the exact same API.
- * 
+ *
  * It offers a few special features that make it useful:
- * 
+ *
  *  * Only one model is instantiated for the whole result set, which 
  *    is significantly faster in terms of performance.
- *  * It is easily extensible, so things like polymorphism and 
+ *  * It is easily extensible, so things like polymorphism and
  *    recursive result sets can be easily implemented.
- * 
+ *
  * Jelly_Collection likes to know what model its result set is related to,
- * though it's not required. Some features may disappear, however, if 
+ * though it's not required. Some features may disappear, however, if
  * it doesn't know the model it's working with.
  *
- * @package Jelly
+ * @package  Jelly
  */
 class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, ArrayAccess
 {
 	/**
-	 * @var Jelly The current model we're placing results into
+	 * @var  Jelly  The current model we're placing results into
 	 * 
 	 */
 	protected $_model = NULL;
-	
+
 	/**
-	 * @var mixed The current result set
+	 * @var  mixed  The current result set
 	 */
 	protected $_result = NULL;
-	
+
 	/**
 	 * Tracks a database result
 	 *
-	 * @param  mixed   $model 
-	 * @param  mixed  $result 
+	 * @param  mixed  $model
+	 * @param  mixed  $result
 	 */
 	public function __construct($model, $result)
 	{
@@ -46,15 +46,14 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 			// fill with values when iterating
 			$this->_model = new $model;
 		}
-		
+
 		$this->_result = $result;
 	}
-	
+
 	/**
 	 * Converts MySQL Results to Cached Results, since MySQL resources are not serializable.
 	 *
-	 * @return array
-	 * @author Paul Banks
+	 * @return  array
 	 */
 	public function __sleep()
 	{
@@ -63,7 +62,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 			$this->_result = new Database_Result_Cached($this->_result->as_array(), '');
 		}
 	}
-	
+
 	/**
 	 * Return all of the rows in the result as an array.
 	 *
@@ -74,7 +73,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	public function as_array($key = NULL, $value = NULL)
 	{
 		$model = Jelly::model_name($this->_model);
-		
+
 		foreach (array('key', 'value') as $var)
 		{
 			if ($$var)
@@ -83,28 +82,28 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 				$$var = $alias['column'];
 			}
 		}
-		
+
 		return $this->_result->as_array($key, $value);
 	}
-	
-	/**
-	 * Implementation of the Iterator interface
-	 * @return $this
-	 */
-	public function rewind() 
-	{
-		$this->_result->rewind();
-		return $this;
-    }
 
 	/**
 	 * Implementation of the Iterator interface
-	 * @return Jelly
+	 * @return  $this
 	 */
-    public function current($object = TRUE) 
-	{	
-		// Database_Result causes errors if you call current() 
-		// on an object with no results, so we check first.	
+	public function rewind()
+	{
+		$this->_result->rewind();
+		return $this;
+	}
+
+	/**
+	 * Implementation of the Iterator interface
+	 * @return  Jelly
+	 */
+    public function current($object = TRUE)
+	{
+		// Database_Result causes errors if you call current()
+		// on an object with no results, so we check first.
 		if ($this->_result->count())
 		{
 			$result = $this->_result->current();
@@ -113,52 +112,52 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 		{
 			$result = array();
 		}
-		
+
 		return $this->_load($result, $object);
-    }
+	}
 
 	/**
 	 * Implementation of the Iterator interface
-	 * @return int
+	 * @return  int
 	 */
-    public function key() 
+	public function key()
 	{
-        return $this->_result->key();
-    }
+		return $this->_result->key();
+	}
 
 	/**
 	 * Implementation of the Iterator interface
-	 * @return $this
+	 * @return  $this
 	 */
-    public function next() 
+	public function next()
 	{
-        $this->_result->next();
+		$this->_result->next();
 		return $this;
-    }
+	}
 
 	/**
 	 * Implementation of the Iterator interface
-	 * @return boolean
+	 * @return  boolean
 	 */
-    public function valid() 
+	public function valid()
 	{
 		return $this->_result->valid();;
-    }
+	}
 
 	/**
 	 * Implementation of the Countable interface
-	 * @return boolean
+	 * @return  boolean
 	 */
-    public function count() 
+	public function count()
 	{
 		return $this->_result->count();;
-    }
+	}
 
 	/**
 	 * Implementation of SeekableIterator
 	 *
-	 * @param  mixed   $offset 
-	 * @return boolean
+	 * @param   mixed  $offset
+	 * @return  boolean
 	 */
 	public function seek($offset)
 	{
@@ -200,23 +199,23 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	{
 		throw new Kohana_Exception('Jelly results are read-only');
 	}
-	
+
 	/**
 	 * Loads values into the model.
 	 *
-	 * @param  array $values 
-	 * @return Jelly_Model|array
+	 * @param   array $values
+	 * @return  Jelly_Model|array
 	 */
 	protected function _load($values, $object)
 	{
 		if ($this->_model AND $object)
 		{
 			// Don't return models when we don't have one
-			return ($values) 
-			        ? $this->_model->load_values($values, TRUE) 
+			return ($values)
+			        ? $this->_model->load_values($values, TRUE)
 			        : $this->_model->clear();
 		}
-		
+
 		return $values;
 	}
 }

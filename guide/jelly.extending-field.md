@@ -10,4 +10,3 @@ allow fields to specify that they can be used by methods like `with()`,
 `has()`, or `add()` and `remove()`.
 
 More detailed in for now can be found in the [API docs](api/Jelly_Field_Behavior).
-

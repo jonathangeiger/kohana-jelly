@@ -3,7 +3,7 @@
 /**
  * Handles floats
  *
- * @package Jelly
+ * @package  Jelly
  */
 abstract class Jelly_Field_Float extends Jelly_Field
 {
@@ -11,12 +11,12 @@ abstract class Jelly_Field_Float extends Jelly_Field
 	 * @var int The number of places to round the number, NULL to forgo rounding
 	 */
 	public $places = NULL;
-	
+
 	/**
 	 * Converts to float and rounds the number if necessary
 	 *
-	 * @param  mixed  $value
-	 * @return mixed
+	 * @param   mixed  $value
+	 * @return  mixed
 	 */
 	public function set($value)
 	{
@@ -26,7 +26,7 @@ abstract class Jelly_Field_Float extends Jelly_Field
 		{
 			$value = round($value, $this->places);
 		}
-		
+
 		return $value;
 	}
 }

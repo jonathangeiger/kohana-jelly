@@ -14,19 +14,19 @@ have to first locate it!
 
 ##### Example - Loading a single record
 
-    $post = Jelly::select('post', 1);
-    $post->loaded(); // TRUE
-    $post->saved(); // TRUE
-    
-    // The above is shorthand for the following
-    $post = Jelly::select('post')->load(1);
-    
-    // And the above is shorthand for
-    $post = Jelly::select('post')
-                 ->where(':primary_key', '=', 1)
-                 ->limit(1)
-                 ->execute();
-                 
+	$post = Jelly::select('post', 1);
+	$post->loaded(); // TRUE
+	$post->saved(); // TRUE
+	
+	// The above is shorthand for the following
+	$post = Jelly::select('post')->load(1);
+	
+	// And the above is shorthand for
+	$post = Jelly::select('post')
+				 ->where(':primary_key', '=', 1)
+				 ->limit(1)
+				 ->execute();
+				 
 ### Finding many records
 
 If you want to load many records, you end your query building with the
@@ -38,14 +38,13 @@ you to work with.
 
 ##### Example - Finding many records
 
-    // Find every single post
-    $posts = Jelly::select('post')->execute();
-    
-    foreach ($posts as $post)
-    {
-        echo $post->name;
-    }
-    
+	// Find every single post
+	$posts = Jelly::select('post')->execute();
+
+	foreach ($posts as $post)
+	{
+		echo $post->name;
+	}
 
 [!!] **Note**: Whenever you `limit()` a query to 1, `execute()` returns the model instance directly, instead of returning a `Jelly_Collection`
 
@@ -54,18 +53,18 @@ you to work with.
 At any time during a query builder chain, you can call the `count()` method to
 find out how many records will be returned.
 
-    $total_posts = Jelly::select('post')->where('published', '=', 1)->count();
-    
+	$total_posts = Jelly::select('post')->where('published', '=', 1)->count();
+
 ### The Query Builder
 
 If you're familiar with Kohana's query builder you already know how to use Jelly's.
 
-    // Find all active posts
-    $posts = Jelly::select('post')->where('published', '=', 1)->execute();
-    
-    // Load posts with their author in one query
-    // This is possible since there is only 1 author for each post
-    $posts = Jelly::select('post')->with('author')->execute();
+	// Find all active posts
+	$posts = Jelly::select('post')->where('published', '=', 1)->execute();
+
+	// Load posts with their author in one query
+	// This is possible since there is only 1 author for each post
+	$posts = Jelly::select('post')->with('author')->execute();
 
 [!!] **Note**: See [Extending the query builder](jelly.extending-builder) for more advanced building options
 

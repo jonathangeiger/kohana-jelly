@@ -3,10 +3,9 @@
 /**
  * Handles long strings
  *
- * @package Jelly
- * @author Jonathan Geiger
+ * @package  Jelly
  */
 abstract class Jelly_Field_Text extends Jelly_Field
 {
-	
+
 }

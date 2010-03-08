@@ -2,5 +2,5 @@
 
 class Field_Slug extends Jelly_Field_Slug
 {
-	
+
 }
