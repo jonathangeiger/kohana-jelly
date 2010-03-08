@@ -26,8 +26,8 @@ relationships uses the ':foreign_key' meta-alias, when you can set in your model
 
 **Here's a quick example to illustrate:**
 
-    Jelly::select('post')->join('author')->on('post.author:foreign_key', '=', 'author.:primary_key');
-    => SELECT * FROM `posts` JOIN `authors` ON (`posts`.`author_id` = `authors`.`id`);
+	Jelly::select('post')->join('author')->on('post.author:foreign_key', '=', 'author.:primary_key');
+	=> SELECT * FROM `posts` JOIN `authors` ON (`posts`.`author_id` = `authors`.`id`);
 
 Notice we specify the model for `:foreign_key`. This can be done with all
 meta-aliases, but is especially useful for getting at another model within the
@@ -37,51 +37,51 @@ context of another.
 
 	// Each author belongs to an editor, has many posts and approved posts,
 	// has one address, and has a many to many relationship with roles
-    class Model_Author extends Jelly_Model
-    {
-    	public static function initialize($meta)
-    	{
-    		$meta->fields(array(
-    		    'editor' => new Field_BelongsTo(
-    		        // We can specify the foreign connection to ours
-    		        'foreign' => 'editor.id',
-    		        
-    		        // Since BelongsTo has a column in the table, we can specify that
-    		        // However, this would default to editor_id anyway.
-    		        'column' => 'editor_id'
-    		    ),
-    			'posts' => new Field_HasMany(array(
-    				// If not set, this would default to post.author:foreign_key
-    				// And would expand in the query builder to posts.author_id
-    				'foreign' => 'post.author_id',
-    			)),
-    			'approved_posts' => new Field_HasMany(array(
-    			    // Note a non-standard column can be used to make 
+	class Model_Author extends Jelly_Model
+	{
+		public static function initialize($meta)
+		{
+			$meta->fields(array(
+				'editor' => new Field_BelongsTo(
+					// We can specify the foreign connection to ours
+					'foreign' => 'editor.id',
+
+					// Since BelongsTo has a column in the table, we can specify that
+					// However, this would default to editor_id anyway.
+					'column' => 'editor_id',
+				),
+				'posts' => new Field_HasMany(array(
+					// If not set, this would default to post.author:foreign_key
+					// And would expand in the query builder to posts.author_id
+					'foreign' => 'post.author_id',
+				)),
+				'approved_posts' => new Field_HasMany(array(
+					// Note a non-standard column can be used to make
 					// multiple relationships between the same column possible
-    				'foreign' => 'post.approved_by'
-    			)),    			
-    			'address' => new Field_HasOne(array(
-    			    // It's also possible to specify only a model.
-    				// This defaults to address.author:foreign_key
-    				'foreign' => 'address',
-    			)),
-    			'roles' => new Field_ManyToMany(array(
-    			    // Once again, we're only specifying the model.
-    			    // The user's foreign key is added automatically.
-    			    'foreign' => 'role',
-    			    
-    			    // Through can be a model or table by itself
-    			    'through' => 'author_roles'
-    			    
-    			    // Or if you need to specify the columns in the pivot table:
-    				'through' => array(
-						author_roles.author_id,
-						author_roles.role_id,
+					'foreign' => 'post.approved_by',
+				)),
+				'address' => new Field_HasOne(array(
+					// It's also possible to specify only a model.
+					// This defaults to address.author:foreign_key
+					'foreign' => 'address',
+				)),
+				'roles' => new Field_ManyToMany(array(
+					// Once again, we're only specifying the model.
+					// The user's foreign key is added automatically.
+					'foreign' => 'role',
+
+					// Through can be a model or table by itself
+					'through' => 'author_roles',
+
+					// Or if you need to specify the columns in the pivot table:
+					'through' => array(
+						'model'   => 'author_roles',
+						'columns' => array('author_id', 'role_id'),
 					),
-    			)),
-    		));
-    	}
-    }
+				)),
+			));
+		}
+	}
 
 [!!] **Note**: Except for `through` in ManyToMany relationships, you should always specify a valid model. You do not need to specify a valid field in the model, however. As long as the column exists in the database, it will work.
 
@@ -89,48 +89,48 @@ context of another.
 
 Using our models defined above, we can now do:
 
-    $user = Jelly::select('user', 1);
-    
-    // Print postcode
-    echo $user->address->postal_code;
-    
-    // Get Jelly_Result of all posts
-    $posts = $user->posts;
-    
-    // Get approved posts
-    $approved = $user->get('posts')->where('approved', '=', 1)->execute();
+	$user = Jelly::select('user', 1);
+
+	// Print postcode
+	echo $user->address->postal_code;
+
+	// Get Jelly_Result of all posts
+	$posts = $user->posts;
+
+	// Get approved posts
+	$approved = $user->get('posts')->where('approved', '=', 1)->execute();
 
 ### Managing Relationships
 
 For n:1 relations, we just set them as properties
 
-    $user = Jelly::factory('user');
-    
-     // Set by primary key value
-    $user->address = 1;
-    
-     // Set by model instance
-    $user->address = Jelly::select('address', 1);
-    
-    // Remove relationship (assuming this is allowed by your validation rules)
-    $user->address = NULL;
-    
-    // Saves change to relationship to database
-    $user->save(); 
-    
+	$user = Jelly::factory('user');
+
+	// Set by primary key value
+	$user->address = 1;
+
+	// Set by model instance
+	$user->address = Jelly::select('address', 1);
+
+	// Remove relationship (assuming this is allowed by your validation rules)
+	$user->address = NULL;
+
+	// Saves change to relationship to database
+	$user->save();
+
 For n:many relations we use `add()` or `remove()`:
 
-    // Add single post by primary key value
-    $user->add('posts', 1);
-    
-    // Add post by assigning an instance
-    $user->add('posts', $post); 
-    
-    // Add multiple relations with a mixture of primary key values and instances.
-    $user->add('posts', array(1, 2, $post)); 
-    
-    // Takes the same args as add()
-    $user->remove('posts', 1); 
+	// Add single post by primary key value
+	$user->add('posts', 1);
+
+	// Add post by assigning an instance
+	$user->add('posts', $post);
+
+	// Add multiple relations with a mixture of primary key values and instances.
+	$user->add('posts', array(1, 2, $post));
+
+	// Takes the same args as add()
+	$user->remove('posts', 1);
 
 Adding relations which already exist and deleting ones that don't has no effect and won't cause errors.
 

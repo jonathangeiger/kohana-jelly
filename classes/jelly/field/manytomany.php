@@ -105,18 +105,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 				)
 			);
 		}
-		// $this->through is an array of two elements
-		else
-		{
-			// Use the first column as the model
-			list($model) = explode('.', $this->through[0]);
 
-			$this->through = array(
-				'model' => $model,
-				'columns' => $this->through
-			);
-		}
-		
 		parent::initialize($model, $column);
 	}
 	
