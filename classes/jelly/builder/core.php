@@ -92,10 +92,16 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		// Don't repeat queries
 		if ( ! $this->_result)
 		{
-			// See if we can use a better $db group
 			if ($this->_meta)
 			{
+				// See if we can use a better $db group
 				$db = $this->_meta->db();
+				
+				// Select all of the columns for the model if we haven't already
+				if (empty($this->_select))
+				{
+					$this->select('*');
+				}
 			}
 
 			// Apply sorting and with if necessary
@@ -250,6 +256,39 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			}
 			else
 			{
+				// Check for * and model.*
+				if (FALSE !== strpos($column, '*'))
+				{
+					$meta = $this->_meta;
+					
+					if ($column != '*')
+					{
+						$meta = explode('.', $column);
+						$meta = Jelly::meta($meta[0]);
+					}
+					
+					// Can we continue? Only if there's a valid meta object
+					if ($meta)
+					{
+						$add_columns = array();
+						
+						foreach ($meta->fields() as $field)
+						{
+							if ($field->in_db)
+							{
+								$add_columns[] = array($meta->table().'.'.$field->column, $field->name);
+							}
+						}
+						
+						// Add these columns before we continue
+						parent::select_array($add_columns);
+						
+						// Remove the item we just added. It's no longer valid
+						unset($columns[$i]);
+						continue;
+					}
+				}
+				
 				$columns[$i] = $this->_column($column, TRUE);
 			}
 		}

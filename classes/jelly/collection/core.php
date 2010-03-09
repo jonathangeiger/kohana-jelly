@@ -72,17 +72,6 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	 */
 	public function as_array($key = NULL, $value = NULL)
 	{
-		$model = Jelly::model_name($this->_model);
-
-		foreach (array('key', 'value') as $var)
-		{
-			if ($$var)
-			{
-				$alias = Jelly::alias($model.'.'.$$var, NULL);
-				$$var = $alias['column'];
-			}
-		}
-
 		return $this->_result->as_array($key, $value);
 	}
 
@@ -212,7 +201,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 		{
 			// Don't return models when we don't have one
 			return ($values)
-			        ? $this->_model->load_values($values, TRUE)
+			        ? $this->_model->load_values($values)
 			        : $this->_model->clear();
 		}
 

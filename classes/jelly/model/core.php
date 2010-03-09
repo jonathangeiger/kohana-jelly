@@ -78,7 +78,7 @@ abstract class Jelly_Model_Core
 		// Add the values stored by mysql_set_object
 		if ( ! empty($this->_preload_data) AND is_array($this->_preload_data))
 		{
-			$this->load_values($this->_preload_data, TRUE);
+			$this->load_values($this->_preload_data);
 			$this->_preload_data = array();
 		}
 
