@@ -148,6 +148,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function compile(Database $db)
 	{
+		// Select all of the columns for the model if we haven't already
+		if (empty($this->_select))
+		{
+			$this->select('*');
+		}
+		
 		return $this->_build()->compile($db);
 	}
 

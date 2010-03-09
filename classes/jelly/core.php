@@ -289,8 +289,14 @@ abstract class Jelly_Core
 	 * @param   mixed   $value
 	 * @return  string
 	 */
-	protected static function meta_alias($meta, $field, $value = NULL)
+	public static function meta_alias($meta, $field, $value = NULL)
 	{
+		// Allow passing the model name
+		if (is_string($meta) OR $meta instanceof Jelly_Model)
+		{
+			$meta = Jelly::meta($meta);
+		}
+			
 		// Check for a model operator
 		if (substr($field, 0, 1) !== ':')
 		{
