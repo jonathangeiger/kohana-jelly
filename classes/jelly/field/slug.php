@@ -17,6 +17,11 @@ abstract class Jelly_Field_Slug extends Field_String
 	 */
 	public function set($value)
 	{
+		if ($value === NULL OR ($this->null AND empty($value)))
+		{
+			return NULL;
+		}
+		
 		// Only allow slashes, dashes, and lowercase letters
 		$value = preg_replace('/[^a-z0-9-\/]/', '-', strtolower($value));
 

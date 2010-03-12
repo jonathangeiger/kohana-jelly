@@ -35,6 +35,11 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 	 */
 	public function set($value)
 	{
+		if ($value === NULL OR ($this->null AND empty($value)))
+		{
+			return NULL;
+		}
+		
 		if (FALSE !== strtotime($value))
 		{
 			return strtotime($value);

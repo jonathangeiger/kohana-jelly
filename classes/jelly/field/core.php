@@ -133,7 +133,7 @@ abstract class Jelly_Field_Core
 	 **/
 	public function set($value)
 	{
-		return (string)$value;
+		return $value;
 	}
 	
 	/**

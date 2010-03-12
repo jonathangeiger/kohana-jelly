@@ -15,6 +15,11 @@ abstract class Jelly_Field_Integer extends Jelly_Field
 	 */
 	public function set($value)
 	{
+		if ($value === NULL OR ($this->null AND empty($value)))
+		{
+			return NULL;
+		}
+		
 		return (int)$value;
 	}
 }

@@ -17,6 +17,11 @@ abstract class Jelly_Field_Serialized extends Jelly_Field
 	 */
 	public function set($value)
 	{
+		if ($value === NULL OR ($this->null AND empty($value)))
+		{
+			return NULL;
+		}
+		
 	 	if ($return = @unserialize($value))
 		{
 			return $return;

@@ -35,13 +35,18 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 	 * @return  mixed
 	 */
 	public function set($value)
-	{
+	{		
 		if (in_array($value, $this->choices))
 		{
 			return $value;
 		}
 		else
 		{
+			if ($this->null AND empty($value))
+			{
+				return NULL;
+			}
+				
 			return $this->default;
 		}
 	}
