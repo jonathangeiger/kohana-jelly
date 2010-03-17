@@ -104,20 +104,6 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				}
 			}
 
-			// Apply sorting and with if necessary
-			if ($this->_type === Database::SELECT AND $this->_meta)
-			{
-				foreach ($this->_meta->sorting() as $column => $direction)
-				{
-					$this->order_by($column, $direction);
-				}
-
-				foreach ($this->_meta->load_with() as $relationship)
-				{
-					$this->with($relationship);
-				}
-			}
-
 			// We've now left the Jelly
 			$this->_result = $this->_build()->execute($db);
 
@@ -163,7 +149,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 * @return  int
 	 */
 	public function count()
-	{
+	{	
 		$query = $this->_build(Database::SELECT);
 		$db = (is_object($this->_meta)) ? $this->_meta->db() : 'default';
 		
@@ -395,15 +381,18 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		{
 			if (is_array($column))
 			{
-				$columns[$i][0] = $this->_table($column[0]);
+				$columns[$i][0] = $this->_column($column[0]);
 			}
 			else
 			{
-				$columns[$i] = $this->_table($column);
+				$columns[$i] = $this->_column($column);
 			}
 		}
-
-		return parent::group_by($columns);
+		
+		// Bypass parent since there is no reliable way to call parent method with arguments as an array
+		$this->_group_by = array_merge($this->_group_by, $columns);
+		
+		return $this;
 	}
 
 	/**
@@ -535,8 +524,8 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 */
 	public function with($relationship)
 	{
-		// Ensure the main table is selected
-		$this->select('*');
+		// Ensure the main model is selected
+		$this->select($this->_model.'.*');
 
 		// We'll start with the first one and work our way down
 		$paths = explode(":", $relationship);
@@ -626,6 +615,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		if ($this->_meta)
 		{
 			$this->from($this->_meta->table());
+			
+			// Load with automatically here.
+			foreach ($this->_meta->load_with() as $relationship)
+			{
+				$this->with($relationship);
+			}
 		}
 		else
 		{
@@ -671,26 +666,33 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
 		}
 
-		// If the field doesn't contain a model, we need to supply one
+		// Field has no model
 		if (strpos($field, '.') === FALSE)
-		{
-			$field = $this->_model.'.'.$field;
-		}
-
-		// See if the model is register
-		if ($alias = Jelly::alias($field, $value))
-		{
-			if ($join)
+		{			
+			// If we have a meta alias with no model use this model to resolve it
+			// or if we have a valid field for this model assume that's what we mean			
+			if (strpos($field, ':') !== FALSE OR ($this->_meta AND $this->_meta->fields($field)))	
 			{
-				return implode('.', $alias);
-			}
+				$field = $this->_model.'.'.$field;				
+			}		
 			else
 			{
-				return $alias['column'];
+				// This is not a model field or meta alias, so don't bother trying to alias it and 
+				// return it as it is
+				return $field;
 			}
 		}
 
-		return $field;
+		$alias = Jelly::alias($field, $value);
+		
+		if ($join)
+		{
+			return implode('.', $alias);
+		}
+		else
+		{
+			return $alias['column'];
+		}
 	}
 
 	/**
@@ -709,6 +711,16 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		switch($type)
 		{
 			case Database::SELECT:
+				
+				if ($this->_meta AND ! count($this->_order_by))
+				{
+					// Don't add default sorting if order_by() has been set manually
+					foreach ($this->_meta->sorting() as $column => $direction)
+					{
+						$this->order_by($column, $direction);
+					}
+				}
+					
 				$query = DB::select();
 				$query->_from		= $this->_from;
 				$query->_select 	= $this->_select;

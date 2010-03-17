@@ -405,7 +405,14 @@ abstract class Jelly_Model_Core
 	{
 		// Determine whether or not we're updating
 		$data = ($this->_loaded OR $key) ? $this->_changed : $this->_changed + $this->_original;
-
+		
+		if ( ! is_null($key))
+		{
+			// There are no rules for this since it is a meta alias and not an actual field
+			// but adding it allows us to check for uniqueness when lazy saving
+			$data[':unique_key'] = $key;			
+		}
+		
 		// Set the key to our id if it isn't set
 		if ($this->_loaded)
 		{
@@ -629,6 +636,12 @@ abstract class Jelly_Model_Core
 
 		// Create the validation object
 		$data = Validate::factory($data);
+		
+		// If we are passing a unique key value through, add a filter to ensure it isn't removed
+		if ($data->offsetExists(':unique_key'))
+		{
+			$data->filter(':unique_key', 'trim');
+		}		
 
 		// Loop through all columns, adding rules where data exists
 		foreach ($this->_meta->fields() as $column => $field)

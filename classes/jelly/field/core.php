@@ -233,10 +233,15 @@ abstract class Jelly_Field_Core
 		if ($data[$field])
 		{
 			$count = Jelly::select($this->model)
-						->where($field, '=', $data[$field])
-						->count();
+						->where($field, '=', $data[$field]);
+			
+			// Exclude unique key value from check if this is a lazy save
+			if (isset($data[':unique_key']))
+			{
+				$count->where(':unique_key', '!=', $data[':unique_key']);
+			}
 
-			if ($count)
+			if ($count->count())
 			{
 				$data->error($field, 'unique');
 			}
