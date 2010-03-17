@@ -51,6 +51,11 @@ abstract class Jelly_Field_Core
 	* @var  mixed  Default value
 	*/
 	public $default = NULL;
+	
+	/**
+	 * @var  boolean  Whether or not empty() values should be converted to NULL
+	 */
+	public $null = FALSE;
 
 	/**
 	* @var  array  {@link Kohana_Validate} filters for this field.
@@ -133,7 +138,7 @@ abstract class Jelly_Field_Core
 	 **/
 	public function set($value)
 	{
-		return (string)$value;
+		return $value;
 	}
 	
 	/**

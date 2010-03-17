@@ -20,9 +20,14 @@ abstract class Jelly_Field_Float extends Jelly_Field
 	 */
 	public function set($value)
 	{
+		if ($value === NULL OR ($this->null AND empty($value)))
+		{
+			return NULL;
+		}
+		
 		$value = (float)$value;
 		
-		if ($this->places !== NULL)
+		if (is_numeric($this->places))
 		{
 			$value = round($value, $this->places);
 		}

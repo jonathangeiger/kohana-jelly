@@ -298,12 +298,13 @@ abstract class Jelly_Model_Core
 			}
 
 			$value = $field->set($value);
+			$current_value = array_key_exists($field->name, $this->_changed)
+			               ? $this->_changed[$field->name]
+			               : $this->_original[$field->name];
+			
 
-			// Ensure data is really changed. If the original data is equal to the 
-			// field's default, we're going to go ahead and mark it as changed anyway.
-			if ($field->in_db 
-				AND $field->default !== $this->_original[$field->name] 
-				AND $this->_original[$field->name] == $value)
+			// Ensure data is really changed
+			if ($value === $current_value)
 			{
 				continue;
 			}
