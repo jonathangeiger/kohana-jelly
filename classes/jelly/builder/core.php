@@ -98,20 +98,6 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				$db = $this->_meta->db();
 			}
 
-			// Apply sorting and with if necessary
-			if ($this->_type === Database::SELECT AND $this->_meta)
-			{
-				foreach ($this->_meta->sorting() as $column => $direction)
-				{
-					$this->order_by($column, $direction);
-				}
-
-				foreach ($this->_meta->load_with() as $relationship)
-				{
-					$this->with($relationship);
-				}
-			}
-
 			// We've now left the Jelly
 			$this->_result = $this->_build()->execute($db);
 
@@ -151,7 +137,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 * @return  int
 	 */
 	public function count()
-	{
+	{	
 		$query = $this->_build(Database::SELECT);
 		$db = (is_object($this->_meta)) ? $this->_meta->db() : 'default';
 		
@@ -584,6 +570,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		if ($this->_meta)
 		{
 			$this->from($this->_meta->table());
+			
+			// Load with automatically here.
+			foreach ($this->_meta->load_with() as $relationship)
+			{
+				$this->with($relationship);
+			}
 		}
 		else
 		{
@@ -674,6 +666,16 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		switch($type)
 		{
 			case Database::SELECT:
+				
+				if ($this->_meta AND ! count($this->_order_by))
+				{
+					// Don't add default sorting if order_by() has been set manually
+					foreach ($this->_meta->sorting() as $column => $direction)
+					{
+						$this->order_by($column, $direction);
+					}
+				}
+					
 				$query = DB::select();
 				$query->_from		= $this->_from;
 				$query->_select 	= $this->_select;
