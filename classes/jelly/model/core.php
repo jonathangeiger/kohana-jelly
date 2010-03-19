@@ -310,7 +310,7 @@ abstract class Jelly_Model_Core
 			}
 
 			// Data has changed
-			$this->_changed[$field->name] = $field->set($value);
+			$this->_changed[$field->name] = $value;
 
 			// Invalidate the cache
 			if (array_key_exists($field->name, $this->_retrieved))
