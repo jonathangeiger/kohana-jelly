@@ -61,6 +61,8 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 		{
 			$this->_result = new Database_Result_Cached($this->_result->as_array(), '');
 		}
+		
+		return array_keys(get_object_vars($this));
 	}
 
 	/**
