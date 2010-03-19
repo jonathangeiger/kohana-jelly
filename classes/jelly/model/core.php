@@ -181,22 +181,12 @@ abstract class Jelly_Model_Core
 
 			// Ensure changed and retrieved data is cleared
 			// This effectively clears the cache and any changes
-			if (array_key_exists($name, $this->_changed))
-			{
-				unset($this->_changed[$name]);
-			}
-
-			if (array_key_exists($name, $this->_retrieved))
-			{
-				unset($this->_retrieved[$name]);
-			}
+			unset($this->_changed[$name]);
+			unset($this->_retrieved[$name]);
 		}
-
-		// This doesn't matter
-		if (array_key_exists($name, $this->_unmapped))
-		{
-			unset($this->_unmapped[$name]);
-		}
+		
+		// We can safely delete this no matter what
+		unset($this->_unmapped[$name]);
 	}
 
 	/**
