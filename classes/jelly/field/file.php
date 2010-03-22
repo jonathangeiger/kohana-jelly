@@ -25,28 +25,38 @@ abstract class Jelly_Field_File extends Jelly_Field
 		// Make sure the path has a trailing slash
 		$this->path = rtrim(str_replace('\\', '/', $this->path), '/').'/';
 	}
-
+	
 	/**
-	 * Either uploads a file
+	 * Uploads a file if we have a valid upload
 	 *
-	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
-	 * @param   boolean      $loaded
-	 * @return  mixed
+	 * @return  string|NULL
 	 */
-	public function save($model, $value, $loaded)
+	public function set($value)
 	{
+		if ($this->null AND empty($value))
+		{
+			return NULL;
+		}
+		
 		// Upload a file?
 		if (upload::valid($value))
 		{
 			if (FALSE !== ($filename = upload::save($value, NULL, $this->path)))
 			{
-				$value = $filename;
+				// Chop off the original path
+				$value = str_replace(realpath($this->path).DIRECTORY_SEPARATOR, '', $filename);
 			}
 			else
 			{
 				$value = $this->default;
 			}
+		}
+		
+		// Ensure we have no leading slash
+		if (is_string($value))
+		{
+			$value = trim($filename, DIRECTORY_SEPARATOR);
 		}
 
 		return $value;
