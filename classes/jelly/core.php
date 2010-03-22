@@ -44,11 +44,11 @@ abstract class Jelly_Core
 	 *
 	 * In essence, passing a $key is analogous to:
 	 *
-	 *     Model::select($model)->load($key);
+	 *     Jelly::select($model)->load($key);
 	 *
 	 * Which itself is a shortcut for:
 	 *
-	 *     Model::select($model)
+	 *     Jelly::select($model)
 	 *          ->where(':unique_key', '=', $key)
 	 *          ->limit(1)
 	 *          ->execute();
