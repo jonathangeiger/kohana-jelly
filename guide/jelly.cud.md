@@ -14,7 +14,7 @@ we won't here just for clarity.
 
 You can pass an array of values to set() or you can set the object members directly.
 
-	Model::factory('post')
+	Jelly::factory('post')
 		 ->set(array(
 			 'name' => 'A new post',
 			 'published' => TRUE,
@@ -35,7 +35,7 @@ Because the model is loaded, Jelly knows that you want to update, rather than in
 
 Notice that we pass a primary key to save(). This updates the record, even if it isn't loaded.
 
-	$post = Model::factory('post');
+	$post = Jelly::factory('post');
 	$post->name = $new_name;
 	$post->save($id);
 
@@ -44,7 +44,7 @@ Notice that we pass a primary key to save(). This updates the record, even if it
 Security implications aside, there is a shortcut provided for populating data
 in a newly instantiated model, which is useful for form processing.
 
-	Model::factory('post', $_POST)->save();
+	Jelly::factory('post', $_POST)->save();
 
 ### Delete
 
@@ -59,7 +59,7 @@ method on a model. The number of affected rows (1 or 0) will be returned.
 ##### Example - Deleting a record without having to load it
 
 	// Notice we specify a unique_key for delete()
-	Model::factory('post')->delete($id);
+	Jelly::factory('post')->delete($id);
 
 
 ## Next [Accessing and managing relationships](jelly.relationships)
