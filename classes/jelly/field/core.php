@@ -216,7 +216,7 @@ abstract class Jelly_Field_Core
 		// Check we can find a view for this field type, if not inherit view from parent
 		if ( ! Kohana::find_file('views', $view) 
 			// Don't try going beyond this base Jelly_Field class!
-			AND get_parent_class($this) !== __CLASS__)
+			AND get_parent_class($field_class) !== __CLASS__)
 		{
 			return $this->_input_view($prefix, get_parent_class($field_class));
 		}
