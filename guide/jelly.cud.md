@@ -41,10 +41,14 @@ Notice that we pass a primary key to save(). This updates the record, even if it
 
 ##### Example - Saving a record from $_POST data
 
-Security implications aside, there is a shortcut provided for populating data
-in a newly instantiated model, which is useful for form processing.
+There is a shortcut provided for populating data in a newly instantiated model, which is useful for form processing:
 
 	Jelly::factory('post', $_POST)->save();
+	
+However, one must take care to only insert the keys that are wanted, otherwise there are significant security implications. For example, insert the POST data directly would allow an attacker to update fields that weren't necessarily in the form.
+
+	// Extract the useful keys first
+	$model->set(Arr::extract($_POST, array('keys', 'to', 'use')));
 
 ### Delete
 
