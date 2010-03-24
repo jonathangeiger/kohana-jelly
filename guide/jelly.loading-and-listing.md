@@ -48,6 +48,15 @@ you to work with.
 
 [!!] **Note**: Whenever you `limit()` a query to 1, `execute()` returns the model instance directly, instead of returning a `Jelly_Collection`
 
+##### *So what's the difference between load() and execute()*
+
+There is a small, but significant difference between load() and execute(). load() implicitly limits the query to 1, and just returns a model directly. load() also accepts an optional unique_key to find the record by.
+
+    // load() is essentially shorthand for the following:
+    Jelly::select('post')->where(':unique_key', '=', $value)->limit(1)->execute();
+    
+Additionally, load() is only useful for SELECTs. It will have no effect on any other query types.
+
 ### Counting Records
 
 At any time during a query builder chain, you can call the `count()` method to
