@@ -214,7 +214,7 @@ abstract class Jelly_Meta_Core
 	 * Allows setting a variable only when initialized
 	 *
 	 * @param   string  $key
-	 * @param   string  $value
+	 * @param   mixed   $value
 	 * @return  $this
 	 */
 	protected function set($key, $value)
