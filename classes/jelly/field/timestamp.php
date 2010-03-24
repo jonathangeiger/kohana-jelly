@@ -1,7 +1,17 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles timestamps
+ * Handles timestamps and conversions to and from different formats.
+ * 
+ * All timestamps are represented internally by UNIX timestamps, regardless 
+ * of their format in the database. When the model is saved, the value is 
+ * converted back to the format specified by $format (which is a valid 
+ * date() string).
+ * 
+ * This means that you can have timestamp logic exist relatively indepentently
+ * of your database's format. If, one day, you wish to change the format used
+ * to represent dates in the database, you just have to update the $format 
+ * property for the field.
  *
  * @package  Jelly
  */

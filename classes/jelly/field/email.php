@@ -1,7 +1,10 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles email addresses
+ * Handles email addresses. 
+ * 
+ * No special processing is added for this field other 
+ * than a validation rule that ensures the email address is valid.
  *
  * @package  Jelly
  */

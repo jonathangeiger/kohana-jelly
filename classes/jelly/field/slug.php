@@ -1,7 +1,12 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles "slugs"
+ * Handles "slugs".
+ * 
+ * Slugs are not validated, but rather automatically converted to a valid slug.
+ * 
+ * A valid slug consists of lowercase alphanumeric characters, plus 
+ * underscores, dashes, and forward slashes.
  *
  * @package  Jelly
  */

@@ -1,7 +1,11 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles files and file uploads
+ * Handles files and file uploads.
+ * 
+ * If a valid upload is set on the field, the upload will be saved 
+ * automatically to the $path set and the value of the field will 
+ * be the filename used.
  *
  * @package  Jelly
  */

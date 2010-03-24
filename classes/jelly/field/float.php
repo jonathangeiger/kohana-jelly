@@ -1,7 +1,10 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles floats
+ * Handles floats.
+ * 
+ * You can specify an optional places property to 
+ * round the value to the specified number of places.
  *
  * @package  Jelly
  */
