@@ -11,9 +11,16 @@
 abstract class Jelly_Field_Email extends Field_String
 {
 	/**
-	 * @var  string  Validate as an email
-	 */
-	public $rules = array(
-		'email' => NULL
-	);
+	 * Adds an email validation rule if it doesn't already exist.
+	 *
+	 * @param   string  $model
+	 * @param   string  $column
+	 * @return  void
+	 **/
+	public function initialize($model, $column)
+	{
+		parent::initialize($model, $column);
+		
+		$this->rules += array('email' => NULL);
+	}
 }
