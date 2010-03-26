@@ -420,6 +420,12 @@ abstract class Jelly_Model_Core
 		// have save() behavior like timestamp updating...
 		foreach ($this->_changed + $this->_original as $column => $value)
 		{
+			// Filters may have been applied to data, so we should use that value
+			if (array_key_exists($column, $data))
+			{
+				$value = $data[$column];
+			}
+			
 			$field = $this->_meta->fields($column);
 
 			// Only save in_db values
