@@ -33,23 +33,26 @@ abstract class Jelly_Field_File extends Jelly_Field
 	/**
 	 * Uploads a file if we have a valid upload
 	 *
-	 * @param   mixed        $value
+	 * @param   Jelly  $model
+	 * @param   mixed  $value
+	 * @param   bool   $loaded
 	 * @return  string|NULL
 	 */
-	public function set($value)
+	public function save($model, $value, $loaded)
 	{
-		if ($this->null AND empty($value))
-		{
-			return NULL;
-		}
-		
 		// Upload a file?
-		if (upload::valid($value))
+		if (is_array($value) AND upload::valid($value))
 		{
 			if (FALSE !== ($filename = upload::save($value, NULL, $this->path)))
 			{
 				// Chop off the original path
 				$value = str_replace(realpath($this->path).DIRECTORY_SEPARATOR, '', $filename);
+				
+				// Ensure we have no leading slash
+				if (is_string($value))
+				{
+					$value = trim($filename, DIRECTORY_SEPARATOR);
+				}
 			}
 			else
 			{
@@ -57,12 +60,6 @@ abstract class Jelly_Field_File extends Jelly_Field
 			}
 		}
 		
-		// Ensure we have no leading slash
-		if (is_string($value))
-		{
-			$value = trim($filename, DIRECTORY_SEPARATOR);
-		}
-
 		return $value;
 	}
 }
