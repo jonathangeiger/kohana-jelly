@@ -51,7 +51,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 				// Ensure we have no leading slash
 				if (is_string($value))
 				{
-					$value = trim($filename, DIRECTORY_SEPARATOR);
+					$value = trim($value, DIRECTORY_SEPARATOR);
 				}
 			}
 			else
