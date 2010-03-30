@@ -212,10 +212,12 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	{
 		if ($this->_model AND $object)
 		{
+			$model = clone $this->_model;
+			
 			// Don't return models when we don't have one
 			return ($values)
-			        ? $this->_model->load_values($values)
-			        : $this->_model->clear();
+			        ? $model->load_values($values)
+			        : $model->clear();
 		}
 
 		return $values;
