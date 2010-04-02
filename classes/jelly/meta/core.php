@@ -88,6 +88,13 @@ abstract class Jelly_Meta_Core
 	 * @var  array  A cache of retrieved fields, with aliases resolved
 	 */
 	protected $field_cache = array();
+	
+	/**
+	 * @var  string  Field alias for the column that represents the row's model type
+	 *               for polymorphic models. This is derived from the presence of a
+	 *               Jelly_Field_ModelType field.
+	 */
+	protected $model_type_field = NULL;
 
 	/**
 	 * This is called after initialization to
@@ -169,6 +176,13 @@ abstract class Jelly_Meta_Core
 			}
 
 			$this->columns[$field->column][] = $column;
+			
+			// Handle polymorphic models
+			if ($field instanceof Jelly_Field_ModelType)
+			{
+				// Store alias
+				$this->model_type_field = $column;
+			}
 		}
 
 		// Meta object is initialized and no longer writable
@@ -249,6 +263,15 @@ abstract class Jelly_Meta_Core
 	public function model()
 	{
 		return $this->model;
+	}
+
+	/**
+	 * Returns the model type field for polymorphic
+	 * @return  string
+	 */
+	public function model_type_field()
+	{
+		return $this->model_type_field;
 	}
 
 	/**

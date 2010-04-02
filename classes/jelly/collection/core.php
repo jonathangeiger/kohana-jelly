@@ -20,9 +20,13 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 {
 	/**
 	 * @var  Jelly  The current model we're placing results into
-	 * 
 	 */
 	protected $_model = NULL;
+	
+	/**
+	 * @var  Jelly_Meta  The meta object for the current model (since we may not have an instance)
+	 */
+	protected $_meta = NULL;
 
 	/**
 	 * @var  mixed  The current result set
@@ -39,12 +43,24 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	{
 		if ($model)
 		{
-			// Convert to a model
-			$model = Jelly::class_name($model);
-
-			// Instantiate the model, which we'll continually
-			// fill with values when iterating
-			$this->_model = new $model;
+			$this->_meta = Jelly::meta($model);
+			
+			// See if model is polymorphic
+			if ($this->_meta->model_type_field())
+			{
+				// We may have different types of model in this result, store one instance of each to hydrate
+				$this->_model = array();
+			}
+			else 
+			{
+				// Just one model type, create an instance to hydrate
+				if ( ! is_object($model))
+				{
+					$model = Jelly::factory($model);
+				}
+				
+				$this->_model = $model;
+			}
 		}
 
 		$this->_result = $result;
@@ -74,14 +90,12 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	 */
 	public function as_array($key = NULL, $value = NULL)
 	{
-		$model = Jelly::model_name($this->_model);
-
 		foreach (array('key', 'value') as $var)
 		{
 			// Only alias meta-aliases
-			if ($$var && FALSE !== strpos($$var, ':'))
+			if ($$var AND strpos($$var, ':') !== FALSE)
 			{
-				$$var = Jelly::meta_alias($model, $$var, NULL);
+				$$var = Jelly::meta_alias($this->_meta->model, $$var, NULL);
 			}
 		}
 			
@@ -210,9 +224,25 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	 */
 	protected function _load($values, $object)
 	{
-		if ($this->_model AND $object)
+		if ($object)
 		{
-			$model = clone $this->_model;
+			if (is_array($this->_model))
+			{
+				// This is polymorphic, we're not sure which model to return yet
+				$model_type = Arr::get($values, $this->_meta->model_type_field(), FALSE);
+				
+				if ( ! isset($this->_model[$model_type]))
+				{
+					// Store one instance per model type required
+					$this->_model[$model_type] = Jelly::factory($model_type);
+				}
+				
+				$model = clone $this->_model[$model_type];
+			}
+			else
+			{
+				$model = clone $this->_model;
+			}
 			
 			// Don't return models when we don't have one
 			return ($values)
