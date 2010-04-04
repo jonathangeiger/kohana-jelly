@@ -565,7 +565,8 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				if ($select->in_db)
 				{
 					// We have to manually alias, since the path does not necessarily correspond to the path
-					$this->select(array($model.'.'.$alias, $chain.':'.$alias));
+					// We select from the field alias rather than the model to allow multiple joins to same model
+					$this->select(array($field->name.'.'.$alias, $chain.':'.$alias));
 				}
 			}
 
@@ -665,6 +666,9 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			// Quote the column in FUNC("ident") identifiers
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
 		}
+		
+		// Set if we find this is a reference to a joined field
+		$join_table_alias = FALSE;
 
 		// Field has no model
 		if (strpos($field, '.') === FALSE)
@@ -682,8 +686,34 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				return $field;
 			}
 		}
+		else
+		{
+			list($model, $field) = explode('.', $field, 2);
+			
+			// Check to see if the 'model' passed is actually a relationship alias
+			if ($field_object = $this->_meta->fields($model) AND $field_object instanceof Jelly_Field_Behavior_Joinable)
+			{
+				// The model specified looks like a relationship alias in this context
+				// that means we alias the field name to a column but use the join alias for the table
+				$join_table_alias = Jelly::join_alias($field_object);
+				
+				// Change the field to use the appropriate model so it can be properly aliased
+				$field = $field_object->foreign['model'].'.'.$field;
+			}
+			else
+			{
+				// Put field back together
+				$field = $model.'.'.$field;
+			}
+		}
 
 		$alias = Jelly::alias($field, $value);
+		
+		if ($join_table_alias)
+		{
+			// Replace the actual table with the join alias
+			$alias['table'] = $join_table_alias;
+		}
 		
 		if ($join)
 		{

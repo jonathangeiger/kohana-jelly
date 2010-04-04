@@ -109,16 +109,16 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	/**
 	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
-	 * @param   Jelly_Model  $model
+	 * @param   Jelly_Builder  $builder
 	 * @return  void
 	 */
-	public function with($model)
+	public function with($builder)
 	{
 		$join_col1 = $this->model.'.:primary_key';
 		$join_col2 = $this->foreign['model'].'.'.$this->foreign['column'];
 
-		$model
-			->join($this->foreign['model'], 'LEFT')
+		$builder
+			->join(array($this->foreign['model'], $this->name), 'LEFT')
 			->on($join_col1, '=', $join_col2);
 	}
 }

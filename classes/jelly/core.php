@@ -335,6 +335,42 @@ abstract class Jelly_Core
 
 		return $field;
 	}
+	
+	/**
+	 * Aliases a Joinable column base on the field's alias 
+	 * 
+	 * Required to allow joins to the same table with different aliases in one query.
+	 * 
+	 * If a field object is passed, it's (hopefully unique) join alias is returned.
+	 * 
+	 * If a sting is passed, it is converted back to a model identifier if it is a valid join alias format
+	 * or FALSE is returned otherwise. This allows for correctly aliasing fields that have a join alias 
+	 * rather than a model identifier.
+	 * 
+	 * @param   Jelly_Field | string  Field to alias or alias to convert back to model.field
+	 * @return  string | FALSE
+	 */
+	public static function join_alias($field)
+	{
+		if ($field instanceof Jelly_Field)
+		{
+			// Return join alias for field
+			// Join alias is the foreign model name with the aliased name from the field
+			return '_'.$field->foreign['model'].':'.$field->name;
+		}
+		
+		// If this is a join alias
+		if (substr($field, 0, 1) === '_')
+		{
+			list($model, $field) = explode(':', substr($field, 1), 2);
+			
+			// This is a valid join alias, return the model it aliases
+			return $model;
+		}
+		
+		// Don't know what this is, just return it
+		return FALSE;
+	}
 
 	/**
 	 * Returns the prefix to use for all models and builders.
