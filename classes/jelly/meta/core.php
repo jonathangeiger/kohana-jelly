@@ -236,7 +236,7 @@ abstract class Jelly_Meta_Core
 	{
 		if (func_num_args() !== 0)
 		{
-			return $this->set('db', $db);
+			return $this->set('db', $value);
 		}
 
 		return $this->db;
