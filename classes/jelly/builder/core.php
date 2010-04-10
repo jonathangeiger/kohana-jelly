@@ -667,6 +667,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
 		}
 		
+		// Test for Database Expressions
+		if ($field instanceof Database_Expression)
+		{
+			return $field;
+		}
+		
 		// Set if we find this is a reference to a joined field
 		$join_table_alias = FALSE;
 
