@@ -2,9 +2,9 @@
 
 /**
  * Handles files and file uploads.
- * 
- * If a valid upload is set on the field, the upload will be saved 
- * automatically to the $path set and the value of the field will 
+ *
+ * If a valid upload is set on the field, the upload will be saved
+ * automatically to the $path set and the value of the field will
  * be the filename used.
  *
  * @package  Jelly
@@ -29,7 +29,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 		// Make sure the path has a trailing slash
 		$this->path = rtrim(str_replace('\\', '/', $this->path), '/').'/';
 	}
-	
+
 	/**
 	 * Uploads a file if we have a valid upload
 	 *
@@ -47,7 +47,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 			{
 				// Chop off the original path
 				$value = str_replace(realpath($this->path).DIRECTORY_SEPARATOR, '', $filename);
-				
+
 				// Ensure we have no leading slash
 				if (is_string($value))
 				{
@@ -59,7 +59,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 				$value = $this->default;
 			}
 		}
-		
+
 		return $value;
 	}
 }

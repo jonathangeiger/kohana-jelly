@@ -2,10 +2,10 @@
 
 /**
  * Handles "slugs".
- * 
+ *
  * Slugs are not validated, but rather automatically converted to a valid slug.
- * 
- * A valid slug consists of lowercase alphanumeric characters, plus 
+ *
+ * A valid slug consists of lowercase alphanumeric characters, plus
  * underscores, dashes, and forward slashes.
  *
  * @package  Jelly
@@ -26,7 +26,7 @@ abstract class Jelly_Field_Slug extends Field_String
 		{
 			return NULL;
 		}
-		
+
 		// Only allow slashes, dashes, and lowercase letters
 		$value = preg_replace('/[^a-z0-9-\/]/', '-', strtolower($value));
 

@@ -26,7 +26,7 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 
 	/**
 	 * Returns the record that the model has
-	 * 
+	 *
 	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
 	 * @param   boolean      $loaded

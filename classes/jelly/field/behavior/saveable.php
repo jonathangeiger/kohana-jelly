@@ -7,7 +7,7 @@
  * @package  Jelly
  */
 interface Jelly_Field_Behavior_Saveable
-{	
+{
 	/**
 	 * This method is called after an insert or update is finished on
 	 * changed in_db fields. The field is expected to handle all database

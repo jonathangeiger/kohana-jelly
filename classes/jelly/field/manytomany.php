@@ -5,8 +5,8 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_ManyToMany 
-extends Jelly_Field_Relationship 
+abstract class Jelly_Field_ManyToMany
+extends Jelly_Field_Relationship
 implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
 {
 	/**
@@ -86,7 +86,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 				// Find the join table based on the two model names pluralized,
 				// sorted alphabetically and with an underscore separating them
 				$through = array(
-					inflector::plural($this->foreign['model']), 
+					inflector::plural($this->foreign['model']),
 					inflector::plural($model)
 				);
 
@@ -227,7 +227,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 * which columns the model is "in" in the join table
 	 *
 	 * @param   Jelly    $model
-	 * @param   boolean  $as_array 
+	 * @param   boolean  $as_array
 	 * @return  mixed
 	 */
 	protected function _in($model, $as_array = FALSE)

@@ -2,8 +2,8 @@
 
 /**
  * Handles enumerated lists.
- * 
- * A choices property is required, which is an array of valid options. If you 
+ *
+ * A choices property is required, which is an array of valid options. If you
  * attempt to set a value that isn't a valid choice, the default will be used.
  *
  * @package  Jelly
@@ -38,7 +38,7 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 	 * @return  mixed
 	 */
 	public function set($value)
-	{		
+	{
 		if (in_array($value, $this->choices))
 		{
 			return $value;
@@ -49,7 +49,7 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 			{
 				return NULL;
 			}
-				
+
 			return $this->default;
 		}
 	}

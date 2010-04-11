@@ -105,7 +105,7 @@ abstract class Jelly_Core
 	 * While you will generally want to use models for deleting single records,
 	 * this method remains useful for deleting multiple rows all at once.
 	 *
-	 * @param  string $model 
+	 * @param  string $model
 	 * @return Jelly_Builder
 	 */
 	public static function delete($model)
@@ -296,7 +296,7 @@ abstract class Jelly_Core
 		{
 			$meta = Jelly::meta($meta);
 		}
-			
+
 		// Check for a model operator
 		if (substr($field, 0, 1) !== ':')
 		{
@@ -335,18 +335,18 @@ abstract class Jelly_Core
 
 		return $field;
 	}
-	
+
 	/**
-	 * Aliases a Joinable column base on the field's alias 
-	 * 
+	 * Aliases a Joinable column base on the field's alias
+	 *
 	 * Required to allow joins to the same table with different aliases in one query.
-	 * 
+	 *
 	 * If a field object is passed, it's (hopefully unique) join alias is returned.
-	 * 
+	 *
 	 * If a sting is passed, it is converted back to a model identifier if it is a valid join alias format
-	 * or FALSE is returned otherwise. This allows for correctly aliasing fields that have a join alias 
+	 * or FALSE is returned otherwise. This allows for correctly aliasing fields that have a join alias
 	 * rather than a model identifier.
-	 * 
+	 *
 	 * @param   Jelly_Field | string  Field to alias or alias to convert back to model.field
 	 * @return  string | FALSE
 	 */
@@ -358,16 +358,16 @@ abstract class Jelly_Core
 			// Join alias is the foreign model name with the aliased name from the field
 			return '_'.$field->foreign['model'].':'.$field->name;
 		}
-		
+
 		// If this is a join alias
 		if (substr($field, 0, 1) === '_')
 		{
 			list($model, $field) = explode(':', substr($field, 1), 2);
-			
+
 			// This is a valid join alias, return the model it aliases
 			return $model;
 		}
-		
+
 		// Don't know what this is, just return it
 		return FALSE;
 	}

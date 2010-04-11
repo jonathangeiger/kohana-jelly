@@ -70,8 +70,8 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	}
 
 	/**
-	 * Returns the primary key of the model passed. 
-	 * 
+	 * Returns the primary key of the model passed.
+	 *
 	 * @param   mixed  $value
 	 * @return  mixed
 	 */
