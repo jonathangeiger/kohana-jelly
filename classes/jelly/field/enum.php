@@ -29,6 +29,19 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 		{
 			throw new Kohana_Exception('Field_Enum must have a `choices` property set');
 		}
+		
+		// Convert non-associative values to associative ones
+		if (!arr::is_assoc($this->choices))
+		{
+			$choices = array();
+			
+			foreach ($this->choices as $choice)
+			{
+				$choices[$choice] = $choice;
+			}
+			
+			$this->choices = $choices;
+		}
 	}
 
 	/**
@@ -39,7 +52,7 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if (in_array($value, $this->choices))
+		if (array_key_exists($value, $this->choices))
 		{
 			return $value;
 		}
