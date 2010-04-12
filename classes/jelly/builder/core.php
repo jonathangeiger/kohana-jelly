@@ -758,15 +758,16 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				}
 
 				$query = DB::select();
-				$query->_from		= $this->_from;
-				$query->_select 	= $this->_select;
-				$query->_distinct	= $this->_distinct;
-				$query->_offset 	= $this->_offset;
-				$query->_limit 		= $this->_limit;
-				$query->_join 		= $this->_join;
-				$query->_group_by 	= $this->_group_by;
-				$query->_order_by 	= $this->_order_by;
+				$query->_from       = $this->_from;
+				$query->_select     = $this->_select;
+				$query->_distinct   = $this->_distinct;
+				$query->_offset     = $this->_offset;
+				$query->_limit      = $this->_limit;
+				$query->_join       = $this->_join;
+				$query->_group_by   = $this->_group_by;
+				$query->_order_by   = $this->_order_by;
 				$query->_as_object  = $this->_as_object;
+				$query->_lifetime   = $this->_lifetime;
 				break;
 
 			case Database::UPDATE:
