@@ -33,14 +33,7 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 		// Convert non-associative values to associative ones
 		if (!arr::is_assoc($this->choices))
 		{
-			$choices = array();
-			
-			foreach ($this->choices as $choice)
-			{
-				$choices[$choice] = $choice;
-			}
-			
-			$this->choices = $choices;
+			$this->choices = array_combine($this->choices, $this->choices);
 		}
 	}
 
