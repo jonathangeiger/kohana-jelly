@@ -6,7 +6,7 @@
  * @package  Jelly
  */
 abstract class Jelly_Field_Core
-{	
+{
 	/**
 	 * @var  string  The model's name
 	 */
@@ -51,7 +51,7 @@ abstract class Jelly_Field_Core
 	* @var  mixed  Default value
 	*/
 	public $default = NULL;
-	
+
 	/**
 	 * @var  boolean  Whether or not empty() values should be converted to NULL
 	 */
@@ -130,7 +130,7 @@ abstract class Jelly_Field_Core
 	}
 
 	/**
-	 * Sets a particular value processed according 
+	 * Sets a particular value processed according
 	 * to the class's standards.
 	 *
 	 * @param   mixed  $value
@@ -140,9 +140,9 @@ abstract class Jelly_Field_Core
 	{
 		return $value;
 	}
-	
+
 	/**
-	 * Returns a particular value processed according 
+	 * Returns a particular value processed according
 	 * to the class's standards.
 	 *
 	 * @param   Jelly_Model  $model
@@ -158,7 +158,7 @@ abstract class Jelly_Field_Core
 	/**
 	 * Called just before saving if the field is $in_db, and just after if it's not.
 	 *
-	 * If $in_db, it is expected to return a value suitable for insertion 
+	 * If $in_db, it is expected to return a value suitable for insertion
 	 * into the database.
 	 *
 	 * @param   Jelly  $model
@@ -193,7 +193,7 @@ abstract class Jelly_Field_Core
 
 	/**
 	 * Used internally to allow fields to inherit input views from parent classes
-	 * 
+	 *
 	 * @param   Jelly_Field  $class [optional]
 	 * @return  string
 	 */
@@ -206,15 +206,15 @@ abstract class Jelly_Field_Core
 
 		// Determine the view name, which matches the class name
 		$file = strtolower($field_class);
-		
+
 		// Could be prefixed by Jelly_Field, or just Field_
 		$file = str_replace(array('jelly_field_', 'field_'), array('', ''), $file);
-		
+
 		// Allowing a prefix means inputs can be rendered from different paths
 		$view = $prefix.'/'.$file;
-		
+
 		// Check we can find a view for this field type, if not inherit view from parent
-		if ( ! Kohana::find_file('views', $view) 
+		if ( ! Kohana::find_file('views', $view)
 			// Don't try going beyond this base Jelly_Field class!
 			AND get_parent_class($field_class) !== __CLASS__)
 		{
@@ -228,8 +228,8 @@ abstract class Jelly_Field_Core
 	/**
 	 * Callback for validating that a field is unique.
 	 *
-	 * @param   Validate $data 
-	 * @param   string $field 
+	 * @param   Validate $data
+	 * @param   string $field
 	 * @return  void
 	 * @author  Woody Gilk
 	 */
@@ -239,7 +239,7 @@ abstract class Jelly_Field_Core
 		{
 			$count = Jelly::select($this->model)
 						->where($field, '=', $data[$field]);
-			
+
 			// Exclude unique key value from check if this is a lazy save
 			if (isset($data[':unique_key']))
 			{
@@ -256,7 +256,7 @@ abstract class Jelly_Field_Core
 	/**
 	 * Converts a bunch of types to an array of ids
 	 *
-	 * @param   mixed  $models 
+	 * @param   mixed  $models
 	 * @return  array
 	 */
 	protected function _ids($models)

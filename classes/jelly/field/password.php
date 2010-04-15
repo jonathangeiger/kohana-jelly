@@ -1,11 +1,11 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles passwords by automatically hashing them before they're 
+ * Handles passwords by automatically hashing them before they're
  * saved to the database.
- * 
- * It is important to note that a new password is hashed only when the 
- * model is saved. This means you must save a model if you want to 
+ *
+ * It is important to note that a new password is hashed only when the
+ * model is saved. This means you must save a model if you want to
  * compare hashes of two passwords.
  *
  * @package  Jelly

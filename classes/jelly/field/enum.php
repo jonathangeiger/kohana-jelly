@@ -2,8 +2,8 @@
 
 /**
  * Handles enumerated lists.
- * 
- * A choices property is required, which is an array of valid options. If you 
+ *
+ * A choices property is required, which is an array of valid options. If you
  * attempt to set a value that isn't a valid choice, the default will be used.
  *
  * @package  Jelly
@@ -29,6 +29,12 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 		{
 			throw new Kohana_Exception('Field_Enum must have a `choices` property set');
 		}
+		
+		// Convert non-associative values to associative ones
+		if (!arr::is_assoc($this->choices))
+		{
+			$this->choices = array_combine($this->choices, $this->choices);
+		}
 	}
 
 	/**
@@ -38,8 +44,8 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 	 * @return  mixed
 	 */
 	public function set($value)
-	{		
-		if (in_array($value, $this->choices))
+	{
+		if (array_key_exists($value, $this->choices))
 		{
 			return $value;
 		}
@@ -49,7 +55,7 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 			{
 				return NULL;
 			}
-				
+
 			return $this->default;
 		}
 	}

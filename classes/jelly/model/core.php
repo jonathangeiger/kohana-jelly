@@ -3,7 +3,7 @@
 /**
  * Jelly_Model is the class all models must extend. It handles
  * various CRUD operations and relationships to other models.
- * 
+ *
  * @package Jelly
  */
 abstract class Jelly_Model_Core
@@ -71,7 +71,7 @@ abstract class Jelly_Model_Core
 		// Load the object's meta data for quick access
 		$this->_meta = Jelly::meta($this);
 
-		// Copy over the defaults into the original data. This also has 
+		// Copy over the defaults into the original data. This also has
 		// the added benefit of registering the model's metadata, if it does not exist yet
 		$this->_original = $this->_meta->defaults();
 
@@ -106,7 +106,7 @@ abstract class Jelly_Model_Core
 	 * @return  mixed
 	 */
 	public function __get($name)
-	{	
+	{
 		// Alias the field to its actual name. We must do this now
 		// so that any aliases will be cached under the real fields
 		// name, rather than under its alias name
@@ -160,7 +160,7 @@ abstract class Jelly_Model_Core
 	{
 		return (bool)($this->_meta->fields($name) OR array_key_exists($name, $this->_unmapped));
 	}
-	
+
 	/**
 	 * This doesn't unset fields. Rather, it sets them to their default
 	 * value. Unmapped, changed, and retrieved values are unset.
@@ -175,7 +175,7 @@ abstract class Jelly_Model_Core
 	{
 		if ($field = $this->_meta->fields($name, TRUE))
 		{
-			// We don't want to unset the keys, because 
+			// We don't want to unset the keys, because
 			// they are assumed to exist. Just set them back to defaults
 			$this->_original[$field] = $this->_meta->defaults($field);
 
@@ -184,7 +184,7 @@ abstract class Jelly_Model_Core
 			unset($this->_changed[$name]);
 			unset($this->_retrieved[$name]);
 		}
-		
+
 		// We can safely delete this no matter what
 		unset($this->_unmapped[$name]);
 	}
@@ -200,14 +200,14 @@ abstract class Jelly_Model_Core
 	 * @return  mixed
 	 */
 	public function get($name)
-	{	
+	{
 		if ($field = $this->_meta->fields($name))
-		{	
+		{
 			// Alias the name to its actual name
 			$name = $field->name;
 
 			if (array_key_exists($name, $this->_changed))
-			{	
+			{
 				$value = $field->get($this, $this->_changed[$name]);
 			}
 			elseif (array_key_exists($name, $this->_with))
@@ -243,7 +243,7 @@ abstract class Jelly_Model_Core
 	 *
 	 *     $model->as_array('id', 'name', 'status');
 	 *
-	 * @param  string  $fields 
+	 * @param  string  $fields
 	 * @param  ...
 	 * @return array
 	 */
@@ -291,7 +291,7 @@ abstract class Jelly_Model_Core
 			$current_value = array_key_exists($field->name, $this->_changed)
 			               ? $this->_changed[$field->name]
 			               : $this->_original[$field->name];
-			
+
 
 			// Ensure data is really changed
 			if ($value === $current_value)
@@ -318,7 +318,7 @@ abstract class Jelly_Model_Core
 	/**
 	 * Clears the object and loads an array of values into the object.
 	 *
-	 * This should only be used for setting from database results 
+	 * This should only be used for setting from database results
 	 * since the model declares itself as saved and loaded after.
 	 *
 	 * @param   array    $values
@@ -366,7 +366,7 @@ abstract class Jelly_Model_Core
 					$this->_original[$field] = $this->_meta->fields($field)->set($value);
 				}
 			}
-			// Standard setting of a field 
+			// Standard setting of a field
 			elseif ($alias === FALSE AND $field = $this->_meta->fields($key))
 			{
 				$this->_original[$field->name] = $field->set($value);
@@ -396,14 +396,14 @@ abstract class Jelly_Model_Core
 	{
 		// Determine whether or not we're updating
 		$data = ($this->_loaded OR $key) ? $this->_changed : $this->_changed + $this->_original;
-		
+
 		if ( ! is_null($key))
 		{
 			// There are no rules for this since it is a meta alias and not an actual field
 			// but adding it allows us to check for uniqueness when lazy saving
-			$data[':unique_key'] = $key;			
+			$data[':unique_key'] = $key;
 		}
-		
+
 		// Set the key to our id if it isn't set
 		if ($this->_loaded)
 		{
@@ -425,7 +425,7 @@ abstract class Jelly_Model_Core
 			{
 				$value = $data[$column];
 			}
-			
+
 			$field = $this->_meta->fields($column);
 
 			// Only save in_db values
@@ -472,7 +472,7 @@ abstract class Jelly_Model_Core
 							 ->columns(array_keys($values))
 							 ->values(array_values($values))
 							 ->execute();
-							
+
 			// Gotta make sure to set this
 			$values[$this->_meta->primary_key()] = $id;
 		}
@@ -486,7 +486,7 @@ abstract class Jelly_Model_Core
 
 		// Save the relations
 		foreach($relations as $column => $value)
-		{	
+		{
 			$this->_meta->fields($column)->save($this, $value, (bool) $key);
 		}
 
@@ -549,7 +549,7 @@ abstract class Jelly_Model_Core
 	{
 		// Reset back to the initial state
 		$this->_loaded = $this->_saved = FALSE;
-		$this->_with = $this->_changed = 
+		$this->_with = $this->_changed =
 		$this->_retrieved = $this->_unmapped = array();
 		$this->_original = $this->_meta->defaults();
 		return $this;
@@ -569,7 +569,7 @@ abstract class Jelly_Model_Core
 	 *  * A Jelly_Collection
 	 *  * An array of primary keys or models
 	 *
-	 * @param   string  $name 
+	 * @param   string  $name
 	 * @param   mixed   $models
 	 * @return  boolean
 	 */
@@ -633,12 +633,12 @@ abstract class Jelly_Model_Core
 
 		// Create the validation object
 		$data = Validate::factory($data);
-		
+
 		// If we are passing a unique key value through, add a filter to ensure it isn't removed
 		if ($data->offsetExists(':unique_key'))
 		{
 			$data->filter(':unique_key', 'trim');
-		}		
+		}
 
 		// Loop through all columns, adding rules where data exists
 		foreach ($this->_meta->fields() as $column => $field)
@@ -665,7 +665,7 @@ abstract class Jelly_Model_Core
 
 	/**
 	 * Returns a view object that represents the field.
-	 * 
+	 *
 	 * If $prefix is an array, it will be used for the data
 	 * and $prefix will be set to the default.
 	 *
@@ -714,7 +714,7 @@ abstract class Jelly_Model_Core
 	 * @return  boolean
 	 */
 	public function saved()
-	{	
+	{
 		return $this->_saved;
 	}
 
@@ -757,7 +757,7 @@ abstract class Jelly_Model_Core
 	 * @return  $this
 	 */
 	protected function _change($name, $models, $add)
-	{		
+	{
 		$field = $this->_meta->fields($name);
 
 		if ($field instanceof Jelly_Field_Behavior_Changeable)
@@ -809,7 +809,7 @@ abstract class Jelly_Model_Core
 	protected function _ids($models)
 	{
 		$ids = array();
-				
+
 		// Handle Database Results
 		if ($models instanceof Iterator OR is_array($models))
 		{
