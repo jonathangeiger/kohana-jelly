@@ -660,26 +660,8 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	{
 		$model = NULL;
 
-		// Check for expressions that needed a column alias
-		if(is_array($field))
-		{
-			foreach ($field as $alias => $value)
-			{
-				// only value can be a database expression
-				if($value instanceof Database_Expression)
-				{
-					return array($alias, $value);
-				}
-
-				if($alias instanceof Database_Expression)
-				{
-					throw new Kohana_Exception("Jelly_Builder can not use database Expression as column alias");
-				}
-			}
-		}
-
 		// Check for functions
-		if (!is_array($field) AND strpos($field, '"') !== FALSE)
+		if (strpos($field, '"') !== FALSE)
 		{
 			// Quote the column in FUNC("ident") identifiers
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
