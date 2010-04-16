@@ -69,4 +69,4 @@
 	Jelly::factory('post')->delete($id);
 
 
-## Далее [Доступ и управление отношениями](jelly.relationships)
+## Далее [Доступ и управление связями](jelly.relationships)

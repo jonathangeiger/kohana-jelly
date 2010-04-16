@@ -23,51 +23,60 @@ Jelly также имеет систему мета-алиасов,позвол�
         }
     }
 
-Anywhere you reference the 'id' field, it will be mapped to the 'PostId' column. For example:
+Теперь, при ссылке на поле 'id', при построении запроса будет использоваться столбец 'PostId'.
+Например:
 
     $post->where('id', 'IN', array(1, 2, 3));
     
-    // The following will work, but ties your logic to 
-    // your database schema so it's frowned upon
+    // Следующий код будет работать, но логика запроса будет 
+    // основываться на схеме базы данных, что не желательно
     $post->where('PostId', 'IN', array(1, 2, 3));
-    
-Anywhere you're referencing a model or field, you should be using the name of a model or field, *not* the name of a table or column.
 
-### Meta-Aliases
+При ссылке на модель или поле, следует использовать имя модели или поля, на *не* имя таблицы или
+столбца.
 
-Meta-aliases are a syntactic shortcut for referencing a particular field in a model. There are currently four meta-aliases defined:
+### Мета-алиасы
 
-  * **:primary_key** - references the model's primary key
-  * **:name_key** - references the model's name key 
-  * **:unique_key** - references the model's unique key 
-  * **:foreign_key** - references the model's foreign key 
+Мета-аслиасы - это синтаксические ярлыки для ссылки на конкретную область модели. В настоящее время
+в Jelly определены четыре мета-алиаса:
+
+  * **:primary_key** - ссылается на первичный ключ модели
+  * **:name_key** - ссылается на именной ключ модели
+  * **:unique_key** - ссылается на уникальный ключ модели
+  * **:foreign_key** - ссылается на внешний ключ модели
   
-##### Example - Using a meta-alias
+##### Пример: использование мета-алиасов
 
     $post->where(':primary_key', '=', $value);
     $post->where(':name_key', '=', $value);
     
-    // In this case, value is passed to the unique_key() method in 
-    // your builder class, which returns the proper field to use
-    // based on the value
+    // В этом случае, значение передаётся методу unique_key()
+    // класса query builder'а, который возвращает соответствующее
+    // поле на основе этого значения
     $post->where(':unique_key', '=', $value);
     
-##### Example - Using the :foreign_key meta-alias
+##### Пример: использование `:foreign_key` мета-алиаса
 
-Generally, you want to be able to reference another model's foreign key, so there is a special syntax for doing such a thing. 
+В основном, при работе необходимо ссылаться на внешний ключ другой модели. Для этого существует
+специальный синтаксис.
 
-    // Assume a post belongs_to an author
+    // Поиск постов, принадлежащих (belongs_to) автору
     $post->where('post.author:foreign_key', '=', $value);
-    
-    // This is also possible, though not really useful or practical
+
+    // Такой вариант тоже допустим, но не особо  удобен и практичен
     $post->where('author:primary_key', '=', $value);
-    
-In this case, you specify a model before the meta-alias to pull it from.
 
-[!!] **Note**: Meta-aliases can only be used in the query builder or with the as_array() method in Jelly\_Collection.
+В этом случае перед определением мета-алиаса определяется модель, из которой он извлекается.
 
-## Changing your meta-aliases
+[!!] **Заметка**: Мета-алиасы могут быть использованы только в query builder'е или с методом
+as_array() в Jelly\_Collection.
 
-Your model's primary\_key, name\_key, and foreign\_key are all defined in your initialize() method. More information can be found in the [API documentation for Jelly_Meta](api/Jelly_Meta).
+## Изменение мета-алиаса
 
-The unique\_key is a special case since a value is passed to it so that it can determine the proper field to use. To change its behaviour you must [create your model specific Jelly\_Builder](jelly.extending-builder).
+Первичный ключ (primary\_key), именной ключ (name\_key) и внешний ключ (foreign\_key) модели
+определяются в initialize() методе. Более подробную информацию можно найти в
+[API документации класса Jelly_Meta](api/Jelly_Meta).
+
+С уникальным ключом (unique\_key) дело другое. Ввиду того, что ему передаётся значение, он может 
+использовать собственное поле. Чтобы изменить его поведение, необходимо 
+[создать специфический для модели экземпляр Jelly\_Builder класса](jelly.extending-builder).

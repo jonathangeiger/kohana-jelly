@@ -3,7 +3,7 @@
    - [Описание моделей](jelly.defining-models)
    - [Загрузка и получение данных](jelly.loading-and-listing)
    - [Создание, обновление и удаление данных](jelly.cud)
-   - [Отношения](jelly.relationships)
+   - [Связи в Jelly](jelly.relationships)
    - [Типы полей в Jelly](jelly.field-types)
    - [Понимание алиасов и мета-алиасов](jelly.aliases)
    - [Расширение query builder'а](jelly.extending-builder)
