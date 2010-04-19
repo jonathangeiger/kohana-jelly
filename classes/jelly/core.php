@@ -12,7 +12,14 @@ abstract class Jelly_Core
 	 *               models and builders in a different location.
 	 */
 	protected static $_prefix = 'model_';
-
+	
+        /**
+	 * @var  string  This prefix to use for all model's field classes
+	 *               This can be overridden to allow you to place
+	 *               field classes in a different location.
+	 */
+	protected static $_field_prefix = 'field_';
+        
 	/**
 	 * @var  array  Contains all of the meta classes related to models
 	 */
@@ -36,6 +43,20 @@ abstract class Jelly_Core
 		return new $class($values);
 	}
 
+	/**
+	 * Factory for instantiating fields.
+	 *
+	 * @param   string $type
+	 * @param   mixed  $options
+	 * @return  mixed
+	 */
+	public static function field($type, $options = NULL)
+	{
+		$field = Jelly::$_field_prefix.$type;
+                
+		return new $field($options);	
+	}
+        
 	/**
 	 * Returns a query builder that can be used for selecting records.
 	 *
