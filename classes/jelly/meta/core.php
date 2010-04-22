@@ -297,12 +297,6 @@ abstract class Jelly_Meta_Core
 	 */
 	public function fields($field = NULL, $name = FALSE)
 	{
-		// Skip database expression to avoid attempts to create an alias of it
-		if($field instanceof Database_Expression)
-		{
-			return NULL;
-		}
-
 		if (func_num_args() == 0)
 		{
 			return $this->fields;
