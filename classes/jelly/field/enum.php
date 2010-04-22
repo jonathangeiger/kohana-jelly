@@ -45,7 +45,7 @@ abstract class Jelly_Field_Enum extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if (array_key_exists($value, $this->choices))
+		if ((is_int($value) OR is_string($value)) AND array_key_exists($value, $this->choices))
 		{
 			return $value;
 		}
