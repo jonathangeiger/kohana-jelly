@@ -11,7 +11,7 @@ abstract class Jelly_Core
 	 *               This can be overridden to allow you to place
 	 *               models and builders in a different location.
 	 */
-	protected static $_prefix = 'model_';
+	protected static $_model_prefix = 'model_';
 	
         /**
 	 * @var  string  This prefix to use for all model's field classes
@@ -219,7 +219,7 @@ abstract class Jelly_Core
 		}
 		else
 		{
-			return strtolower(Jelly::$_prefix.$model);
+			return strtolower(Jelly::$_model_prefix.$model);
 		}
 	}
 
@@ -236,10 +236,10 @@ abstract class Jelly_Core
 			$model = get_class($model);
 		}
 
-		$prefix_length = strlen(Jelly::$_prefix);
+		$prefix_length = strlen(Jelly::$_model_prefix);
 
 		// Compare the first parts of the names and chomp if they're the same
-		if (strtolower(substr($model, 0, $prefix_length)) === strtolower(Jelly::$_prefix))
+		if (strtolower(substr($model, 0, $prefix_length)) === strtolower(Jelly::$_model_prefix))
 		{
 			$model = substr($model, $prefix_length);
 		}
@@ -398,9 +398,9 @@ abstract class Jelly_Core
 	 *
 	 * @return  string
 	 */
-	public static function prefix()
+	public static function model_prefix()
 	{
-		return Jelly::$_prefix;
+		return Jelly::$_model_prefix;
 	}
 
 	/**

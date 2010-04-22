@@ -116,7 +116,7 @@ abstract class Jelly_Meta_Core
 		// See if we have a special builder class to use
 		if (empty($this->builder))
 		{
-			$builder = Jelly::prefix().'builder_'.$model;
+			$builder = Jelly::model_prefix().'builder_'.$model;
 
 			if (class_exists($builder))
 			{
