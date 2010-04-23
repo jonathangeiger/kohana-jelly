@@ -98,7 +98,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				$db = $this->_meta->db();
 
 				// Select all of the columns for the model if we haven't already
-				if (empty($this->_select))
+				if ($this->_type === Database::SELECT AND empty($this->_select))
 				{
 					$this->select('*');
 				}
@@ -152,6 +152,9 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	{
 		$query = $this->_build(Database::SELECT);
 		$db = (is_object($this->_meta)) ? $this->_meta->db() : 'default';
+		
+		// Dump a few unecessary bits that cause problems anyway
+		$query->_select = $query->_order_by = array();
 
 		// Find the count
 		return (int) $query
