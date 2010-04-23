@@ -104,8 +104,6 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				}
 			}
 			
-			var_dump($this->_select);
-
 			// We've now left the Jelly
 			$this->_result = $this->_build()->execute($db);
 
