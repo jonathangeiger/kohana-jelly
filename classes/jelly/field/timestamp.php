@@ -81,7 +81,16 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 		// Convert if necessary
 		if ($this->format)
 		{
-			$value = date($this->format, $value);
+			// Does it need converting?
+			if (FALSE !== strtotime($value))
+			{
+				$value = strtotime($value);
+			}
+
+			if (is_numeric($value))
+			{
+				$value = date($this->format, $value);
+			}
 		}
 
 		return $value;
