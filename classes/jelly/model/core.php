@@ -149,6 +149,18 @@ abstract class Jelly_Model_Core
 
 		$this->set($name, $value);
 	}
+	
+	/**
+	 * Passes unknown methods along to the behaviors.
+	 *
+	 * @param   string  $method
+	 * @param   array   $args
+	 * @return  mixed
+	 **/
+	public function __call($method, $args)
+	{
+		return Jelly::meta($this)->call('model_'.$method, array_unshift($args, $this));
+	}
 
 	/**
 	 * Returns true if $name is a field of the model or an unmapped column.
@@ -279,6 +291,9 @@ abstract class Jelly_Model_Core
 		foreach($values as $key => $value)
 		{
 			$field = $this->_meta->fields($key);
+			
+			// Behavior callbacks
+			$
 
 			// If this isn't a field, we just throw it in unmapped
 			if ( ! $field)

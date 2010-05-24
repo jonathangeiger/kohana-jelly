@@ -80,6 +80,18 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		// Save this for building the query later on
 		$this->_type = $type;
 	}
+	
+	/**
+	 * Passes unknown methods along to the behaviors.
+	 *
+	 * @param   string  $method
+	 * @param   array   $args
+	 * @return  mixed
+	 **/
+	public function __call($method, $args)
+	{
+		return Jelly::meta($this)->call('builder_'.$method, array_unshift($args, $this));
+	}
 
 	/**
 	 * Builds the builder into a native query

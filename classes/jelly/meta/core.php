@@ -88,6 +88,16 @@ abstract class Jelly_Meta_Core
 	 * @var  array  A cache of retrieved fields, with aliases resolved
 	 */
 	protected $field_cache = array();
+	
+	/**
+	 * @var  array  Behaviors attached to this model
+	 */
+	protected $behaviors = array();
+	
+	/**
+	 * @var  array  A cache of behavior methods that can be called
+	 */
+	protected $behavior_methods = array();
 
 	/**
 	 * This is called after initialization to
@@ -101,7 +111,7 @@ abstract class Jelly_Meta_Core
 			return;
 
 		// Ensure certain fields are not overridden
-		$this->model = $model;
+		$this->model       = $model;
 		$this->columns     =
 		$this->defaults    =
 		$this->field_cache =
@@ -132,6 +142,32 @@ abstract class Jelly_Meta_Core
 		if (empty($this->foreign_key))
 		{
 			$this->foreign_key = $model.'_id';
+		}
+		
+		// Initialize behaviors
+		foreach ($this->behaviors as $name => $behavior)
+		
+			// Register any public methods from the behaviour
+			foreach (get_class_methods($behavior) as $method)
+			{
+				if (($ns = substr($method, 0, 6)) === 'model_' 
+				OR  ($ns = substr($method, 0, 8)) === 'builder_')
+				{
+					$method = substr($method, strlen($ns));
+					
+					// Create a normal method without the $name prefix...
+					$this->behavior_methods[$ns.$method] = 
+					
+					// ...and an alias so that we can avoid clashes if necessary
+					$this->behavior_methods[$ns.$name.'_'.$method] = 
+					
+					// and save as a callback
+					array($behavior, $ns.$method);
+				}
+			}
+			
+			 // Allow modification of this meta object by the behavior
+			$behaviour->initialize($this, $name);
 		}
 
 		// Initialize all of the fields with their column and the model name
