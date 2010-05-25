@@ -3,6 +3,8 @@
 /**
  * This core class is the main interface to all
  * models, builders, and meta data.
+ * 
+ * @package  Jelly
  */
 abstract class Jelly_Core
 {
@@ -13,12 +15,19 @@ abstract class Jelly_Core
 	 */
 	protected static $_model_prefix = 'model_';
 	
-        /**
+	/**
 	 * @var  string  This prefix to use for all model's field classes
 	 *               This can be overridden to allow you to place
 	 *               field classes in a different location.
 	 */
 	protected static $_field_prefix = 'field_';
+	
+	/**
+	 * @var  string  This prefix to use for all behavior classes
+	 *               This can be overridden to allow you to place
+	 *               behavior classes in a different location.
+	 */
+	protected static $_behavior_prefix = 'behavior_';
         
 	/**
 	 * @var  array  Contains all of the meta classes related to models
@@ -48,13 +57,27 @@ abstract class Jelly_Core
 	 *
 	 * @param   string $type
 	 * @param   mixed  $options
-	 * @return  mixed
+	 * @return  Jelly_Field
 	 */
 	public static function field($type, $options = NULL)
 	{
 		$field = Jelly::$_field_prefix.$type;
                 
 		return new $field($options);	
+	}
+	
+	/**
+	 * Factoring for instantiating behaviors.
+	 *
+	 * @param   string $type
+	 * @param   mixed  $options
+	 * @return  Jelly_Behavior
+	 */
+	public function behavior($type, $options = NULL)
+	{
+		$behavior = Jelly::$_behavior_prefix.$type;
+		
+		return new $behavior($options);
 	}
         
 	/**

@@ -10,94 +10,89 @@ abstract class Jelly_Meta_Core
 	/**
 	 * @var  boolean  If this is FALSE, properties can still be set on the meta object
 	 */
-	protected $initialized = FALSE;
+	protected $_initialized = FALSE;
 
 	/**
 	 * @var  string  The model this meta object belongs to
 	 */
-	protected $model = NULL;
+	protected $_model = NULL;
 
 	/**
 	 * @var  string  The database key to use for connection
 	 */
-	protected $db = 'default';
+	protected $_db = 'default';
 
 	/**
 	 * @var  string  The table this model represents, defaults to the model name pluralized
 	 */
-	protected $table = '';
+	protected $_table = '';
 
 	/**
 	 * @var  string  The primary key, defaults to the first Field_Primary found.
 	 *               This can be referenced in query building as :primary_key
 	 */
-	protected $primary_key = '';
+	protected $_primary_key = '';
 
 	/**
 	 * @var  string  The title key. This can be referenced in query building as :name_key
 	 */
-	protected $name_key = 'name';
+	protected $_name_key = 'name';
 
 	/**
 	 * @var  string  The foreign key for use in other tables. This can be referenced in query building as :foreign_key
 	 */
-	protected $foreign_key = '';
+	protected $_foreign_key = '';
 
 	/**
 	 * @var  array  An array of ordering options for SELECTs
 	 */
-	protected $sorting = array();
+	protected $_sorting = array();
 
 	/**
 	 * @var  array  An array of 1:1 relationships to pass to with() for every SELECT
 	 */
-	protected $load_with = array();
+	protected $_load_with = array();
 
 	/**
 	 * @var  string  Prefix to apply to input view generation
 	 */
-	protected $input_prefix = 'jelly/field';
+	protected $_input_prefix = 'jelly/field';
 
 	/**
 	 * @var  array  A map to the models's fields and how to process each column.
 	 */
-	protected $fields = array();
+	protected $_fields = array();
 
 	/**
 	 * @var  array  A map of aliases to fields
 	 */
-	protected $aliases = array();
+	protected $_aliases = array();
 
 	/**
 	 * @var  string  The builder class the model is associated with. This defaults to
 	 *               Jelly_Builder_Modelname, if that particular class is found.
 	 */
-	protected $builder = '';
+	protected $_builder = '';
 
 	/**
 	 * @var  array  A list of columns and how they relate to fields
 	 */
-	protected $columns = array();
+	protected $_columns = array();
 
 	/**
 	 * @var  array  Default data for each field
 	 */
-	protected $defaults = array();
+	protected $_defaults = array();
 
 	/**
 	 * @var  array  A cache of retrieved fields, with aliases resolved
 	 */
-	protected $field_cache = array();
+	protected $_field_cache = array();
 	
 	/**
 	 * @var  array  Behaviors attached to this model
 	 */
-	protected $behaviors = array();
-	
-	/**
-	 * @var  array  A cache of behavior methods that can be called
-	 */
-	protected $behavior_methods = array();
+	protected $_behaviors = array();
 
 	/**
 	 * This is called after initialization to
@@ -107,82 +102,62 @@ abstract class Jelly_Meta_Core
 	 */
 	public function finalize($model)
 	{
-		if ($this->initialized)
+		if ($this->_initialized)
 			return;
 
 		// Ensure certain fields are not overridden
-		$this->model       = $model;
-		$this->columns     =
-		$this->defaults    =
-		$this->field_cache =
-		$this->aliases     = array();
+		$this->_model       = $model;
+		$this->_columns     =
+		$this->_defaults    =
+		$this->_field_cache =
+		$this->_aliases     = array();
 
 		// Table should be a sensible default
-		if (empty($this->table))
+		if (empty($this->_table))
 		{
-			$this->table = inflector::plural($model);
+			$this->_table = inflector::plural($model);
 		}
 
 		// See if we have a special builder class to use
-		if (empty($this->builder))
+		if (empty($this->_builder))
 		{
 			$builder = Jelly::model_prefix().'builder_'.$model;
 
 			if (class_exists($builder))
 			{
-				$this->builder = $builder;
+				$this->_builder = $builder;
 			}
 			else
 			{
-				$this->builder = 'Jelly_Builder';
+				$this->_builder = 'Jelly_Builder';
 			}
 		}
 
 		// Can we set a sensible foreign key?
-		if (empty($this->foreign_key))
+		if (empty($this->_foreign_key))
 		{
-			$this->foreign_key = $model.'_id';
+			$this->_foreign_key = $model.'_id';
 		}
 		
-		// Initialize behaviors
-		foreach ($this->behaviors as $name => $behavior)
+		// Hand over the behaviors to the collection manager
+		$this->_behaviors = new Jelly_Behavior_Collection($this->_behaviors, $this->_model);
 		
-			// Register any public methods from the behaviour
-			foreach (get_class_methods($behavior) as $method)
-			{
-				if (($ns = substr($method, 0, 6)) === 'model_' 
-				OR  ($ns = substr($method, 0, 8)) === 'builder_')
-				{
-					$method = substr($method, strlen($ns));
-					
-					// Create a normal method without the $name prefix...
-					$this->behavior_methods[$ns.$method] = 
-					
-					// ...and an alias so that we can avoid clashes if necessary
-					$this->behavior_methods[$ns.$name.'_'.$method] = 
-					
-					// and save as a callback
-					array($behavior, $ns.$method);
-				}
-			}
-			
-			 // Allow modification of this meta object by the behavior
-			$behaviour->initialize($this, $name);
-		}
+		// Allow modification of this meta object by the behaviors
+		$this->_behaviors->initialize($this);
 
 		// Initialize all of the fields with their column and the model name
-		foreach($this->fields as $column => $field)
+		foreach($this->_fields as $column => $field)
 		{
 			// Allow aliasing fields
 			if (is_string($field))
 			{
-				if (isset($this->fields[$field]))
+				if (isset($this->_fields[$field]))
 				{
-					$this->aliases[$column] = $field;
+					$this->_aliases[$column] = $field;
 				}
 
 				// Aliases shouldn't pollute fields
-				unset($this->fields[$column]);
+				unset($this->_fields[$column]);
 
 				continue;
 			}
@@ -190,25 +165,25 @@ abstract class Jelly_Meta_Core
 			$field->initialize($model, $column);
 
 			// Ensure a default primary key is set
-			if ($field->primary AND empty($this->primary_key))
+			if ($field->primary AND empty($this->_primary_key))
 			{
-				$this->primary_key = $column;
+				$this->_primary_key = $column;
 			}
 
 			// Set the defaults so they're actually persistent
-			$this->defaults[$column] = $field->default;
+			$this->_defaults[$column] = $field->default;
 
 			// Set the columns, so that we can access reverse database results properly
-			if ( ! array_key_exists($field->column, $this->columns))
+			if ( ! array_key_exists($field->column, $this->_columns))
 			{
-				$this->columns[$field->column] = array();
+				$this->_columns[$field->column] = array();
 			}
 
-			$this->columns[$field->column][] = $column;
+			$this->_columns[$field->column][] = $column;
 		}
 
 		// Meta object is initialized and no longer writable
-		$this->initialized = TRUE;
+		$this->_initialized = TRUE;
 	}
 
 	/**
@@ -219,9 +194,9 @@ abstract class Jelly_Meta_Core
 	 */
 	public function __get($key)
 	{
-		if ( ! $this->initialized)
+		if ( ! $this->_initialized)
 		{
-			return $this->$key;
+			return $this->{'_'.$key};
 		}
 	}
 
@@ -243,7 +218,7 @@ abstract class Jelly_Meta_Core
 	 */
 	public function initialized()
 	{
-		return $this->initialized;
+		return $this->_initialized;
 	}
 
 	/**
@@ -255,9 +230,9 @@ abstract class Jelly_Meta_Core
 	 */
 	protected function set($key, $value)
 	{
-		if ( ! $this->initialized)
+		if ( ! $this->_initialized)
 		{
-			$this->$key = $value;
+			$this->{'_'.$key} = $value;
 		}
 
 		return $this;
@@ -275,7 +250,7 @@ abstract class Jelly_Meta_Core
 			return $this->set('db', $value);
 		}
 
-		return $this->db;
+		return $this->_db;
 	}
 
 	/**
@@ -284,7 +259,7 @@ abstract class Jelly_Meta_Core
 	 */
 	public function model()
 	{
-		return $this->model;
+		return $this->_model;
 	}
 
 	/**
@@ -299,7 +274,7 @@ abstract class Jelly_Meta_Core
 			return $this->set('table', $value);
 		}
 
-		return $this->table;
+		return $this->_table;
 	}
 
 	/**
@@ -314,7 +289,7 @@ abstract class Jelly_Meta_Core
 			return $this->set('builder', $value);
 		}
 
-		return $this->builder;
+		return $this->_builder;
 	}
 
 	/**
@@ -335,31 +310,31 @@ abstract class Jelly_Meta_Core
 	{
 		if (func_num_args() == 0)
 		{
-			return $this->fields;
+			return $this->_fields;
 		}
 
 		if (is_array($field))
 		{
-			if ( ! $this->initialized)
+			if ( ! $this->_initialized)
 			{
 				// Allows fields to be appended
-				$this->fields += $field;
+				$this->_fields += $field;
 				return $this;
 			}
 		}
 
-		if ( ! isset($this->field_cache[$field]))
+		if ( ! isset($this->_field_cache[$field]))
 		{
 			$resolved_name = $field;
 
-			if (isset($this->aliases[$field]))
+			if (isset($this->_aliases[$field]))
 			{
-				$resolved_name = $this->aliases[$field];
+				$resolved_name = $this->_aliases[$field];
 			}
 
-			if (isset($this->fields[$resolved_name]))
+			if (isset($this->_fields[$resolved_name]))
 			{
-				$this->field_cache[$field] = $this->fields[$resolved_name];
+				$this->_field_cache[$field] = $this->_fields[$resolved_name];
 			}
 			else
 			{
@@ -369,11 +344,11 @@ abstract class Jelly_Meta_Core
 
 		if ($name)
 		{
-			return $this->field_cache[$field]->name;
+			return $this->_field_cache[$field]->name;
 		}
 		else
 		{
-			return $this->field_cache[$field];
+			return $this->_field_cache[$field];
 		}
 	}
 
@@ -392,12 +367,12 @@ abstract class Jelly_Meta_Core
 	{
 		if (func_get_args() == 0)
 		{
-			return $this->columns;
+			return $this->_columns;
 		}
 
-		if (isset($this->columns[$name]))
+		if (isset($this->_columns[$name]))
 		{
-			return $this->columns[$name];
+			return $this->_columns[$name];
 		}
 	}
 
@@ -414,10 +389,32 @@ abstract class Jelly_Meta_Core
 	{
 		if ($name === NULL)
 		{
-			return $this->defaults;
+			return $this->_defaults;
 		}
 
 		return $this->fields($name)->default;
+	}
+	
+	/**
+	 * Gets or sets the behaviors attached to the object.
+	 * 
+	 * @param   array  $value
+	 * @return  Jelly_Behavior_Collection|$this
+	 */
+	public function behaviors($behaviors = NULL)
+	{
+		if (func_num_args() == 0 OR $this->_initialized)
+		{
+			return $this->_behaviors;
+		}
+
+		if (is_array($behaviors))
+		{
+			// Allows behaviors to be appended
+			$this->_behaviors += $behaviors;
+		}
+		
+		return $this;
 	}
 
 	/**
@@ -432,7 +429,7 @@ abstract class Jelly_Meta_Core
 			return $this->set('primary_key', $value);
 		}
 
-		return $this->primary_key;
+		return $this->_primary_key;
 	}
 
 	/**
@@ -447,7 +444,7 @@ abstract class Jelly_Meta_Core
 			return $this->set('name_key', $value);
 		}
 
-		return $this->name_key;
+		return $this->_name_key;
 	}
 
 	/**
@@ -462,7 +459,7 @@ abstract class Jelly_Meta_Core
 			return $this->set('foreign_key', $value);
 		}
 
-		return $this->foreign_key;
+		return $this->_foreign_key;
 	}
 
 	/**
@@ -477,7 +474,7 @@ abstract class Jelly_Meta_Core
 			return $this->set('sorting', $value);
 		}
 
-		return $this->sorting;
+		return $this->_sorting;
 	}
 
 	/**
@@ -492,7 +489,7 @@ abstract class Jelly_Meta_Core
 			return $this->set('load_with', $value);
 		}
 
-		return $this->load_with;
+		return $this->_load_with;
 	}
 
 	/**
@@ -507,6 +504,6 @@ abstract class Jelly_Meta_Core
 			return $this->set('input_prefix', $value);
 		}
 
-		return $this->input_prefix;
+		return $this->_input_prefix;
 	}
 }

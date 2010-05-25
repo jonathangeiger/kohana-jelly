@@ -159,7 +159,7 @@ abstract class Jelly_Model_Core
 	 **/
 	public function __call($method, $args)
 	{
-		return Jelly::meta($this)->call('model_'.$method, array_unshift($args, $this));
+		return $this->_meta->behaviors()->call('model_'.$method, $this, $args);
 	}
 
 	/**
@@ -291,9 +291,6 @@ abstract class Jelly_Model_Core
 		foreach($values as $key => $value)
 		{
 			$field = $this->_meta->fields($key);
-			
-			// Behavior callbacks
-			$
 
 			// If this isn't a field, we just throw it in unmapped
 			if ( ! $field)
@@ -430,8 +427,14 @@ abstract class Jelly_Model_Core
 
 		// These will be processed later
 		$values = $relations = array();
+		
+		// Trigger callbacks and ensure we should proceed
+		if (FALSE !== $this->_meta->behaviors()->before_save($this, $key))
+		{
+			return $this;
+		}
 
-		// Iterate through all fields in original incase any unchanged fields
+		// Iterate through all fields in original in case any unchanged fields
 		// have save() behavior like timestamp updating...
 		foreach ($this->_changed + $this->_original as $column => $value)
 		{
@@ -468,6 +471,17 @@ abstract class Jelly_Model_Core
 				$relations[$column] = $value;
 			}
 		}
+		
+		// 
+		
+		if ($values !== FALSE)
+		{
+			list($values, $relations) = $return;
+		}
+		else
+		{
+			return $this;
+		}
 
 		// If we have a key, we're updating
 		if ($key)
@@ -500,10 +514,13 @@ abstract class Jelly_Model_Core
 		$this->_retrieved = $this->_changed = array();
 
 		// Save the relations
-		foreach($relations as $column => $value)
+		foreach ($relations as $column => $value)
 		{
 			$this->_meta->fields($column)->save($this, $value, (bool) $key);
 		}
+		
+		// Trigger post-save callback
+		$this->_meta->behaviors()->after_save($this);
 
 		return $this;
 	}
@@ -525,6 +542,12 @@ abstract class Jelly_Model_Core
 			{
 				$key = $this->id();
 			}
+			
+			// Trigger callbacks to ensure we proceed
+			if (FALSE === $this->_meta->behaviors()->before_delete($this, $key))
+			{
+				return FALSE;
+			}
 
 			$result = Jelly::delete($this)
 			               ->where(':unique_key', '=', $key)
@@ -533,6 +556,12 @@ abstract class Jelly_Model_Core
 
 		// Clear the object so it appears deleted anyway
 		$this->clear();
+		
+		// Trigger the post-delete if only it was truly deleted
+		if ($result)
+		{
+			$this->_meta->behaviors()->after_delete($this);
+		}
 
 		return (boolean) $result;
 	}
@@ -645,9 +674,12 @@ abstract class Jelly_Model_Core
 		{
 			return $data;
 		}
-
+		
 		// Create the validation object
 		$data = Validate::factory($data);
+		
+		// Trigger callbacks
+		$data = $this->_meta->behaviors()->before_validate($this, $data);
 
 		// If we are passing a unique key value through, add a filter to ensure it isn't removed
 		if ($data->offsetExists(':unique_key'))
@@ -762,6 +794,51 @@ abstract class Jelly_Model_Core
 	{
 		return $this->_meta;
 	}
+
+	/**
+	 * CCallback to be overridden in the model.
+	 * 
+	 * @see     Jelly_Behavior::before_validate
+	 * @param   Validate     $data
+	 * @return  void
+	 */
+	public function before_validate(Validate $data) { }
+	
+	/**
+	 * Callback to be overridden in the model.
+	 * 
+	 * @see     Jelly_Behavior::before_save
+	 * @param   mixed        $key
+	 * @return  boolean
+	 */
+	public function before_save($key) { }
+	
+	/**
+	 * Callback to be overridden in the model.
+	 * 
+	 * @see     Jelly_Behavior::after_save
+	 * @param   Jelly_Model  $model 
+	 * @return  void
+	 */
+	public function after_save() { }
+	
+	/**
+	 * Callback to be overridden in the model.
+	 * 
+	 * @see     Jelly_Behavior::before_delete
+	 * @param   Jelly_Model  $model 
+	 * @param   mixed        $key
+	 */
+	public function before_delete($key) { }
+	
+	/**
+	 * Callback to be overridden in the model.
+	 * 
+	 * @see     Jelly_Behavior::after_delete
+	 * @param   Jelly_Model   $model 
+	 * @return  void
+	 */
+	public function after_delete() { }
 
 	/**
 	 * Changes a relation by adding or removing specific records from the relation.

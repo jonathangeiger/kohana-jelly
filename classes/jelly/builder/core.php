@@ -90,7 +90,13 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 **/
 	public function __call($method, $args)
 	{
-		return Jelly::meta($this)->call('builder_'.$method, array_unshift($args, $this));
+		if ($this->_meta)
+		{
+			return $this->_meta->behaviors()->call('builder_'.$method, $this, $args);
+		}
+		
+		throw new Kohana_Exception('Invalid method :method called on class :class',
+			array(':method' => $method, ':class' => get_class($this)));
 	}
 
 	/**
@@ -113,6 +119,9 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				if ($this->_type === Database::SELECT AND empty($this->_select))
 				{
 					$this->select('*');
+					
+					// Trigger the behaviors' callbacks
+					$this->_meta->behaviors()->before_select($this);
 				}
 			}
 			
@@ -130,6 +139,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				if ($this->_limit === 1)
 				{
 					$this->_result = $this->_result->current();
+				}
+				
+				// Trigger the behaviors' callbacks
+				if ($this->_meta)
+				{
+					$this->_meta->behaviors()->after_select($this, $this->_result);
 				}
 			}
 		}
@@ -616,6 +631,23 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 
 		return $this;
 	}
+	
+	/**
+	 * Callback that can be overridden in the Builder.
+	 *
+	 * @see     Jelly_Behavior::before_select
+	 * @return  void
+	 */
+	public function before_select() { }
+	
+	/**
+	 * Callback that can be overridden in the Builder.
+	 *
+	 * @see     Jelly_Behavior::before_select
+	 * @param   Jelly_Collection|Jelly_Model  $result
+	 * @return  void
+	 */
+	public function after_select($result) { }
 
 	/**
 	 * Sets the model and the initial from() clause
