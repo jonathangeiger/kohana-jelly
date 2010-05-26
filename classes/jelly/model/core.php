@@ -679,7 +679,7 @@ abstract class Jelly_Model_Core
 		$data = Validate::factory($data);
 		
 		// Trigger callbacks
-		$data = $this->_meta->behaviors()->before_validate($this, $data);
+		$this->_meta->behaviors()->before_validate($this, $data);
 
 		// If we are passing a unique key value through, add a filter to ensure it isn't removed
 		if ($data->offsetExists(':unique_key'))
@@ -794,52 +794,7 @@ abstract class Jelly_Model_Core
 	{
 		return $this->_meta;
 	}
-
-	/**
-	 * CCallback to be overridden in the model.
-	 * 
-	 * @see     Jelly_Behavior::before_validate
-	 * @param   Validate     $data
-	 * @return  void
-	 */
-	public function before_validate(Validate $data) { }
 	
-	/**
-	 * Callback to be overridden in the model.
-	 * 
-	 * @see     Jelly_Behavior::before_save
-	 * @param   mixed        $key
-	 * @return  boolean
-	 */
-	public function before_save($key) { }
-	
-	/**
-	 * Callback to be overridden in the model.
-	 * 
-	 * @see     Jelly_Behavior::after_save
-	 * @param   Jelly_Model  $model 
-	 * @return  void
-	 */
-	public function after_save() { }
-	
-	/**
-	 * Callback to be overridden in the model.
-	 * 
-	 * @see     Jelly_Behavior::before_delete
-	 * @param   Jelly_Model  $model 
-	 * @param   mixed        $key
-	 */
-	public function before_delete($key) { }
-	
-	/**
-	 * Callback to be overridden in the model.
-	 * 
-	 * @see     Jelly_Behavior::after_delete
-	 * @param   Jelly_Model   $model 
-	 * @return  void
-	 */
-	public function after_delete() { }
-
 	/**
 	 * Changes a relation by adding or removing specific records from the relation.
 	 *

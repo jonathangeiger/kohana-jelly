@@ -104,6 +104,12 @@ abstract class Jelly_Meta_Core
 	{
 		if ($this->_initialized)
 			return;
+			
+		// Hand over the behaviors to the collection manager
+		$this->_behaviors = new Jelly_Behavior_Collection($this->_behaviors);
+
+		// Allow modification of this meta object by the behaviors
+		$this->_behaviors->after_initialize($this);
 
 		// Ensure certain fields are not overridden
 		$this->_model       = $model;
@@ -139,12 +145,6 @@ abstract class Jelly_Meta_Core
 			$this->_foreign_key = $model.'_id';
 		}
 		
-		// Hand over the behaviors to the collection manager
-		$this->_behaviors = new Jelly_Behavior_Collection($this->_behaviors, $this->_model);
-		
-		// Allow modification of this meta object by the behaviors
-		$this->_behaviors->initialize($this);
-
 		// Initialize all of the fields with their column and the model name
 		foreach($this->_fields as $column => $field)
 		{

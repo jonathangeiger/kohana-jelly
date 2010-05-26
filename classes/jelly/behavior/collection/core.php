@@ -31,14 +31,14 @@
 class Jelly_Behavior_Collection_Core
 {
 	/**
-	 * @var  string  The class this collection is attached to
+	 * @var  array  All callbacks to search for
 	 */
-	protected $_model = NULL;
-	
-	/**
-	 * @var  array  All behaviors
-	 */
-	protected $_behaviors = array();
+	protected static $_allowed = array
+	(
+		'after_initialize', 'before_select', 'after_select', 
+		'before_validate', 'before_save', 'after_save', 
+		'before_delete', 'after_delete'
+	);
 	
 	/**
 	 * @var  array  All custom behavior methods
@@ -46,21 +46,32 @@ class Jelly_Behavior_Collection_Core
 	protected $_methods = array();
 	
 	/**
+	 * @var  array  All custom callback methods
+	 */
+	protected $_callbacks = array();
+	
+	/**
+	 * @var  array    Flag for picking up model and builder callbacks, since 
+	 *                we want to wait for an instantiated model to check.
+	 *                Reflection is way too slow.
+	 */
+	protected $_callbacks_discovered = array();
+	
+	/**
 	 * Sets up behaviors and documents their custom methods.
 	 *
-	 * @param  array  $behaviors 
-	 * @param  string $model
+	 * @param  array       $behaviors 
+	 * @param  Jelly_Meta  $model
 	 */
-	public function __construct($behaviors, $model)
-	{
-		// Just so we know what we're dealing with
-		$this->_model = $model;
-		
+	public function __construct($behaviors)
+	{	
 		// Process all behaviors
-		foreach ($behaviors as $name => $behaviors)
+		foreach ($behaviors as $name => $behavior)
 		{
+			$methods = get_class_methods($behavior);
+			
 			// Register any public methods from the behaviour
-			foreach (get_class_methods($behavior) as $method)
+			foreach ($methods as $method)
 			{
 				if (($ns = substr($method, 0, 6)) === 'model_' 
 				OR  ($ns = substr($method, 0, 8)) === 'builder_')
@@ -75,6 +86,12 @@ class Jelly_Behavior_Collection_Core
 
 					// and save as a callback
 					array($behavior, $ns.$method);
+				}
+				
+				// Check if the method is a callback
+				if (in_array($method, Jelly_Behavior_Collection_Core::$_allowed))
+				{
+					$this->_callbacks[$method][] = $behavior;
 				}
 			}
 		}
@@ -95,184 +112,250 @@ class Jelly_Behavior_Collection_Core
 		{
 			$object = $this->_methods[$method][0];
 			$method = $this->_methods[$method][1];
-			$count  = count($args);
-
-			switch ($count) 
-			{
-				case 0;
-					return $object->{$method}($sender);
-				case 1:
-					return $object->{$method}($sender, $args[0]);
-				case 2:
-					return $object->{$method}($sender, $args[0], $args[1]);
-				case 3:
-					return $object->{$method}($sender, $args[0], $args[1], $args[2]);
-				case 4:
-					return $object->{$method}($sender, $args[0], $args[1], $args[2], $args[3]);
-				case 5:
-					return $object->{$method}($sender, $args[0], $args[1], $args[2], $args[3], $args[4]);
-				default:
-					return call_user_func_array(array($object, $method), array_unshift($sender, $args));
-			}
+			
+			array_unshift($args, $sender);
+			return $this->_call($object, $method, $args);
 		}
 		
 		throw new Kohana_Exception('Invalid behavior method :method called on class :class',
-			array(':method' => $method, ':class' => get_class($sender)));
+							array(':method' => $method, ':class' => get_class($sender)));
 	}
 	
 	/**
-	 * Calls all behaviors' initialize callback.
+	 * Called just after the model's initialize method has been run.
 	 * 
-	 * @see     Jelly_Behavior::initialize
+	 * This gives the behavior a chance to override any part
+	 * of the model's meta object, add fields, etc.
+	 * 
+	 * There is no 'before_initialize' because we cannot know 
+	 * what behaviors have been added to the meta object before
+	 * initialization.
+	 *
 	 * @param   Jelly_Meta  $meta 
 	 * @return  void
 	 */
-	public function initialize(Jelly_Meta $meta)
+	public function after_initialize(Jelly_Meta $meta)
 	{
-		foreach ($this->_behaviors as $behavior)
-		{
-			$behavior->initialize($meta);
-		}
+		$this->_trigger(__FUNCTION__, $meta, array(), array('discover' => FALSE));
 	}
 	
 	/**
-	 * Calls all behaviors' before_select callback.
-	 * 
-	 * @see     Jelly_Behavior::before_select
+	 * Called just before executing a select query so that 
+	 * the behavior can add additional clauses to the query.
+	 *
 	 * @param   Jelly_Builder  $query 
 	 * @return  void
 	 */
 	public function before_select(Jelly_Builder $query)
 	{
-		foreach ($this->_behaviors as $behavior)
-		{
-			$behavior->before_select($query);
-		}
-		
-		// Trigger builder callback
-		$query->before_select();
+		$this->_trigger(__FUNCTION__, $query);
 	}
 	
 	/**
-	 * Calls all behaviors' after_select callback.
+	 * Called just after executing a select query so that 
+	 * the behavior can modify the result if necessary.
 	 * 
-	 * @see     Jelly_Behavior::after_select
+	 * Note that when limited to 1, such as when load() is
+	 * called, you will receive a Jelly_Model for $result.
+	 * Otherwise, you'll receive a Jelly_Collection.
+	 *
 	 * @param   Jelly_Builder     $query 
 	 * @param   Jelly_Collection|Jelly_Model  $result
 	 * @return  void
 	 */
 	public function after_select(Jelly_Builder $query, $result)
 	{
-		foreach ($this->_behaviors as $behavior)
-		{
-			$behavior->before_select($query);
-		}
-		
-		// Trigger builder callback
-		$query->after_select($result);
+		$this->_trigger(__FUNCTION__, $query, array($result));
 	}
 	
 	/**
-	 * Calls all behaviors' before_validate callback.
-	 * 
-	 * @see     Jelly_Behavior::before_validate
+	 * Called before validating when the data is in its raw form
+	 * in the model. Fields have not had a chance to process
+	 * it with their save() method.
+	 *
 	 * @param   Jelly_Model  $model 
 	 * @param   Validate     $data
 	 * @return  void
 	 */
 	public function before_validate(Jelly_Model $model, Validate $data) 
 	{
-		foreach ($this->_behaviors as $behavior)
-		{
-			$behavior->before_validate($model, $data);
-		}
-		
-		// Trigger model callback
-		$model->before_validate($data);
+		$this->_trigger(__FUNCTION__, $model, array($data));
 	}
 	
 	/**
-	 * Calls all behaviors' before_save callback.
+	 * Called before saving, giving the behavior a chance
+	 * to modify data before it's saved.
 	 * 
-	 * @see     Jelly_Behavior::before_save
+	 * $key is the primary key the model is about to be 
+	 * saved to. If it is NULL, it's safe to assume that
+	 * the record is about to be inserted, otherwise it's
+	 * an update.
+	 * 
+	 * Return FALSE to cancel the save and any further 
+	 * processing by behaviors.
+	 *
 	 * @param   Jelly_Model  $model 
 	 * @param   mixed        $key
 	 * @return  boolean
 	 */
 	public function before_save(Jelly_Model $model, $key)
 	{
-		foreach ($this->_behaviors as $behavior)
-		{
-			if (FALSE === $behavior->before_save($model, $key))
-			{
-				return FALSE;
-			}
-		}
-		
-		// Trigger model callback
-		if (FALSE === $model->before_save($key))
-		{
-			return FALSE;
-		}
+		$this->_trigger(__FUNCTION__, $model, array($key), array('break_on' => FALSE));
 	}
 	
 	/**
-	 * Calls all behaviors' after_save callback.
-	 * 
-	 * @see     Jelly_Behavior::after_save
+	 * Called after saving, giving the behavior a chance
+	 * to modify data after it's saved.
+	 *
 	 * @param   Jelly_Model  $model 
 	 * @return  void
 	 */
 	public function after_save(Jelly_Model $model)
 	{
-		foreach ($this->_behaviors as $behavior)
-		{
-			$behavior->after_save($model);
-		}
-		
-		// Trigger model callback
-		$model->after_save($key);
+		$this->_trigger(__FUNCTION__, $model);
 	}
 	
 	/**
-	 * Calls all behaviors' before_delete callback.
+	 * Called whenever a model is deleted.
 	 * 
-	 * @see     Jelly_Behavior::before_delete
+	 * $key is the primary key that is about to be 
+	 * deleted. 
+	 * 
+	 * Return FALSE to cancel the delete and any 
+	 * further processing by behaviors.
+	 *
 	 * @param   Jelly_Model  $model 
 	 * @param   mixed        $key
 	 */
 	public function before_delete(Jelly_Model $model, $key) 
 	{
-		foreach ($this->_behaviors as $behavior)
-		{
-			if (FALSE === $behavior->before_delete($model, $key))
-			{
-				return FALSE;
-			}
-		}
-		
-		// Trigger model callback
-		if (FALSE === $model->before_delete($key))
-		{
-			return FALSE;
-		}
+		$this->_trigger(__FUNCTION__, $model, array($key), array('break_on' => FALSE));
 	}
 	
 	/**
-	 * Calls all behaviors' after_delete callback.
+	 * Called after deletion.
 	 * 
-	 * @see     Jelly_Behavior::after_delete
+	 * Note, this is only called if the record was actually deleted.
+	 *
 	 * @param   Jelly_Model   $model 
 	 * @return  void
 	 */
 	public function after_delete(Jelly_Model $model)
 	{
-		foreach ($this->_behaviors as $behavior)
+		$this->_trigger(__FUNCTION__, $model);
+	}
+	
+	/**
+	 * Triggers a callback to avoid duplicating a bunch of code.
+	 *
+	 * @param string $method 
+	 * @param string $sender 
+	 * @param string $args 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	protected function _trigger($method, $sender, $args = array(), $options = array())
+	{
+		// Do we need to discover callbacks?
+		if ( ! isset($options['discover']) OR ! empty($options['discover']))
 		{
-			$behavior->after_delete($model);
+			$this->_discover_callbacks($sender, get_class($sender));
 		}
 		
-		// Trigger model callback
-		$model->after_delete($key);
+		// Track the return value
+		$return = NULL;
+		
+		// Loop through our callbacks
+		foreach ($this->_callbacks[$method] as $key => $callback)
+		{
+			// Prevent callbacks being called on objects that shouldn't receive them
+			if (is_string($callback) AND $sender instanceof $callback)
+			{
+				$return = $this->_call($sender, $method, $args);
+			}
+			else if ($callback instanceof Jelly_Behavior)
+			{
+				// We have to make a copy of args so we don't 
+				// continue array_unshifting it on the next iteration
+				// Object references will be preserved.
+				$args_copy = $args;
+				array_unshift($args_copy, $sender);
+				
+				// Call the method with the copy of the args
+				$return = $this->_call($callback, $method, $args_copy);
+			}
+			
+			// Ensure we can continue execution
+			if (isset($options['break_on']) AND $options['break_on'] === $return)
+			{
+				return $return;
+			}
+		}
+	}
+	
+	/**
+	 * Generic dynamic method call that tries to 
+	 * avoid the overhead of call_user_func_array.
+	 *
+	 * @param string $object 
+	 * @param string $method 
+	 * @param string $args 
+	 * @return void
+	 * @author Jonathan Geiger
+	 */
+	protected function _call($object, $method, $args)
+	{
+		switch (count($args)) 
+		{
+			case 0;
+				return $object->{$method}();
+			case 1:
+				return $object->{$method}($args[0]);
+			case 2:
+				return $object->{$method}($args[0], $args[1]);
+			case 3:
+				return $object->{$method}($args[0], $args[1], $args[2]);
+			case 4:
+				return $object->{$method}($args[0], $args[1], $args[2], $args[3]);
+			case 5:
+				return $object->{$method}($args[0], $args[1], $args[2], $args[3], $args[4]);
+			default:
+				return call_user_func_array(array($object, $method), $args);
+		}
+	}
+	
+	/**
+	 * Discovers callbacks for models and builders.
+	 * 
+	 * We have to wait until we're passed a valid object, since
+	 * we don't want to go instantiating one just to get the 
+	 * whole inheritance tree and also since  Reflection is way 
+	 * too slow.
+	 *
+	 * @param   mixed   $object 
+	 * @param   string  $type 
+	 * @return  void
+	 */
+	protected function _discover_callbacks($object, $type)
+	{
+		if (!isset($this->_callbacks_discovered[$type]))
+		{
+			$methods = array_intersect(get_class_methods($object), Jelly_Behavior_Collection::$_allowed);
+			
+			foreach ($methods as $method)
+			{
+				// Adding the class of the object allows _trigger()
+				// to compare the actual senders class with what we
+				// discovered here. For example, if someone put the
+				// before_select() callback in a model, it would be
+				// erroneously discovered here, but not actually called
+				// down the line since the sender would be an instance
+				// of a Jelly_Builder and not the class we'd expect. 
+				$this->_callbacks[$method][] = get_class($object);
+			}
+			
+			// Don't need to do this again
+			$this->_callbacks_discovered[$type] = TRUE;
+		}
 	}
 }
