@@ -119,7 +119,7 @@ abstract class Jelly_Model_Core
 			// Auto-load relations
 			if ($value instanceof Jelly_Builder)
 			{
-				$value = $value->execute();
+				$value = $value->select();
 			}
 
 			$this->_retrieved[$name] = $value;
@@ -460,18 +460,17 @@ abstract class Jelly_Model_Core
 			// Do we even have to update anything in the row?
 			if ($values)
 			{
-				Jelly::update($this)
-					 ->where(':unique_key', '=', $key)
+				Jelly::query($this, $key)
 					 ->set($values)
-					 ->execute();
+					 ->update();
 			}
 		}
 		else
 		{
-			list($id) = Jelly::insert($this)
+			list($id) = Jelly::query($this)
 							 ->columns(array_keys($values))
 							 ->values(array_values($values))
-							 ->execute();
+							 ->insert();
 
 			// Gotta make sure to set this
 			$values[$this->_meta->primary_key()] = $id;
@@ -511,9 +510,7 @@ abstract class Jelly_Model_Core
 				$key = $this->id();
 			}
 
-			$result = Jelly::delete($this)
-			               ->where(':unique_key', '=', $key)
-			               ->execute();
+			$result = Jelly::query($this, $key)->delete();
 		}
 
 		// Clear the object so it appears deleted anyway
@@ -673,6 +670,7 @@ abstract class Jelly_Model_Core
 	 * @param   string|array  $prefix
 	 * @param   array         $data
 	 * @return  View
+	 * @deprecated  This method will be removed in 1.0
 	 */
 	public function input($name, $prefix = NULL, $data = array())
 	{

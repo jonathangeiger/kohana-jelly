@@ -227,7 +227,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	{
 		$result = Jelly::query($this->through['model'])
 			->select_column($this->through['columns'][1])
-			->where($this->through['columns'][0], '=', $model->id()
+			->where($this->through['columns'][0], '=', $model->id())
 			->type(Database::SELECT);
 
 		if ($as_array)

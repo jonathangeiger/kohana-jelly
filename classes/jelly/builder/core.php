@@ -196,6 +196,23 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		               ->execute($db)
 		               ->get('total');
 	}
+	
+	/**
+	 * Loads a single record
+	 *
+	 * @param   int  $type 
+	 * @return  mixed
+	 * @deprecated  This method will be removed in 1.0
+	 */
+	public function load($key = NULL)
+	{
+		if ($key)
+		{
+			$this->where($this->unique_key($key), '=', $key);
+		}
+		
+		return $this->limit(1)->select();
+	}
 
 	/**
 	 * Builds the builder into a native query
@@ -232,6 +249,8 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		
 		// Select all of the columns for the model if we haven't already
 		$this->_meta AND empty($this->_select) AND $this->select_column('*');
+		
+		return $this->_build($type)->compile($db);
 	}
 	
 	/**
@@ -594,7 +613,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	public function with($relationship)
 	{
 		// Ensure the main model is selected
-		$this->select($this->_model.'.*');
+		$this->select_column($this->_model.'.*');
 
 		// We'll start with the first one and work our way down
 		$paths = explode(":", $relationship);
@@ -635,7 +654,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 				{
 					// We have to manually alias, since the path does not necessarily correspond to the path
 					// We select from the field alias rather than the model to allow multiple joins to same model
-					$this->select(array($field->name.'.'.$alias, $chain.':'.$alias));
+					$this->select_column(array($field->name.'.'.$alias, $chain.':'.$alias));
 				}
 			}
 

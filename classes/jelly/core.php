@@ -36,7 +36,7 @@ abstract class Jelly_Core
 	 * @param   mixed  $key
 	 * @return  Jelly
 	 */
-	public static function model($model, $values = NULL)
+	public static function factory($model, $values = NULL)
 	{
 		$class = Jelly::class_name($model);
 
@@ -307,7 +307,7 @@ abstract class Jelly_Core
 				$field = $meta->foreign_key();
 				break;
 			case ':unique_key':
-				$field = Jelly::builder($meta->model())->unique_key($value);
+				$field = Jelly::query($meta->model())->unique_key($value);
 				break;
 			default:
 				throw new Kohana_Exception('Unknown meta alias :field', array(
@@ -412,7 +412,7 @@ abstract class Jelly_Core
 	 */
 	public static function insert($model)
 	{
-		return Jelly::query($model, $key)->type(Database::INSERT)
+		return Jelly::query($model, $key)->type(Database::INSERT);
 	}
 
 	/**
