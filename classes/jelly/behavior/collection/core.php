@@ -140,22 +140,22 @@ class Jelly_Behavior_Collection_Core
 	}
 	
 	/**
-	 * Called just before executing a select query so that 
+	 * Called just before executing a query so that 
 	 * the behavior can add additional clauses to the query.
 	 *
 	 * @param   Jelly_Builder  $query 
 	 * @return  void
 	 */
-	public function before_select(Jelly_Builder $query)
+	public function before_query(Jelly_Builder $query)
 	{
 		$this->_trigger(__FUNCTION__, $query);
 	}
 	
 	/**
-	 * Called just after executing a select query so that 
+	 * Called just after executing a query so that 
 	 * the behavior can modify the result if necessary.
 	 * 
-	 * Note that when limited to 1, such as when load() is
+	 * Note that when limited to 1 on SELECTs, such as when load() is
 	 * called, you will receive a Jelly_Model for $result.
 	 * Otherwise, you'll receive a Jelly_Collection.
 	 *
@@ -163,7 +163,7 @@ class Jelly_Behavior_Collection_Core
 	 * @param   Jelly_Collection|Jelly_Model  $result
 	 * @return  void
 	 */
-	public function after_select(Jelly_Builder $query, $result)
+	public function after_query(Jelly_Builder $query, $result)
 	{
 		$this->_trigger(__FUNCTION__, $query, array($result));
 	}
@@ -200,7 +200,7 @@ class Jelly_Behavior_Collection_Core
 	 */
 	public function before_save(Jelly_Model $model, $key)
 	{
-		$this->_trigger(__FUNCTION__, $model, array($key), array('break_on' => FALSE));
+		return $this->_trigger(__FUNCTION__, $model, array($key), array('allow_break' => TRUE));
 	}
 	
 	/**
@@ -229,20 +229,23 @@ class Jelly_Behavior_Collection_Core
 	 */
 	public function before_delete(Jelly_Model $model, $key) 
 	{
-		$this->_trigger(__FUNCTION__, $model, array($key), array('break_on' => FALSE));
+		return $this->_trigger(__FUNCTION__, $model, array($key), array('allow_break' => TRUE));
 	}
 	
 	/**
-	 * Called after deletion.
+	 * Called after deletion but before the model is cleared of its contents.
 	 * 
-	 * Note, this is only called if the record was actually deleted.
+	 * $result is a boolean that indicates whether or not the model was 
+	 * actually deleted.
 	 *
-	 * @param   Jelly_Model   $model 
+	 * @param   Jelly_Model  $model 
+	 * @param   mixed        $key
+	 * @param   boolean      $result
 	 * @return  void
 	 */
-	public function after_delete(Jelly_Model $model)
+	public function after_delete(Jelly_Model $model, $key, $result)
 	{
-		$this->_trigger(__FUNCTION__, $model);
+		$this->_trigger(__FUNCTION__, $model, $key, $result);
 	}
 	
 	/**
@@ -286,9 +289,9 @@ class Jelly_Behavior_Collection_Core
 			}
 			
 			// Ensure we can continue execution
-			if (isset($options['break_on']) AND $options['break_on'] === $return)
+			if (!empty($options['allow_break']) AND $return instanceof Jelly_Behavior_Result AND $return->break)
 			{
-				return $return;
+				return $return->value;
 			}
 		}
 	}

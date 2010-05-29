@@ -544,24 +544,19 @@ abstract class Jelly_Model_Core
 			}
 			
 			// Trigger callbacks to ensure we proceed
-			if (FALSE === $this->_meta->behaviors()->before_delete($this, $key))
+			if (NULL === ($result = $this->_meta->behaviors()->before_delete($this, $key)))
 			{
-				return FALSE;
+				$result = Jelly::delete($this)
+				               ->where(':unique_key', '=', $key)
+				               ->execute();
 			}
-
-			$result = Jelly::delete($this)
-			               ->where(':unique_key', '=', $key)
-			               ->execute();
 		}
-
-		// Clear the object so it appears deleted anyway
-		$this->clear();
 		
 		// Trigger the post-delete if only it was truly deleted
-		if ($result)
-		{
-			$this->_meta->behaviors()->after_delete($this);
-		}
+		$this->_meta->behaviors()->after_delete($this, $key, $result);
+		
+		// Clear the object so it appears deleted anyway
+		$this->clear();
 
 		return (boolean) $result;
 	}
