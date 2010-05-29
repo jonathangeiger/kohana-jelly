@@ -88,7 +88,7 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 			return $this->default;
 		}
 
-		return (is_numeric($value)) ? (int) $value : (string) $value;
+		return is_numeric($value) ? (int) $value : (string) $value;
 	}
 
 	/**
@@ -100,9 +100,9 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	 */
 	public function get($model, $value)
 	{
-		return Jelly::select($this->foreign['model'])
-				->where($this->foreign['column'], '=', $value)
-				->limit(1);
+		return Jelly::query($this->foreign['model'])
+		            ->where($this->foreign['column'], '=', $value)
+		            ->limit(1);
 	}
 
 	/**

@@ -83,14 +83,13 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	{
 		if ($model->changed($this->name))
 		{
-			// Return a real object
-			return Jelly::select($this->foreign['model'])
-					->where(':primary_key', 'IN', $value);
+			return Jelly::query($this->foreign['model'])
+			            ->where(':primary_key', 'IN', $value);
 		}
 		else
 		{
 			return Jelly::select($this->foreign['model'])
-					->where($this->foreign['column'], '=', $model->id());
+			            ->where($this->foreign['column'], '=', $model->id());
 		}
 	}
 
@@ -104,19 +103,19 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	public function save($model, $value, $loaded)
 	{
 		// Empty relations to the default value
-		Jelly::update($this->foreign['model'])
-			->where($this->foreign['column'], '=', $model->id())
-			->set(array($this->foreign['column'] => $this->default))
-			->execute();
+		Jelly::query($this->foreign['model'])
+		     ->where($this->foreign['column'], '=', $model->id())
+		     ->set(array($this->foreign['column'] => $this->default))
+		     ->update();
 
 		// Set the new relations
 		if ( ! empty($value) AND is_array($value))
 		{
 			// Update the ones in our list
-			Jelly::update($this->foreign['model'])
-				->where(':primary_key', 'IN', $value)
-				->set(array($this->foreign['column'] => $model->id()))
-				->execute();
+			Jelly::query($this->foreign['model'])
+			     ->where(':primary_key', 'IN', $value)
+			     ->set(array($this->foreign['column'] => $model->id()))
+			     ->update();
 		}
 	}
 
@@ -129,7 +128,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 */
 	public function has($model, $ids)
 	{
-		return (bool) Jelly::select($this->foreign['model'])
+		return (bool) Jelly::query($this->foreign['model'])
 			->where($this->foreign['column'], '=', $model->id())
 			->where(':primary_key', 'IN', $ids)
 			->count();

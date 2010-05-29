@@ -131,20 +131,13 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	public function get($model, $value)
 	{
 		// If the value hasn't changed, we need to pull from the database
-		if ($model->changed($this->name))
+		if ( ! $model->changed($this->name))
 		{
-			return Jelly::select($this->foreign['model'])
-					->where($this->foreign['column'], 'IN', $value);
+			$value = $this->_in($model);
 		}
 
-		$join_col1 = $this->through['model'].'.'.$this->through['columns'][1];
-		$join_col2 = $this->foreign['model'].'.'.$this->foreign['column'];
-		$where_col = $this->through['model'].'.'.$this->through['columns'][0];
-
-		return Jelly::select($this->foreign['model'])
-					->join($this->through['model'])
-					->on($join_col1, '=', $join_col2)
-					->where($where_col, '=', $model->id());
+		return Jelly::query($this->foreign['model'])
+		            ->where($this->foreign['column'], 'IN', $value);
 	}
 
 	/**
@@ -162,10 +155,10 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		// Find old relationships that must be deleted
 		if ($old = array_diff($in, (array)$value))
 		{
-			Jelly::delete($this->through['model'])
-				->where($this->through['columns'][0], '=', $model->id())
-				->where($this->through['columns'][1], 'IN', $old)
-				->execute(Jelly::meta($model)->db());
+			Jelly::query($this->through['model'])
+			     ->where($this->through['columns'][0], '=', $model->id())
+			     ->where($this->through['columns'][1], 'IN', $old)
+			     ->delete(Jelly::meta($model)->db());
 		}
 
 		// Find new relationships that must be inserted
@@ -173,10 +166,10 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		{
 			foreach ($new as $new_id)
 			{
-				Jelly::insert($this->through['model'])
+				Jelly::query($this->through['model'])
 					 ->columns($this->through['columns'])
 					 ->values(array($model->id(), $new_id))
-					 ->execute(Jelly::meta($model)->db());
+					 ->insert(Jelly::meta($model)->db());
 			}
 		}
 	}
@@ -232,14 +225,15 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 	 */
 	protected function _in($model, $as_array = FALSE)
 	{
-		$result = Jelly::select($this->through['model'])
-				->select($this->through['columns'][1])
-				->where($this->through['columns'][0], '=', $model->id());
+		$result = Jelly::query($this->through['model'])
+			->select_column($this->through['columns'][1])
+			->where($this->through['columns'][0], '=', $model->id()
+			->type(Database::SELECT);
 
 		if ($as_array)
 		{
 			$result = $result
-						->execute(Jelly::meta($model)->db())
+						->select(Jelly::meta($model)->db())
 						->as_array(NULL, $this->through['columns'][1]);
 		}
 

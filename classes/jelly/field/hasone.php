@@ -36,16 +36,15 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	{
 		if ($model->changed($this->name))
 		{
-			// Return a real object
-			return Jelly::select($this->foreign['model'])
-					->where(':primary_key', '=', $value)
-					->limit(1);
+			return Jelly::query($this->foreign['model'])
+			            ->where(':primary_key', '=', $value)
+			            ->limit(1);
 		}
 		else
 		{
-			return Jelly::select($this->foreign['model'])
-					->where($this->foreign['column'], '=', $model->id())
-					->limit(1);
+			return Jelly::query($this->foreign['model'])
+			            ->where($this->foreign['column'], '=', $model->id())
+			            ->limit(1);
 		}
 	}
 
@@ -59,19 +58,19 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	public function save($model, $value, $loaded)
 	{
 		// Empty relations to the default value
-		Jelly::update($this->foreign['model'])
-			->where($this->foreign['column'], '=', $model->id())
-			->set(array($this->foreign['column'] => $this->default))
-			->execute();
+		Jelly::query($this->foreign['model'])
+		     ->where($this->foreign['column'], '=', $model->id())
+		     ->set(array($this->foreign['column'] => $this->default))
+		     ->update();
 
 		// Set the new relations
 		if ( ! empty($value))
 		{
 			// Update the ones in our list
-			Jelly::update($this->foreign['model'])
-				->where(':primary_key', '=', $value)
-				->set(array($this->foreign['column'] => $model->id()))
-				->execute();
+			Jelly::query($this->foreign['model'])
+			     ->where(':primary_key', '=', $value)
+			     ->set(array($this->foreign['column'] => $model->id()))
+			     ->update();
 		}
 	}
 

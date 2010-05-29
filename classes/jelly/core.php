@@ -36,7 +36,7 @@ abstract class Jelly_Core
 	 * @param   mixed  $key
 	 * @return  Jelly
 	 */
-	public static function factory($model, $values = NULL)
+	public static function model($model, $values = NULL)
 	{
 		$class = Jelly::class_name($model);
 
@@ -78,62 +78,22 @@ abstract class Jelly_Core
 	 * @param   mixed   $cond
 	 * @return  Jelly_Builder
 	 */
-	public static function select($model, $key = NULL)
+	public static function query($model, $key = NULL)
 	{
-		$builder = Jelly::builder($model, Database::SELECT);
+		$builder = 'Jelly_Builder';
 
-		if ($key)
+		if ($meta = Jelly::meta($model))
 		{
-			return $builder->load($key);
+			if ($meta->builder())
+			{
+				$builder = $meta->builder();
+			}
 		}
 
-		return $builder;
+		return new $builder($model, $key);
 	}
-
-	/**
-	 * Returns a query builder that can be used for inserting record(s).
-	 *
-	 * Generally, you will only want to use Models directly for creating
-	 * new records, since this method doesn't support validation or
-	 * relations, but it is still here to complete the API.
-	 *
-	 * @param   string  $model
-	 * @return  Jelly_Builder
-	 */
-	public static function insert($model)
-	{
-		return Jelly::builder($model, Database::INSERT);
-	}
-
-	/**
-	 * Returns a query builder that can be used for updating many records.
-	 *
-	 * Similar to Jelly::insert(), you will generally want to use Models for
-	 * updating an individual record, but this method is useful for updating
-	 * columns on multiple rows all at once.
-	 *
-	 * @param   string  $model
-	 * @return  Jelly_Builder
-	 */
-	public static function update($model)
-	{
-		return Jelly::builder($model, Database::UPDATE);
-	}
-
-	/**
-	 * Returns a query builder that can be used for deleting many records.
-	 *
-	 * While you will generally want to use models for deleting single records,
-	 * this method remains useful for deleting multiple rows all at once.
-	 *
-	 * @param  string $model
-	 * @return Jelly_Builder
-	 */
-	public static function delete($model)
-	{
-		return Jelly::builder($model, Database::DELETE);
-	}
-
+	
+	
 	/**
 	 * Gets a particular set of metadata about a model. If the model
 	 * isn't registered, it will attempt to register it.
@@ -402,26 +362,89 @@ abstract class Jelly_Core
 	{
 		return Jelly::$_model_prefix;
 	}
-
+	
 	/**
-	 * Returns the builder class to use for the specified model
+	 * Returns a query builder that can be used for selecting records.
+	 *
+	 * If $key is passed, the key will be passed to unique_key(), the result
+	 * will be limited to 1, and the record will be returned directly.
+	 *
+	 * In essence, passing a $key is analogous to:
+	 *
+	 *     Jelly::select($model)->load($key);
+	 *
+	 * Which itself is a shortcut for:
+	 *
+	 *     Jelly::select($model)
+	 *          ->where(':unique_key', '=', $key)
+	 *          ->limit(1)
+	 *          ->execute();
 	 *
 	 * @param   string  $model
-	 * @param   int     $type
-	 * @return  string
+	 * @param   mixed   $cond
+	 * @return  Jelly_Builder
+	 * @deprecated  This method will be removed in 1.0
+	 * @see         Jelly::query
 	 */
-	protected static function builder($model, $type = NULL)
+	public static function select($model, $key = NULL)
 	{
-		$builder = 'Jelly_Builder';
+		$builder = Jelly::query($model, $key)->type(Database::SELECT);
 
-		if ($meta = Jelly::meta($model))
+		if (func_num_args() === 2)
 		{
-			if ($meta->builder())
-			{
-				$builder = $meta->builder();
-			}
+			return $builder->select();
 		}
 
-		return new $builder($model, $type);
+		return $builder;
+	}
+
+	/**
+	 * Returns a query builder that can be used for inserting record(s).
+	 *
+	 * Generally, you will only want to use Models directly for creating
+	 * new records, since this method doesn't support validation or
+	 * relations, but it is still here to complete the API.
+	 *
+	 * @param   string  $model
+	 * @return  Jelly_Builder
+	 * @deprecated  This method will be removed in 1.0
+	 * @see         Jelly::query
+	 */
+	public static function insert($model)
+	{
+		return Jelly::query($model, $key)->type(Database::INSERT)
+	}
+
+	/**
+	 * Returns a query builder that can be used for updating many records.
+	 *
+	 * Similar to Jelly::insert(), you will generally want to use Models for
+	 * updating an individual record, but this method is useful for updating
+	 * columns on multiple rows all at once.
+	 *
+	 * @param   string  $model
+	 * @return  Jelly_Builder
+	 * @deprecated  This method will be removed in 1.0
+	 * @see         Jelly::query
+	 */
+	public static function update($model)
+	{
+		return Jelly::query($model, $key)->type(Database::UPDATE);
+	}
+
+	/**
+	 * Returns a query builder that can be used for deleting many records.
+	 *
+	 * While you will generally want to use models for deleting single records,
+	 * this method remains useful for deleting multiple rows all at once.
+	 *
+	 * @param  string $model
+	 * @return Jelly_Builder
+	 * @deprecated  This method will be removed in 1.0
+	 * @see         Jelly::query
+	 */
+	public static function delete($model)
+	{
+		return Jelly::query($model, $key)->type(Database::DELETE);
 	}
 }
