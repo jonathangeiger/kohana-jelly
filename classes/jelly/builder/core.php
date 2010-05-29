@@ -298,9 +298,9 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 * @param   ...
 	 * @return  $this
 	 */
-	public function select_column($columns = NULL)
+	public function select_column($column)
 	{
-		return $this->select_columns(func_get_args());
+		return $this->select_columns(array($column));
 	}
 
 	/**
