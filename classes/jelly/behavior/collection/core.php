@@ -35,9 +35,19 @@ class Jelly_Behavior_Collection_Core
 	 */
 	protected static $_allowed = array
 	(
-		'after_initialize', 'before_query', 'after_query', 
-		'before_validate', 'before_save', 'after_save', 
-		'before_delete', 'after_delete'
+		// Meta callbacks
+		'after_initialize', 
+		
+		// Builder callbacks
+		'before_builder_select', 'after_builder_select', 
+		'before_builder_insert', 'after_builder_insert', 
+		'before_builder_update', 'after_builder_update', 
+		'before_builder_delete', 'after_builder_delete', 
+		
+		// Model callbacks
+		'before_model_validate', 
+		'before_model_save', 'after_model_save', 
+		'before_model_delete', 'after_model_delete'
 	);
 	
 	/**
@@ -140,29 +150,98 @@ class Jelly_Behavior_Collection_Core
 	}
 	
 	/**
-	 * Called just before executing a query so that 
-	 * the behavior can add additional clauses to the query.
+	 * Called just before executing a SELECT.
 	 *
 	 * @param   Jelly_Builder  $query 
-	 * @param   int            $type
 	 * @return  void
 	 */
-	public function before_query(Jelly_Builder $query, $type)
+	public function before_builder_select(Jelly_Builder $query)
 	{
-		$this->_trigger(__FUNCTION__, $query, array($type));
+		$this->_trigger(__FUNCTION__, $query);
 	}
 	
 	/**
-	 * Called just after executing a query so that 
-	 * the behavior can modify the result if necessary.
+	 * Called just after executing a SELECT.
 	 *
 	 * @param   Jelly_Builder     $query 
-	 * @param   mixed             $result
+	 * @param   Jelly_Collection  $result
 	 * @return  void
 	 */
-	public function after_query(Jelly_Builder $query, $result, $type)
+	public function after_builder_select(Jelly_Builder $query, Jelly_Collection $result)
 	{
-		$this->_trigger(__FUNCTION__, $query, array($result, $type));
+		$this->_trigger(__FUNCTION__, $query, array($result));
+	}
+	
+	/**
+	 * Called just before executing an INSERT.
+	 *
+	 * @param   Jelly_Builder  $query 
+	 * @return  void
+	 */
+	public function before_builder_insert(Jelly_Builder $query)
+	{
+		$this->_trigger(__FUNCTION__, $query);
+	}
+	
+	/**
+	 * Called just after executing an INSERT.
+	 *
+	 * @param   Jelly_Builder  $query 
+	 * @param   array          $result
+	 * @return  void
+	 */
+	public function after_builder_insert(Jelly_Builder $query, $result)
+	{
+		$this->_trigger(__FUNCTION__, $query, array($result));
+	}
+	
+	/**
+	 * Called just before executing an UPDATE.
+	 *
+	 * @param   Jelly_Builder  $query 
+	 * @return  void
+	 */
+	public function before_builder_update(Jelly_Builder $query)
+	{
+		$this->_trigger(__FUNCTION__, $query);
+	}
+	
+	/**
+	 * Called just after executing an UPDATE.
+	 *
+	 * @param   Jelly_Builder  $query 
+	 * @param   int            $result
+	 * @return  void
+	 */
+	public function after_builder_update(Jelly_Builder $query, $result)
+	{
+		$this->_trigger(__FUNCTION__, $query, array($result));
+	}
+	
+	/**
+	 * Called just before executing an DELETE.
+	 * 
+	 * The callback can return a value other than NULL to 
+	 * stop the delete from occurring.
+	 *
+	 * @param   Jelly_Builder  $query 
+	 * @return  void
+	 */
+	public function before_builder_delete(Jelly_Builder $query)
+	{
+		return $this->_trigger(__FUNCTION__, $query, array(), array('allow_break' => TRUE));
+	}
+	
+	/**
+	 * Called just after executing a DELETE.
+	 *
+	 * @param   Jelly_Builder  $query 
+	 * @param   int            $result
+	 * @return  void
+	 */
+	public function after_builder_delete(Jelly_Builder $query, $result)
+	{
+		$this->_trigger(__FUNCTION__, $query, array($result));
 	}
 	
 	/**
@@ -174,7 +253,7 @@ class Jelly_Behavior_Collection_Core
 	 * @param   Validate     $data
 	 * @return  void
 	 */
-	public function before_validate(Jelly_Model $model, Validate $data) 
+	public function before_model_validate(Jelly_Model $model, Validate $data) 
 	{
 		$this->_trigger(__FUNCTION__, $model, array($data));
 	}
@@ -195,7 +274,7 @@ class Jelly_Behavior_Collection_Core
 	 * @param   mixed        $key
 	 * @return  boolean
 	 */
-	public function before_save(Jelly_Model $model, $key)
+	public function before_model_save(Jelly_Model $model, $key)
 	{
 		return $this->_trigger(__FUNCTION__, $model, array($key), array('allow_break' => TRUE));
 	}
@@ -207,7 +286,7 @@ class Jelly_Behavior_Collection_Core
 	 * @param   Jelly_Model  $model 
 	 * @return  void
 	 */
-	public function after_save(Jelly_Model $model)
+	public function after_model_save(Jelly_Model $model)
 	{
 		$this->_trigger(__FUNCTION__, $model);
 	}
@@ -224,7 +303,7 @@ class Jelly_Behavior_Collection_Core
 	 * @param   Jelly_Model  $model 
 	 * @param   mixed        $key
 	 */
-	public function before_delete(Jelly_Model $model, $key) 
+	public function before_model_delete(Jelly_Model $model, $key) 
 	{
 		return $this->_trigger(__FUNCTION__, $model, array($key), array('allow_break' => TRUE));
 	}
@@ -240,7 +319,7 @@ class Jelly_Behavior_Collection_Core
 	 * @param   boolean      $result
 	 * @return  void
 	 */
-	public function after_delete(Jelly_Model $model, $key, $result)
+	public function after_model_delete(Jelly_Model $model, $key, $result)
 	{
 		$this->_trigger(__FUNCTION__, $model, $key, $result);
 	}
