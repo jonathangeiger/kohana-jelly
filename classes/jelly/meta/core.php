@@ -496,6 +496,7 @@ abstract class Jelly_Meta_Core
 	 * Gets or sets the object's input prefix
 	 * @param   string  $value
 	 * @return  string
+	 * @deprecated  This method will be removed in 1.0
 	 */
 	public function input_prefix($value = NULL)
 	{

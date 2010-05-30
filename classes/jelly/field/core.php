@@ -175,6 +175,7 @@ abstract class Jelly_Field_Core
 	 *
 	 * @param string $prefix The prefix to put before the filename to be rendered
 	 * @return View
+	 * @deprecated  This method will be removed in 1.0
 	 **/
 	public function input($prefix = 'jelly/field', $data = array())
 	{
@@ -196,6 +197,7 @@ abstract class Jelly_Field_Core
 	 *
 	 * @param   Jelly_Field  $class [optional]
 	 * @return  string
+	 * @deprecated  This method will be removed in 1.0
 	 */
 	protected function _input_view($prefix, $field_class = NULL)
 	{
