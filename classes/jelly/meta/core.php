@@ -354,7 +354,7 @@ abstract class Jelly_Meta_Core
 	 */
 	public function columns($name = NULL)
 	{
-		if (func_get_args() == 0)
+		if (func_num_args() == 0)
 		{
 			return $this->columns;
 		}
