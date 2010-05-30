@@ -81,24 +81,17 @@ abstract class Jelly_Core
 	}
         
 	/**
-	 * Returns a query builder that can be used for selecting records.
+	 * Returns a query builder that can be used for querying.
 	 *
 	 * If $key is passed, the key will be passed to unique_key(), the result
 	 * will be limited to 1, and the record will be returned directly.
 	 *
 	 * In essence, passing a $key is analogous to:
 	 *
-	 *     Jelly::select($model)->load($key);
-	 *
-	 * Which itself is a shortcut for:
-	 *
-	 *     Jelly::select($model)
-	 *          ->where(':unique_key', '=', $key)
-	 *          ->limit(1)
-	 *          ->execute();
+	 *     Jelly::query($model)->where(':unique_key', '=' $key)->limit(1);
 	 *
 	 * @param   string  $model
-	 * @param   mixed   $cond
+	 * @param   mixed   $key
 	 * @return  Jelly_Builder
 	 */
 	public static function query($model, $key = NULL)
