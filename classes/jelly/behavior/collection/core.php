@@ -35,7 +35,7 @@ class Jelly_Behavior_Collection_Core
 	 */
 	protected static $_allowed = array
 	(
-		'after_initialize', 'before_select', 'after_select', 
+		'after_initialize', 'before_query', 'after_query', 
 		'before_validate', 'before_save', 'after_save', 
 		'before_delete', 'after_delete'
 	);
@@ -149,7 +149,7 @@ class Jelly_Behavior_Collection_Core
 	 */
 	public function before_query(Jelly_Builder $query, $type)
 	{
-		$this->_trigger(__FUNCTION__, $query);
+		$this->_trigger(__FUNCTION__, $query, array($type));
 	}
 	
 	/**
@@ -157,12 +157,12 @@ class Jelly_Behavior_Collection_Core
 	 * the behavior can modify the result if necessary.
 	 *
 	 * @param   Jelly_Builder     $query 
-	 * @param   Jelly_Collection  $result
+	 * @param   mixed             $result
 	 * @return  void
 	 */
-	public function after_query(Jelly_Builder $query, Jelly_Collection $result)
+	public function after_query(Jelly_Builder $query, $result, $type)
 	{
-		$this->_trigger(__FUNCTION__, $query, array($result));
+		$this->_trigger(__FUNCTION__, $query, array($result, $type));
 	}
 	
 	/**
@@ -248,11 +248,11 @@ class Jelly_Behavior_Collection_Core
 	/**
 	 * Triggers a callback to avoid duplicating a bunch of code.
 	 *
-	 * @param string $method 
-	 * @param string $sender 
-	 * @param string $args 
-	 * @return void
-	 * @author Jonathan Geiger
+	 * @param  string  $method 
+	 * @param  mixed   $sender 
+	 * @param  array   $args 
+	 * @param  array   $options
+	 * @return mixed
 	 */
 	protected function _trigger($method, $sender, $args = array(), $options = array())
 	{

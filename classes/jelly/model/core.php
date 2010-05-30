@@ -545,7 +545,7 @@ abstract class Jelly_Model_Core
 			// Trigger callbacks to ensure we proceed
 			if (NULL === ($result = $this->_meta->behaviors()->before_delete($this, $key)))
 			{
-				$result = Jelly::query($this, $key)->execute();
+				$result = Jelly::query($this, $key)->delete();
 			}
 		}
 		

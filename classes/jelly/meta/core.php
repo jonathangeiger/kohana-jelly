@@ -110,7 +110,7 @@ abstract class Jelly_Meta_Core
 
 		// Allow modification of this meta object by the behaviors
 		$this->_behaviors->after_initialize($this);
-
+		
 		// Ensure certain fields are not overridden
 		$this->_model       = $model;
 		$this->_columns     =
