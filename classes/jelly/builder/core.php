@@ -248,6 +248,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 *
 	 * @param   int  $type 
 	 * @return  mixed
+	 * @deprecated  This method will be removed in 1.0
 	 */
 	public function load($key = NULL)
 	{
@@ -325,6 +326,17 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	public function unique_key($value)
 	{
 		return $this->_meta->primary_key();
+	}
+	
+	/**
+	 * Returns the meta object attached to this builder 
+	 * or NULL if nothing is attached.
+	 * 
+	 * @return  Jelly_Meta
+	 */
+	public function meta()
+	{
+		return $this->_meta;
 	}
 
 	/**
