@@ -84,7 +84,25 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		// Default to loading as arrays
 		$this->as_object(FALSE);
 	}
-	
+
+	/**
+	 * Passes unknown methods along to the behaviors.
+	 *
+	 * @param   string  $method
+	 * @param   array   $args
+	 * @return  mixed
+	 **/
+	public function __call($method, $args)
+	{
+		if ($this->_meta)
+		{
+			return $this->_meta->behaviors()->call('builder_'.$method, $this, $args);
+		}
+		
+		throw new Kohana_Exception('Invalid method :method called on class :class',
+			array(':method' => $method, ':class' => get_class($this)));
+	}
+
 	/**
 	 * Executes the query as a SELECT statement
 	 *
@@ -104,6 +122,9 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		// Figure out our result type
 		$model = ($this->_meta) ? $this->_meta->model() : NULL;
 		$this->_result = new Jelly_Collection($model, $this->_result);
+		
+		// Trigger after_query callbacks
+		$this->_meta AND $this->_meta->behaviors()->after_query($this, $this->_result, Database::SELECT);
 
 		// If the record was limited to 1, we only return that model
 		// Otherwise we return the whole result set.
@@ -126,7 +147,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		$db = $this->_db($db);
 		
 		// Ready to leave the builder
-		return $this->_build(Database::INSERT)->execute($db);
+		$result = $this->_build(Database::INSERT)->execute($db);
+		
+		// Trigger after_query callbacks
+		$this->_meta AND $this->_meta->behaviors()->after_query($this, $result, Database::INSERT);
+		
+		return $result;
 	}
 	
 	/**
@@ -140,7 +166,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		$db = $this->_db($db);
 		
 		// Ready to leave the builder
-		return $this->_build(Database::UPDATE)->execute($db);
+		$result = $this->_build(Database::UPDATE)->execute($db);
+		
+		// Trigger after_query callbacks
+		$this->_meta AND $this->_meta->behaviors()->after_query($this, $result, Database::UPDATE);
+		
+		return $result;
 	}
 	
 	/**
@@ -154,7 +185,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		$db = $this->_db($db);
 		
 		// Ready to leave the builder
-		return $this->_build(Database::DELETE)->execute($db);
+		$result = $this->_build(Database::DELETE)->execute($db);
+		
+		// Trigger after_query callbacks
+		$this->_meta AND $this->_meta->behaviors()->after_query($this, $result, Database::DELETE);
+		
+		return $result;
 	}
 	
 	/**
@@ -174,10 +210,15 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		$query->_select = $query->_order_by = array();
 
 		// Find the count
-		return (int) $query
+		$result = (int) $query
 		               ->select(array('COUNT("*")', 'total'))
 		               ->execute($db)
 		               ->get('total');
+		
+		// Trigger after_query callbacks
+		$this->_meta AND $this->_meta->behaviors()->after_query($this, $result, Database::SELECT);
+		
+		return $result;
 	}
 	
 	/**
@@ -185,7 +226,6 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 *
 	 * @param   int  $type 
 	 * @return  mixed
-	 * @deprecated  This method will be removed in 1.0
 	 */
 	public function load($key = NULL)
 	{
@@ -672,6 +712,23 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 
 		return $this;
 	}
+	
+	/**
+	 * Callback that can be overridden in the Builder.
+	 *
+	 * @see     Jelly_Behavior::before_select
+	 * @return  void
+	 */
+	public function before_select() { }
+	
+	/**
+	 * Callback that can be overridden in the Builder.
+	 *
+	 * @see     Jelly_Behavior::before_select
+	 * @param   Jelly_Collection|Jelly_Model  $result
+	 * @return  void
+	 */
+	public function after_select($result) { }
 
 	/**
 	 * This method aliases models to tables.
@@ -786,6 +843,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		if ($type === NULL)
 		{
 			$type = $this->_type;
+		}
+		
+		// Trigger before_query callbacks
+		if ($this->_meta)
+		{
+			$this->_meta->behaviors()->before_query($this, $type);
 		}
 
 		switch($type)
