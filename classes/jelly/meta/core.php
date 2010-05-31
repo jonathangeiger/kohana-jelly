@@ -104,14 +104,14 @@ abstract class Jelly_Meta_Core
 	 */
 	public function finalize($model)
 	{
-		if ($this->initialized) 
+		if ($this->initialized)
 			return;
 
 		// Ensure certain fields are not overridden
 		$this->model = $model;
-		$this->columns     = 
+		$this->columns     =
 		$this->defaults    =
-		$this->field_cache = 
+		$this->field_cache =
 		$this->aliases     = array();
 
 		// Table should be a sensible default
@@ -123,7 +123,7 @@ abstract class Jelly_Meta_Core
 		// See if we have a special builder class to use
 		if (empty($this->builder))
 		{
-			$builder = Jelly::prefix().'builder_'.$model;
+			$builder = Jelly::model_prefix().'builder_'.$model;
 
 			if (class_exists($builder))
 			{
@@ -250,7 +250,7 @@ abstract class Jelly_Meta_Core
 	{
 		if (func_num_args() !== 0)
 		{
-			return $this->set('db', $db);
+			return $this->set('db', $value);
 		}
 
 		return $this->db;
@@ -334,16 +334,16 @@ abstract class Jelly_Meta_Core
 				return $this;
 			}
 		}
-		
+
 		if ( ! isset($this->field_cache[$field]))
 		{
 			$resolved_name = $field;
-			
+
 			if (isset($this->aliases[$field]))
 			{
 				$resolved_name = $this->aliases[$field];
 			}
-			
+
 			if (isset($this->fields[$resolved_name]))
 			{
 				$this->field_cache[$field] = $this->fields[$resolved_name];
@@ -377,7 +377,7 @@ abstract class Jelly_Meta_Core
 	 */
 	public function columns($name = NULL)
 	{
-		if (func_get_args() == 0)
+		if (func_num_args() == 0)
 		{
 			return $this->columns;
 		}
@@ -418,7 +418,7 @@ abstract class Jelly_Meta_Core
 		{
 			return $this->set('primary_key', $value);
 		}
-		
+
 		return $this->primary_key;
 	}
 

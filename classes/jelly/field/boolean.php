@@ -6,7 +6,7 @@
  * @package  Jelly
  */
 abstract class Jelly_Field_Boolean extends Jelly_Field
-{	
+{
 	/**
 	 * @var  mixed  How TRUE is represented in the database
 	 */
@@ -30,7 +30,7 @@ abstract class Jelly_Field_Boolean extends Jelly_Field
 	/**
 	 * Validates a boolean out of the value with filter_var
 	 *
-	 * @param   mixed  $value 
+	 * @param   mixed  $value
 	 * @return  void
 	 */
 	public function set($value)

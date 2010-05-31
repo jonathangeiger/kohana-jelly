@@ -1,8 +1,8 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles primary keys. 
- * 
+ * Handles primary keys.
+ *
  * Currently, a primary key can be an integer or a string.
  *
  * @package  Jelly

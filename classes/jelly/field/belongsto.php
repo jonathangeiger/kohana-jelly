@@ -70,8 +70,8 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	}
 
 	/**
-	 * Returns the primary key of the model passed. 
-	 * 
+	 * Returns the primary key of the model passed.
+	 *
 	 * @param   mixed  $value
 	 * @return  mixed
 	 */
@@ -108,16 +108,17 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 	/**
 	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
-	 * @param   Jelly_Model  $model
+	 * @param   Jelly_Builder  $builder
 	 * @return  void
 	 */
-	public function with($model)
+	public function with($builder)
 	{
 		$join_col1 = $this->model.'.'.$this->column;
-		$join_col2 = $this->foreign['model'].'.'.$this->foreign['column'];
+		// We use this field's alias rather than the foreign model so the join alias can be resolved
+		$join_col2 = $this->name.'.'.$this->foreign['column'];
 
-		$model
-			->join($this->foreign['model'], 'LEFT')
+		$builder
+			->join(array($this->foreign['model'], Jelly::join_alias($this)), 'LEFT')
 			->on($join_col1, '=', $join_col2);
 	}
 }

@@ -16,7 +16,7 @@ Jelly is a nice little ORM for Kohana. It is currently in beta.
   the fly.
 
 * **Active testing on MySQL and SQLite** — All of the Jelly unit tests work
-  100% correctly on both SQLite and MySQL databases.
+  100% correctly on both MySQL, SQLite and PostgresSQL databases.
 
 * **A built-in query builder** — This features is a near direct port from
   Kohana's native ORM. I find its usage much simpler than Sprig's.

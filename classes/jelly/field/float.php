@@ -2,8 +2,8 @@
 
 /**
  * Handles floats.
- * 
- * You can specify an optional places property to 
+ *
+ * You can specify an optional places property to
  * round the value to the specified number of places.
  *
  * @package  Jelly
@@ -27,9 +27,9 @@ abstract class Jelly_Field_Float extends Jelly_Field
 		{
 			return NULL;
 		}
-		
+
 		$value = (float)$value;
-		
+
 		if (is_numeric($this->places))
 		{
 			$value = round($value, $this->places);

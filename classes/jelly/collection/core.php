@@ -5,7 +5,7 @@
  *
  * It offers a few special features that make it useful:
  *
- *  * Only one model is instantiated for the whole result set, which 
+ *  * Only one model is instantiated for the whole result set, which
  *    is significantly faster in terms of performance.
  *  * It is easily extensible, so things like polymorphism and
  *    recursive result sets can be easily implemented.
@@ -77,7 +77,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 		{
 			$this->_result = new Database_Result_Cached($this->_result->as_array(), '');
 		}
-		
+
 		return array_keys(get_object_vars($this));
 	}
 
@@ -98,7 +98,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 				$$var = Jelly::meta_alias($this->_meta->model, $$var, NULL);
 			}
 		}
-			
+
 		return $this->_result->as_array($key, $value);
 	}
 
@@ -226,6 +226,7 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	{
 		if ($object)
 		{
+
 			if (is_array($this->_model))
 			{
 				// This is polymorphic, we're not sure which model to return yet

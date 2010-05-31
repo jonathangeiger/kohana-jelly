@@ -10,7 +10,7 @@ abstract class Jelly_Field_String extends Jelly_Field
 	/**
 	 * Casts to a string, preserving NULLs along the way
 	 *
-	 * @param  mixed   $value 
+	 * @param  mixed   $value
 	 * @return string
 	 */
 	public function set($value)
@@ -19,7 +19,7 @@ abstract class Jelly_Field_String extends Jelly_Field
 		{
 			return NULL;
 		}
-		
+
 		return (string) $value;
 	}
 }

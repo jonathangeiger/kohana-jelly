@@ -11,12 +11,12 @@ interface Jelly_Field_Behavior_Joinable
 {
 	/**
 	 * This method should add a join() and on() clause
-	 * to the model to finish the query.
+	 * to the builder to finish the query.
 	 *
 	 * For examples, check out belongsTo and hasOne's implementations.
 	 *
-	 * @param   Jelly_Model  $model
+	 * @param   Jelly_Builder  $builder
 	 * @return  void
 	 */
-	public function with($model);
+	public function with($builder);
 }

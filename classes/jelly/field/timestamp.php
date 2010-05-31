@@ -2,15 +2,15 @@
 
 /**
  * Handles timestamps and conversions to and from different formats.
- * 
- * All timestamps are represented internally by UNIX timestamps, regardless 
- * of their format in the database. When the model is saved, the value is 
- * converted back to the format specified by $format (which is a valid 
+ *
+ * All timestamps are represented internally by UNIX timestamps, regardless
+ * of their format in the database. When the model is saved, the value is
+ * converted back to the format specified by $format (which is a valid
  * date() string).
- * 
+ *
  * This means that you can have timestamp logic exist relatively indepentently
  * of your database's format. If, one day, you wish to change the format used
- * to represent dates in the database, you just have to update the $format 
+ * to represent dates in the database, you just have to update the $format
  * property for the field.
  *
  * @package  Jelly
@@ -40,7 +40,7 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 	/**
 	 * Converts the time to a UNIX timestamp
 	 *
-	 * @param   mixed  $value 
+	 * @param   mixed  $value
 	 * @return  mixed
 	 */
 	public function set($value)
@@ -49,7 +49,7 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 		{
 			return NULL;
 		}
-		
+
 		if (FALSE !== strtotime($value))
 		{
 			return strtotime($value);
@@ -81,7 +81,16 @@ abstract class Jelly_Field_Timestamp extends Jelly_Field
 		// Convert if necessary
 		if ($this->format)
 		{
-			$value = date($this->format, $value);
+			// Does it need converting?
+			if (FALSE !== strtotime($value))
+			{
+				$value = strtotime($value);
+			}
+
+			if (is_numeric($value))
+			{
+				$value = date($this->format, $value);
+			}
 		}
 
 		return $value;

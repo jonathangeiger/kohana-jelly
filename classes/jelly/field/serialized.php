@@ -2,8 +2,8 @@
 
 /**
  * Handles serialized data.
- * 
- * When set, the field attempts to unserialize the data into it's 
+ *
+ * When set, the field attempts to unserialize the data into it's
  * actual PHP representation. When the model is saved, the value
  * is serialized back and saved as a string into the column.
  *
@@ -16,7 +16,7 @@ abstract class Jelly_Field_Serialized extends Jelly_Field
 	 *
 	 * Incoming data that isn't actually serialized will not be harmed.
 	 *
-	 * @param   mixed  $value 
+	 * @param   mixed  $value
 	 * @return  mixed
 	 */
 	public function set($value)
@@ -25,7 +25,7 @@ abstract class Jelly_Field_Serialized extends Jelly_Field
 		{
 			return NULL;
 		}
-		
+
 	 	if ($return = @unserialize($value))
 		{
 			return $return;

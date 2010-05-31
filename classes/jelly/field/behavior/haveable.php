@@ -8,7 +8,7 @@
  * @package  Jelly
  */
 interface Jelly_Field_Behavior_Haveable
-{	
+{
 	/**
 	 * This method should return a boolean that indicates whether or
 	 * not the $model passed is related to the $ids passed.
