@@ -273,6 +273,10 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 							{
 								$add_columns[] = array($meta->table().'.'.$field->column, $field->name);
 							}
+							else if($field->column instanceof Database_Expression)
+							{
+							    $add_columns[] = array($field->column, $field->name);
+							}
 						}
 
 						// Add these columns before we continue
