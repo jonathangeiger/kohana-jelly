@@ -82,9 +82,9 @@ abstract class Jelly_Core
 	{
 		$builder = Jelly::builder($model, Database::SELECT);
 
-		if ($key)
+		if (func_num_args() === 2)
 		{
-			return $builder->load($key);
+ 			return $builder->load($key);
 		}
 
 		return $builder;
