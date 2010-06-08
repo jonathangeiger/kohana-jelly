@@ -242,23 +242,6 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 		
 		return $result;
 	}
-	
-	/**
-	 * Loads a single record
-	 *
-	 * @param   int  $type 
-	 * @return  mixed
-	 * @deprecated  This method will be removed in 1.0
-	 */
-	public function load($key = NULL)
-	{
-		if ($key)
-		{
-			$this->where($this->unique_key($key), '=', $key);
-		}
-		
-		return $this->limit(1)->select();
-	}
 
 	/**
 	 * Builds the builder into a native query
@@ -414,6 +397,10 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 							if ($field->in_db)
 							{
 								$add_columns[] = array($meta->table().'.'.$field->column, $field->name);
+							}
+							else if($field->column instanceof Database_Expression)
+							{
+							    $add_columns[] = array($field->column, $field->name);
 							}
 						}
 

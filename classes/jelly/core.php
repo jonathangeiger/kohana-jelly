@@ -97,7 +97,7 @@ abstract class Jelly_Core
 	public static function query($model, $key = NULL)
 	{
 		$builder = 'Jelly_Builder';
-
+		
 		if ($meta = Jelly::meta($model))
 		{
 			if ($meta->builder())
