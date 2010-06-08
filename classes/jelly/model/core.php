@@ -703,42 +703,6 @@ abstract class Jelly_Model_Core
 	}
 
 	/**
-	 * Returns a view object that represents the field.
-	 *
-	 * If $prefix is an array, it will be used for the data
-	 * and $prefix will be set to the default.
-	 *
-	 * @param   string        $name
-	 * @param   string|array  $prefix
-	 * @param   array         $data
-	 * @return  View
-	 * @deprecated  This method will be removed in 1.0
-	 */
-	public function input($name, $prefix = NULL, $data = array())
-	{
-		$field = $this->_meta->fields($name);
-
-		// More data munging. But it makes the API so much more intuitive
-		if (is_array($prefix))
-		{
-			$data = $prefix;
-			$prefix = NULL;
-		}
-
-		// Set a default prefix if it's NULL
-		if ($prefix === NULL)
-		{
-			$prefix = $this->_meta->input_prefix();
-		}
-
-		// Ensure there is a default value. Some fields override this
-		$data['value'] = $this->__get($name);
-		$data['model'] = $this;
-
-		return $field->input($prefix, $data);
-	}
-
-	/**
 	 * Returns whether or not the model is loaded
 	 *
 	 * @return  boolean

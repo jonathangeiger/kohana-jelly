@@ -54,11 +54,6 @@ abstract class Jelly_Meta_Core
 	protected $_load_with = array();
 
 	/**
-	 * @var  string  Prefix to apply to input view generation
-	 */
-	protected $_input_prefix = 'jelly/field';
-
-	/**
 	 * @var  array  A map to the models's fields and how to process each column.
 	 */
 	protected $_fields = array();
@@ -490,21 +485,5 @@ abstract class Jelly_Meta_Core
 		}
 
 		return $this->_load_with;
-	}
-
-	/**
-	 * Gets or sets the object's input prefix
-	 * @param   string  $value
-	 * @return  string
-	 * @deprecated  This method will be removed in 1.0
-	 */
-	public function input_prefix($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('input_prefix', $value);
-		}
-
-		return $this->_input_prefix;
 	}
 }
