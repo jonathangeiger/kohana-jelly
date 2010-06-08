@@ -1,33 +1,46 @@
-# Loading and Listing Records
+# Finding Records
 
-Jelly extends Kohana's Query Builder. Since it knows all about your models, it
-adds extra features like field and model aliasing and automatic joins of 1:1
-relationships.
+Each model has a `Jelly_Builder` attached to it that is used for all query
+operations. Models can choose to use the stock `Jelly_Builder` or to override it.
 
-It is essentially an objectified version of query builder where you query for
-Jelly objects from models rather than rows from tables.
+### Finding records
 
-### Finding a single record
+Jelly has methods which allow you to grab a single record by key or a
+collection of records matching conditions. The interface is very similar to
+Kohana's Database Query Builder.
 
-Most of your time is spent working with a single record, but to do that you
-have to first locate it!
-
-##### Example - Loading a single record
-
-	$post = Jelly::select('post', 1);
-	$post->loaded(); // TRUE
-	$post->saved(); // TRUE
+	// Find all posts. A Jelly_Collection of Model_Post's is returned.
+	$posts = Jelly::query('post')->select();
 	
-	// The above is shorthand for the following
-	$post = Jelly::select('post')->load(1);
+	// Iterate over our posts to do stuff with them
+	foreach($posts as $post)
+	{
+		if ($post->loaded())
+		{
+			echo "Post #{$post->id} is loaded";
+		}
+	}
 	
-	// And the above is shorthand for
-	$post = Jelly::select('post')
-				 ->where(':primary_key', '=', 1)
-				 ->limit(1)
-				 ->execute();
-				 
-### Finding many records
+	// Find the post with a unique_key of 1. 
+	// A Model_Post instance is returned directly
+	$post = Jelly::query('post', 1)->select();
+	
+	// We don't have to iterate since a model is returned directly
+	if ($post->loaded())
+	{
+		echo "Post #{$post->id} is loaded";
+	}
+	
+	
+### Conditions
+
+Rather than defining conditions using SQL fragments we chain methods named similarly to SQL. This is where Kohana's Database Query Builder will seem very familiar.
+
+	// Find all published posts, ordered by publish date
+	$posts = Jelly::query('post')
+	              ->where('status', '=', 'published')
+	              ->order_by('publish_date', 'ASC')
+	              ->select();
 
 If you want to load many records, you end your query building with the
 `execute()` method, which returns a `Jelly_Collection`. A `Jelly_Collection` contains a
