@@ -205,6 +205,17 @@ abstract class Jelly_Meta_Core
 	{
 		$this->set($key, $value);
 	}
+	
+	/**
+	 * Returns a string representation of the meta object.
+	 *
+	 * @return  string
+	 */
+	public function __toString()
+	{
+		return (string) get_class($this).': '.$this->_model;
+	}
+	
 
 	/**
 	 * Returns whether or not the meta object has finished initialization

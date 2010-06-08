@@ -200,6 +200,16 @@ abstract class Jelly_Model_Core
 		// We can safely delete this no matter what
 		unset($this->_unmapped[$name]);
 	}
+	
+	/**
+	 * Returns a string representation of the model.
+	 *
+	 * @return  string
+	 */
+	public function __toString()
+	{
+		return (string) get_class($this).' ('.$this->id().')';
+	}
 
 	/**
 	 * Gets the internally represented value from a field or unmapped column.

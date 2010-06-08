@@ -64,6 +64,16 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 
 		return array_keys(get_object_vars($this));
 	}
+	
+	/**
+	 * Returns a string representation of the collection.
+	 *
+	 * @return  string
+	 */
+	public function __toString()
+	{
+		return get_class($this).': '.Jelly::model_name($this->_model).' ('.$this->count().')';
+	}
 
 	/**
 	 * Return all of the rows in the result as an array.
