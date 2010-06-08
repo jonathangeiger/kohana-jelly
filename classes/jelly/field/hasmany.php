@@ -90,7 +90,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 		else
 		{
 			return Jelly::select($this->foreign['model'])
-					->where($this->foreign['column'], '=', $model->id());
+					->where($this->foreign['model'].'.'.$this->foreign['column'], '=', $model->id());
 		}
 	}
 
