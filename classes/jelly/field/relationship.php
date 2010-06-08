@@ -7,7 +7,7 @@
  * @package  Jelly
  * @author   Jonathan Geiger
  */
-abstract class Jelly_Field_Relationship extends Jelly_Field
+class Jelly_Field_Relationship extends Jelly_Field
 {
 	/**
 	 * Most relationship are in fact not part of the model's table

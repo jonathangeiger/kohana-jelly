@@ -10,7 +10,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Slug extends Field_String
+class Jelly_Field_Slug extends Field_String
 {
 	/**
 	 * Converts a slug to value valid for a URL.

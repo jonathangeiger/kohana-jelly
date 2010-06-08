@@ -9,7 +9,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_File extends Jelly_Field
+class Jelly_Field_File extends Jelly_Field
 {
 	/**
 	 * Ensures there is a path for saving set

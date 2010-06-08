@@ -5,7 +5,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Boolean extends Jelly_Field
+class Jelly_Field_Boolean extends Jelly_Field
 {
 	/**
 	 * @var  mixed  How TRUE is represented in the database

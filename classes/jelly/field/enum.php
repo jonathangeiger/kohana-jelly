@@ -8,7 +8,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Enum extends Jelly_Field
+class Jelly_Field_Enum extends Jelly_Field
 {
 	/**
 	 * @var array An array of valid choices

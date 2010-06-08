@@ -15,7 +15,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Timestamp extends Jelly_Field
+class Jelly_Field_Timestamp extends Jelly_Field
 {
 	/**
 	 * @var  boolean  Whether or not to automatically set now() on creation

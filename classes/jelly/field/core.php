@@ -5,7 +5,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Core
+class Jelly_Field_Core
 {
 	/**
 	 * @var  string  The model's name

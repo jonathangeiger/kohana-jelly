@@ -15,7 +15,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Expression extends Jelly_Field
+class Jelly_Field_Expression extends Jelly_Field
 {
 	/**
 	 * @var  boolean  Expression fields are not in_db

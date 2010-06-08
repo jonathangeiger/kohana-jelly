@@ -5,7 +5,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Text extends Jelly_Field
+class Jelly_Field_Text extends Jelly_Field
 {
 	/**
 	 * Casts to a string, preserving NULLs along the way

@@ -10,7 +10,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Password extends Field_String
+class Jelly_Field_Password extends Field_String
 {
 	/**
 	 * @var  callback  A valid callback to use for hashing the password or FALSE to not hash

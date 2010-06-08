@@ -7,7 +7,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Primary extends Jelly_Field
+class Jelly_Field_Primary extends Jelly_Field
 {
 	/**
 	 * @var  boolean  Defaults primary keys to primary

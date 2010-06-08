@@ -8,7 +8,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Float extends Jelly_Field
+class Jelly_Field_Float extends Jelly_Field
 {
 	/**
 	 * @var int The number of places to round the number, NULL to forgo rounding

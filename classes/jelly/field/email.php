@@ -8,7 +8,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Email extends Field_String
+class Jelly_Field_Email extends Field_String
 {
 	/**
 	 * Adds an email validation rule if it doesn't already exist.

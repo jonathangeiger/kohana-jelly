@@ -9,7 +9,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Serialized extends Jelly_Field
+class Jelly_Field_Serialized extends Jelly_Field
 {
 	/**
 	 * Unserializes data as soon as it comes in.

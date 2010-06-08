@@ -5,7 +5,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_ManyToMany
+class Jelly_Field_ManyToMany
 extends Jelly_Field_Relationship
 implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
 {

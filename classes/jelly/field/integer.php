@@ -5,7 +5,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_Integer extends Jelly_Field
+class Jelly_Field_Integer extends Jelly_Field
 {
 	/**
 	 * Converts the value to an integer
