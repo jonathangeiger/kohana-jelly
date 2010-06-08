@@ -22,22 +22,4 @@ abstract class Jelly_Field_Relationship extends Jelly_Field
 	 * @var  string
 	 */
 	public $foreign = array();
-
-	/**
-	 * Displays a selection of models to relate to
-	 *
-	 * @param   string  $prefix  The prefix to put before the filename to be rendered
-	 * @return  View
-	 **/
-	public function input($prefix = 'jelly/field', $data = array())
-	{
-		if ( ! isset($data['options']))
-		{
-			$data['options'] = Jelly::select($this->foreign['model'])
-				->execute()
-				->as_array(':primary_key', ':name_key');
-		}
-
-		return parent::input($prefix, $data);
-	}
 }

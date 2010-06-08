@@ -195,26 +195,7 @@ implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_F
 
 		return TRUE;
 	}
-
-	/**
-	 * Adds the "ids" variable to the view data
-	 *
-	 * @param   string  $prefix
-	 * @param   array   $data
-	 * @return  View
-	 */
-	public function input($prefix = 'jelly/field', $data = array())
-	{
-		$data['ids'] = array();
-
-		foreach ($data['value'] as $model)
-		{
-			$data['ids'][] = $model->id();
-		}
-
-		return parent::input($prefix, $data);
-	}
-
+	
 	/**
 	 * Returns either an array or unexecuted query to find
 	 * which columns the model is "in" in the join table

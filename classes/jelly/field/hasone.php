@@ -92,20 +92,6 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 	}
 
 	/**
-	 * Provides the input with the ids variable. An array of
-	 * all the ID's in the foreign model that this record owns.
-	 *
-	 * @param string $prefix
-	 * @param string $data
-	 * @return void
-	 */
-	public function input($prefix = 'jelly/field', $data = array())
-	{
-		$data['id'] = $this->get($data['model'], NULL)->load()->id();
-		return parent::input($prefix, $data);
-	}
-
-	/**
 	 * Implementation of Jelly_Field_Behavior_Joinable
 	 *
 	 * @param   Jelly_Builder  $builder
