@@ -259,9 +259,9 @@ abstract class Jelly_Model_Core
 	 * @param  ...
 	 * @return array
 	 */
-	public function as_array($fields = NULL)
+	public function as_array(array $fields = NULL)
 	{
-		$fields = func_num_args() ? func_get_args() : array_keys($this->_meta->fields());
+		$fields = $fields ? $fields : array_keys($this->_meta->fields());
 		$result = array();
 
 		foreach($fields as $field)
