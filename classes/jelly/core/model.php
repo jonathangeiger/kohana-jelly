@@ -110,7 +110,7 @@ abstract class Jelly_Core_Model
 		// Alias the field to its actual name. We must do this now
 		// so that any aliases will be cached under the real fields
 		// name, rather than under its alias name
-		$name = $this->_meta->fields($name, TRUE);
+		$name = $this->_meta->field($name, TRUE);
 
 		if ( ! array_key_exists($name, $this->_retrieved))
 		{
@@ -170,7 +170,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function __isset($name)
 	{
-		return (bool)($this->_meta->fields($name) OR array_key_exists($name, $this->_unmapped));
+		return (bool)($this->_meta->field($name) OR array_key_exists($name, $this->_unmapped));
 	}
 
 	/**
@@ -185,7 +185,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function __unset($name)
 	{
-		if ($field = $this->_meta->fields($name, TRUE))
+		if ($field = $this->_meta->field($name, TRUE))
 		{
 			// We don't want to unset the keys, because
 			// they are assumed to exist. Just set them back to defaults
@@ -223,7 +223,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function get($name)
 	{
-		if ($field = $this->_meta->fields($name))
+		if ($field = $this->_meta->field($name))
 		{
 			// Alias the name to its actual name
 			$name = $field->name;
@@ -300,7 +300,7 @@ abstract class Jelly_Core_Model
 
 		foreach($values as $key => $value)
 		{
-			$field = $this->_meta->fields($key);
+			$field = $this->_meta->field($key);
 
 			// If this isn't a field, we just throw it in unmapped
 			if ( ! $field)
@@ -361,7 +361,7 @@ abstract class Jelly_Core_Model
 
 				// Alias as it comes back in, which allows people to use with()
 				// with alaised field names
-				$relationship = $this->_meta->fields(array_shift($targets), TRUE);
+				$relationship = $this->_meta->field(array_shift($targets), TRUE);
 
 				if ( ! array_key_exists($relationship, $this->_with))
 				{
@@ -385,11 +385,11 @@ abstract class Jelly_Core_Model
 				// This allows multiple fields to get data from the same column
 				foreach ($columns as $field)
 				{
-					$this->_original[$field] = $this->_meta->fields($field)->set($value);
+					$this->_original[$field] = $this->_meta->field($field)->set($value);
 				}
 			}
 			// Standard setting of a field
-			elseif ($alias === FALSE AND $field = $this->_meta->fields($key))
+			elseif ($alias === FALSE AND $field = $this->_meta->field($key))
 			{
 				$this->_original[$field->name] = $field->set($value);
 			}
@@ -454,7 +454,7 @@ abstract class Jelly_Core_Model
 				$value = $data[$column];
 			}
 
-			$field = $this->_meta->fields($column);
+			$field = $this->_meta->field($column);
 
 			// Only save in_db values
 			if ($field->in_db)
@@ -525,7 +525,7 @@ abstract class Jelly_Core_Model
 		// Save the relations
 		foreach ($relations as $column => $value)
 		{
-			$this->_meta->fields($column)->save($this, $value, (bool) $key);
+			$this->_meta->field($column)->save($this, $value, (bool) $key);
 		}
 		
 		// Trigger post-save callback
@@ -580,7 +580,7 @@ abstract class Jelly_Core_Model
 	{
 		if ($field)
 		{
-			return array_key_exists($this->_meta->fields($field, TRUE), $this->_changed);
+			return array_key_exists($this->_meta->field($field, TRUE), $this->_changed);
 		}
 
 		return $this->_changed;
@@ -621,7 +621,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function has($name, $models)
 	{
-		$field = $this->_meta->fields($name);
+		$field = $this->_meta->field($name);
 
 		// Don't continue without knowing we have something to work with
 		if ($field instanceof Jelly_Field_Behavior_Haveable)
@@ -772,7 +772,7 @@ abstract class Jelly_Core_Model
 	 */
 	protected function _change($name, $models, $add)
 	{
-		$field = $this->_meta->fields($name);
+		$field = $this->_meta->field($name);
 
 		if ($field instanceof Jelly_Field_Behavior_Changeable)
 		{

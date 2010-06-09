@@ -180,31 +180,6 @@ abstract class Jelly_Core_Meta
 		// Meta object is initialized and no longer writable
 		$this->_initialized = TRUE;
 	}
-
-	/**
-	 * Allows dynamic retrieval of members when initializing
-	 *
-	 * @param   string  $key
-	 * @return  void
-	 */
-	public function __get($key)
-	{
-		if ( ! $this->_initialized)
-		{
-			return $this->{'_'.$key};
-		}
-	}
-
-	/**
-	 * Allows dynamic setting of members when initializing
-	 *
-	 * @param   string  $key
-	 * @return  void
-	 */
-	public function __set($key, $value)
-	{
-		$this->set($key, $value);
-	}
 	
 	/**
 	 * Returns a string representation of the meta object.
@@ -215,7 +190,6 @@ abstract class Jelly_Core_Meta
 	{
 		return (string) get_class($this).': '.$this->_model;
 	}
-	
 
 	/**
 	 * Returns whether or not the meta object has finished initialization
@@ -297,6 +271,59 @@ abstract class Jelly_Core_Meta
 
 		return $this->_builder;
 	}
+	
+	/**
+	 * Getter/setter for individual fields
+	 * 
+	 * @param   $name     string
+	 * @param   $type     string
+	 * @param   $options  mixed
+	 */
+	public function field($name, $type = FALSE, $options = array())
+	{
+		// If $type is boolean, we're searching for a field
+		if (is_bool($type))
+		{
+			if ( ! isset($this->_field_cache[$field]))
+			{
+				$resolved_name = $field;
+
+				if (isset($this->_aliases[$field]))
+				{
+					$resolved_name = $this->_aliases[$field];
+				}
+
+				if (isset($this->_fields[$resolved_name]))
+				{
+					$this->_field_cache[$field] = $this->_fields[$resolved_name];
+				}
+				else
+				{
+					return NULL;
+				}
+			}
+
+			if ($name)
+			{
+				return $this->_field_cache[$field]->name;
+			}
+			else
+			{
+				return $this->_field_cache[$field];
+			}
+			
+			return NULL;
+		}
+		
+		// If we've made it here it's a standard setter
+		if ( ! $this->_initialized)
+		{
+			// Allows fields to be appended
+			$this->_fields[$name] = Jelly::field($type, $options);
+			
+			return $this;
+		}
+	}
 
 	/**
 	 * Returns the fields for this object.
@@ -327,34 +354,6 @@ abstract class Jelly_Core_Meta
 				$this->_fields += $field;
 				return $this;
 			}
-		}
-
-		if ( ! isset($this->_field_cache[$field]))
-		{
-			$resolved_name = $field;
-
-			if (isset($this->_aliases[$field]))
-			{
-				$resolved_name = $this->_aliases[$field];
-			}
-
-			if (isset($this->_fields[$resolved_name]))
-			{
-				$this->_field_cache[$field] = $this->_fields[$resolved_name];
-			}
-			else
-			{
-				return NULL;
-			}
-		}
-
-		if ($name)
-		{
-			return $this->_field_cache[$field]->name;
-		}
-		else
-		{
-			return $this->_field_cache[$field];
 		}
 	}
 
@@ -398,7 +397,7 @@ abstract class Jelly_Core_Meta
 			return $this->_defaults;
 		}
 
-		return $this->fields($name)->default;
+		return $this->field($name)->default;
 	}
 	
 	/**

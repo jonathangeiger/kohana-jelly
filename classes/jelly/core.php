@@ -7,7 +7,7 @@
  * @package  Jelly
  */
 abstract class Jelly_Core
-{
+{	
 	/**
 	 * @var  string  The prefix to use for all model's class names
 	 *               This can be overridden to allow you to place
@@ -266,7 +266,7 @@ abstract class Jelly_Core
 			$table = $meta->table();
 
 			// Alias the field
-			if ($field = $meta->fields($field))
+			if ($field = $meta->field($field))
 			{
 				$column = $field->column;
 			}
