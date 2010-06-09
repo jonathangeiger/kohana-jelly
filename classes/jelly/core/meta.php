@@ -284,18 +284,18 @@ abstract class Jelly_Core_Meta
 		// If $type is boolean, we're searching for a field
 		if (is_bool($type))
 		{
-			if ( ! isset($this->_field_cache[$field]))
+			if ( ! isset($this->_field_cache[$name]))
 			{
-				$resolved_name = $field;
+				$resolved_name = $name;
 
-				if (isset($this->_aliases[$field]))
+				if (isset($this->_aliases[$name]))
 				{
-					$resolved_name = $this->_aliases[$field];
+					$resolved_name = $this->_aliases[$name];
 				}
 
 				if (isset($this->_fields[$resolved_name]))
 				{
-					$this->_field_cache[$field] = $this->_fields[$resolved_name];
+					$this->_field_cache[$name] = $this->_fields[$resolved_name];
 				}
 				else
 				{
@@ -303,13 +303,13 @@ abstract class Jelly_Core_Meta
 				}
 			}
 
-			if ($name)
+			if ($type)
 			{
-				return $this->_field_cache[$field]->name;
+				return $this->_field_cache[$name]->name;
 			}
 			else
 			{
-				return $this->_field_cache[$field];
+				return $this->_field_cache[$name];
 			}
 			
 			return NULL;
