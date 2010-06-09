@@ -20,14 +20,14 @@ abstract class Jelly_Core
 	 *               This can be overridden to allow you to place
 	 *               field classes in a different location.
 	 */
-	protected static $_field_prefix = 'field_';
+	protected static $_field_prefix = 'Jelly_Field_';
 	
 	/**
 	 * @var  string  This prefix to use for all behavior classes
 	 *               This can be overridden to allow you to place
 	 *               behavior classes in a different location.
 	 */
-	protected static $_behavior_prefix = 'behavior_';
+	protected static $_behavior_prefix = 'Jelly_Behavior_';
         
 	/**
 	 * @var  array  Contains all of the meta classes related to models
