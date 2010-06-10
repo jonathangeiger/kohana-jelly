@@ -476,11 +476,14 @@ abstract class Jelly_Model_Core
 							 ->execute();
 
 			// Gotta make sure to set this
-			$values[$this->_meta->primary_key()] = $id;
+			$this->_changed[$this->_meta->primary_key()] = $id;
 		}
 
-		// Set the changed data back as original
-		$this->_original = array_merge($this->_original, $this->_changed, $values);
+		// Reset the saved data, since save() may have modified it
+		$this->set($values);
+		
+		// Make it appear as original data instead of changed
+		$this->_original = array_merge($this->_original, $this->_changed);
 
 		// We're good!
 		$this->_loaded = $this->_saved = TRUE;
