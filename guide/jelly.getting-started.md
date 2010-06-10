@@ -1,17 +1,27 @@
 # Getting Started
 
-**Jelly is currently in a pre-1.0 state and under heavy development. Please
-bear in mind that the API is not guaranteed to be stable until a 1.0 release.
-Please report any bugs or feature requests you have in the module, or
-documentation to
-[github](http://github.com/jonathangeiger/kohana-jelly/issues).**
+This is the documentation for Jelly, an ORM for Kohana 3.0.
 
-Jelly is built around a hybrid of ActiveRecord and DataMapper patterns. Jelly
-model instances follow the active record pattern but actually do as little as
-possible and are as small as possible. All loading and listing of models is
-achieved through a natural extension of Kohana's own query builder which
-automatically handles model and field aliasing as well as relationship
-handling.
+First off, if you're already feeling lost feel free to ask a question in [the official forums](http://dev.kohanaframework.org/projects/jelly/boards)—we're all very nice and helpful. If you feel better looking at the source, you can always [view the API documentation](http://jelly.jonathan-geiger.com/docs/api/Jelly) or [browse the source on Github](http://github.com/jonathangeiger/kohana-jelly).
+
+## Installation
+
+To install Jelly simply [download the latest release](http://github.com/jonathangeiger/kohana-jelly) and place it in your modules directory. After that you must edit your `application/bootstrap.php` file and modify the call to `Kohana::modules` to include the Jelly module:
+
+	Kohana::modules(array(
+	    ...
+	    'database' => MODPATH.'database',
+		'jelly'    => MODPATH.'jelly',
+	    ...
+	));
+	
+Notice that Jelly depends on Kohana 3.x's [database module](http://github.com/kohana/database). Make sure you install and configure that as well.
+
+## Upgrading
+
+If you're upgrading Jelly you may want to check out [the changelog](jelly.upgrading) to see if any API changes have occurred since you last updated.
+
+## Basic Usage
 
 The basic operations needed to work with Jelly are:
 
@@ -22,8 +32,8 @@ The basic operations needed to work with Jelly are:
 
 ## More Advanced Use
 
-Jelly is incredibly flexible with almost all aspects of it's behavior
-transparently extendable. The guides below give an overview of some more
+Jelly is incredibly flexible with almost all aspects of its behavior
+being transparently extendable. The guides below give an overview of some more
 advanced usage.
 
 1.  [Extending the query builder](jelly.extending-builder)

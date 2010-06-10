@@ -10,16 +10,27 @@ First, let's start with a sample model:
 	{
 		public static function initialize(Jelly_Meta $meta)
 		{
+			// An optional database group you want to use
+			$meta->db('default');
+			
+			// The table the model is attached to.
+			// It defaults to the name of the model pluralized
 			$meta->table('posts')
-				 ->fields(array(
-					 'id' => new Field_Primary,
-					 'name' => new Field_String,
-					 'body' => new Field_Text,
-					 'status' => new Field_Enum(array(
-						 'choices' => array('draft', 'review', 'published'))),
-					 'author' => new Field_BelongsTo,
-					 'tags' => new Field_ManyToMany,
-				 ));
+		
+			// Fields defined by the model
+			$meta->fields(array(
+				'id'      => new Jelly_Field_Primary,
+				'name'    => new Jelly_Field_String,
+				'body'    => new Jelly_Field_Text,
+				'status'  => new Jelly_Field_Enum(array(
+					'choices' => array('draft', 'review', 'published')
+				)),
+				
+				// Relationships to other models
+				'author'   => new Jelly_Field_BelongsTo,
+				'comments' => new Jelly_Field_HasMany,
+				'tags'     => new Jelly_Field_ManyToMany,
+			));
 		}
 	}
 
@@ -27,12 +38,9 @@ As you can see all models must do a few things to be registered with Jelly:
 
  * They must extend `Jelly_Model`
  * They must define an `initialize()` method, which is passed a `Jelly_Meta` object
- * They must add properties to that `$meta` object to define the fields, table, keys and a number of other things
+ * They must add properties to that `$meta` object to define the fields, table, keys and a number of other things. Most of these items are optional.
 
-The `initialize()` method is only called once per execution for each model and the model's meta object is stored
-statically. If you need to find out anything about a particular model, you can use `Jelly::meta('model')`.
-
-[!!] Most of the things we're defining here are optional and have sensible defaults, but we're just putting them there for reference.
+The `initialize()` method is only called once per execution for each model and the model's meta object is stored statically. If you need to find out anything about a particular model, you can use `Jelly::meta('model')`.
 
 ## Jelly Fields
 
