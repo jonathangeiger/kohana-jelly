@@ -167,7 +167,7 @@ abstract class Jelly_Core_Behavior_Collection
 	 * @param   Jelly_Collection  $result
 	 * @return  void
 	 */
-	public function after_builder_select(Jelly_Builder $query, Jelly_Collection $result)
+	public function after_builder_select(Jelly_Builder $query, $result)
 	{
 		$this->_trigger(__FUNCTION__, $query, array($result));
 	}
