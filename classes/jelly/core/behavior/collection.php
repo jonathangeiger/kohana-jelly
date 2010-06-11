@@ -99,7 +99,7 @@ abstract class Jelly_Core_Behavior_Collection
 				}
 				
 				// Check if the method is a callback
-				if (in_array($method, Jelly_Behavior_Collection_Core::$_allowed))
+				if (in_array($method, Jelly_Behavior_Collection::$_allowed))
 				{
 					$this->_callbacks[$method][] = $behavior;
 				}
