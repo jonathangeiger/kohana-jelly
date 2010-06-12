@@ -42,6 +42,11 @@ abstract class Jelly_Core_Model
 	 * @var  Jelly_Meta  A copy of this object's meta object
 	 */
 	protected $_meta = NULL;
+	
+	/**
+	 * @var  Jelly_Validate  A copy of this object's validator
+	 */
+	protected $_validator = NULL;
 
 	/**
 	 * @var  array  Data set by the result
@@ -70,6 +75,9 @@ abstract class Jelly_Core_Model
 	{
 		// Load the object's meta data for quick access
 		$this->_meta = Jelly::meta($this);
+		
+		// Copy over a validator object
+		$this->_validate = $this->_meta->validator()->copy($this, array());
 
 		// Copy over the defaults into the original data. This also has
 		// the added benefit of registering the model's metadata, if it does not exist yet
@@ -309,11 +317,10 @@ abstract class Jelly_Core_Model
 				continue;
 			}
 
-			$value = $field->set($value);
+			$value = $this->_validator->filter($field, $field->set($value));
 			$current_value = array_key_exists($field->name, $this->_changed)
 			               ? $this->_changed[$field->name]
 			               : $this->_original[$field->name];
-
 
 			// Ensure data is really changed
 			if ($value === $current_value)
@@ -419,13 +426,6 @@ abstract class Jelly_Core_Model
 		// Determine whether or not we're updating
 		$data = ($this->_loaded OR $key) ? $this->_changed : $this->_changed + $this->_original;
 
-		if ( ! is_null($key))
-		{
-			// There are no rules for this since it is a meta alias and not an actual field
-			// but adding it allows us to check for uniqueness when lazy saving
-			$data[':unique_key'] = $key;
-		}
-
 		// Set the key to our id if it isn't set
 		if ($this->_loaded)
 		{
@@ -433,13 +433,13 @@ abstract class Jelly_Core_Model
 		}
 
 		// Run validation
-		$data = $this->validate($data);
+		$this->validate($data);
 
 		// These will be processed later
 		$values = $relations = array();
 		
 		// Trigger callbacks and ensure we should proceed
-		if (FALSE !== $this->_meta->behaviors()->before_save($this, $key))
+		if (FALSE === $this->_meta->behaviors()->before_model_save($this, $key)))
 		{
 			return $this;
 		}
@@ -448,19 +448,13 @@ abstract class Jelly_Core_Model
 		// have save() behavior like timestamp updating...
 		foreach ($this->_changed + $this->_original as $column => $value)
 		{
-			// Filters may have been applied to data, so we should use that value
-			if (array_key_exists($column, $data))
-			{
-				$value = $data[$column];
-			}
-
 			$field = $this->_meta->field($column);
 
 			// Only save in_db values
 			if ($field->in_db)
 			{
 				// See if field wants to alter the value on save()
-				$value = $field->save($this, $value, (bool) $key);
+				$value = $field->save($this, $value, $key);
 
 				if ($value !== $this->_original[$column])
 				{
@@ -480,17 +474,6 @@ abstract class Jelly_Core_Model
 			{
 				$relations[$column] = $value;
 			}
-		}
-		
-		// 
-		
-		if ($values !== FALSE)
-		{
-			list($values, $relations) = $return;
-		}
-		else
-		{
-			return $this;
 		}
 
 		// If we have a key, we're updating
@@ -512,11 +495,11 @@ abstract class Jelly_Core_Model
 							 ->insert();
 
 			// Gotta make sure to set this
-			$values[$this->_meta->primary_key()] = $id;
+			$this->_original[$this->_meta->primary_key()] = $id;
 		}
 
 		// Set the changed data back as original
-		$this->_original = array_merge($this->_original, $this->_changed, $values);
+		$this->_original = array_merge($this->_original, $this->_changed);
 
 		// We're good!
 		$this->_loaded = $this->_saved = TRUE;
@@ -525,7 +508,7 @@ abstract class Jelly_Core_Model
 		// Save the relations
 		foreach ($relations as $column => $value)
 		{
-			$this->_meta->field($column)->save($this, $value, (bool) $key);
+			$this->_meta->field($column)->save($this, $value, $key);
 		}
 		
 		// Trigger post-save callback
@@ -661,55 +644,34 @@ abstract class Jelly_Core_Model
 	 *
 	 * Only changed data is validated, unless $data is passed.
 	 *
-	 * @param   array  $data
-	 * @throws  Validate_Exception
+	 * @param   array           $data
+	 * @param   Jelly_Validate  $validator
 	 * @return  array
 	 */
-	public function validate($data = NULL)
+	public function validate($data = NULL, $validator = NULL)
 	{
 		if ($data === NULL)
 		{
 			$data = $this->_changed;
 		}
-
+		
+		// Don't validate if there isn't anything
 		if (empty($data))
 		{
-			return $data;
+			return;
 		}
 		
-		// Create the validation object
-		$data = Validate::factory($data);
+		// Create a new copy from the validator
+		$this->_validator->exchangeArray($data);
 		
 		// Trigger callbacks
-		$this->_meta->behaviors()->before_validate($this, $data);
+		$this->_meta->behaviors()->before_validate($this, $this->_validator);
 
-		// If we are passing a unique key value through, add a filter to ensure it isn't removed
-		if ($data->offsetExists(':unique_key'))
+		// Check
+		if ( ! $this->_validator->check())
 		{
-			$data->filter(':unique_key', 'trim');
+			throw new Validate_Exception($this->_validator);
 		}
-
-		// Loop through all columns, adding rules where data exists
-		foreach ($this->_meta->fields() as $column => $field)
-		{
-			// Do not add any rules for this field
-			if ( ! $data->offsetExists($column))
-			{
-				continue;
-			}
-
-			$data->label($column, $field->label);
-			$data->filters($column, $field->filters);
-			$data->rules($column, $field->rules);
-			$data->callbacks($column, $field->callbacks);
-		}
-
-		if ( ! $data->check())
-		{
-			throw new Validate_Exception($data);
-		}
-
-		return $data->as_array();
 	}
 
 	/**
@@ -861,3 +823,5 @@ abstract class Jelly_Core_Model
 		return $ids;
 	}
 }
+
+

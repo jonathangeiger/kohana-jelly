@@ -68,6 +68,11 @@ abstract class Jelly_Core_Meta
 	 *               Jelly_Builder_Modelname, if that particular class is found.
 	 */
 	protected $_builder = '';
+	
+	/**
+	 * @var  string  The validator attached to the object
+	 */
+	protected $_validator = NULL;
 
 	/**
 	 * @var  array  A list of columns and how they relate to fields
@@ -140,6 +145,9 @@ abstract class Jelly_Core_Meta
 			$this->_foreign_key = $model.'_id';
 		}
 		
+		// Create our default validator
+		$this->_validator = new Jelly_Validate;
+		
 		// Initialize all of the fields with their column and the model name
 		foreach($this->_fields as $column => $field)
 		{
@@ -175,6 +183,12 @@ abstract class Jelly_Core_Meta
 			}
 
 			$this->_columns[$field->column][] = $column;
+			
+			// Add our filters, rules, and callbacks
+			$this->_validator->label($column, $field->label);
+			$this->_validator->filters($column, $field->filters);
+			$this->_validator->rules($column, $field->rules);
+			$this->_validator->callbacks($column, $field->callbacks);
 		}
 
 		// Meta object is initialized and no longer writable
@@ -398,6 +412,16 @@ abstract class Jelly_Core_Meta
 		}
 
 		return $this->field($name)->default;
+	}
+	
+	/**
+	 * Gets the validator attached to the model.
+	 * 
+	 * @return  Jelly_Validate
+	 */
+	public function validator()
+	{
+		return $this->_validator;
 	}
 	
 	/**
