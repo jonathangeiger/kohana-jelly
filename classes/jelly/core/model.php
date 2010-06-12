@@ -75,9 +75,6 @@ abstract class Jelly_Core_Model
 	{
 		// Load the object's meta data for quick access
 		$this->_meta = Jelly::meta($this);
-		
-		// Copy over a validator object
-		$this->_validate = $this->_meta->validator()->copy($this, array());
 
 		// Copy over the defaults into the original data. This also has
 		// the added benefit of registering the model's metadata, if it does not exist yet
@@ -317,7 +314,7 @@ abstract class Jelly_Core_Model
 				continue;
 			}
 
-			$value = $this->_validator->filter($field, $field->set($value));
+			$value = $this->_filter($field, $field->set($value));
 			$current_value = array_key_exists($field->name, $this->_changed)
 			               ? $this->_changed[$field->name]
 			               : $this->_original[$field->name];
@@ -721,6 +718,39 @@ abstract class Jelly_Core_Model
 	public function meta()
 	{
 		return $this->_meta;
+	}
+	
+	/**
+	 * Filters a value using the validator.
+	 *
+	 * @param   Jelly_Field  $field 
+	 * @param   mixed        $value 
+	 * @return  mixed
+	 */
+	protected function _filter($field, $value)
+	{
+		if ($field->filters)
+		{
+			return $this->_validator()->filter_value($field->name, $value);
+		}
+		
+		return $value;
+	}
+	
+	/**
+	 * Returns a copy of the model's validator.
+	 *
+	 * @return  void
+	 * @author  Jonathan Geiger
+	 */
+	protected function _validator(array $data = array())
+	{
+		if ( ! $this->_validator)
+		{
+			$this->_validator = $this->_meta->validator()->copy($this, $data);
+		}
+		
+		return $this->_validator;
 	}
 	
 	/**
