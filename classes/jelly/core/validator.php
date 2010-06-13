@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Jelly_Validate overrides Kohana's core validation class in order to add a few 
+ * Jelly_Validator overrides Kohana's core validation class in order to add a few 
  * Jelly-specific features:
  * 
  *  * Adds filter_value(), since Jelly does not filter when validating but when 
@@ -16,31 +16,27 @@
  *    and callbacks, although the old way still works fine. Now, all filters,
  *    rules, and callbacks should be declared as such:
  * 
- *        'field' => array(
- *             // Params is entirely optional...
- *             array(callback $callback [, array $params]),
- *             array(callback $callback [, array $params]),
- *         );
+ *        // Params is entirely optional...
+ *        array(callback $callback [, array $params])
+ * 
+ *        // This shorthand is allowed for those without params
+ *        callback $callback
  * 
  *    This means that callbacks can have parameters passed to them, and 
  *    filters can be called on objects.
  * 
- *  * It allows the :model context to be passed so that the method is called
- *    on the model being validated. This was not possible previously.
+ *  * It allows the :model and :field context to be passed so that the method is called
+ *    on the model or field being validated. This was not possible previously.
  * 
  *        'field' => array(
  *             array(array(':model', 'method'), array('arg1', 'arg2')),
+ *             array(array(':field', 'method'), array('arg1', 'arg2')),
  *         );
- * 
- * Since Jelly_Validate is a sort of singleton for your model (that is, all
- * instances of your model will use the same instance to validate itself, it is
- * best to make a clone if you need to change the rules, filters, or callbacks
- * for a specific instance.
  * 
  * @see     Jelly_Model::validate
  * @package Jelly
  */
-abstract class Jelly_Core_Validate extends Kohana_Validate
+abstract class Jelly_Core_Validator extends Kohana_Validate
 {
 	/**
 	 * @var  Jelly_Model  The current model we're validating against
@@ -54,32 +50,64 @@ abstract class Jelly_Core_Validate extends Kohana_Validate
 	 * @param   array   array to validate
 	 * @return  void
 	 */
-	public function __construct(array $array = array())
+	public function __construct(Jelly_Model $model, array $array)
 	{
 		parent::__construct($array, ArrayObject::STD_PROP_LIST);
+		
+		// Save the model
+		$this->_model = $model;
 	}
 	
 	/**
 	 * Copies the current filter/rule/callback to a new array.
+	 * 
+	 * $model is required, but simply set as optional to get around
+	 * PHP's strict standards. Also, sorry about the wonky argument
+	 * order, which is so for the same reason.
 	 *
-	 *     $copy = $array->copy($model, $new_data);
-	 *
-	 * @param   Jelly_Model  $model
 	 * @param   array        $array
-	 * @return  Jelly_Validate
+	 * @param   Jelly_Model  $model
+	 * @return  Jelly_Validator
 	 */
-	public function copy(Jelly_Model $model, array $array)
+	public function copy(array $array, Jelly_Model $model = NULL)
 	{
-		// Create a copy of the current validation set
-		$copy = clone $this;
-
-		// Replace the data set
-		$copy->exchangeArray($array);
+		$copy = parent::copy($array);
+		
+		// $model is required
+		if ( ! $model instanceof Jelly_Model)
+		{
+			throw new Kohana_Exception('A Jelly_Model must be passed to '.get_class($this).'::copy()');
+		}
 		
 		// Replace model
 		$copy->_model = $model;
 
 		return $copy;
+	}
+	
+	/**
+	 * Adds an alias to a field so that the alias can be 
+	 * validated with the same rules as the original field.
+	 *
+	 * @param   string $field 
+	 * @param   string $column 
+	 * @return  $this
+	 */
+	public function alias($field, $alias)
+	{
+		foreach (array('_filters', '_rules', '_callbacks') as $key)
+		{
+			// Ensure we have something for the actual field
+			if ( ! isset($this->$key[$field]))
+			{
+				$this->$key[$field] = array();
+			}
+			
+			// Create a reference to the actual field
+			$this->$key[$alias] =& $this->$key[$field];
+		}
+		
+		return $this;
 	}
 	
 	/**
@@ -211,7 +239,7 @@ abstract class Jelly_Core_Validate extends Kohana_Validate
 			array_unshift($params, $value);
 			
 			// Call
-			$value = $this->_call($callback, $params);
+			$value = $this->_call($field, $callback, $params);
 		}
 		
 		return $value;
@@ -294,7 +322,7 @@ abstract class Jelly_Core_Validate extends Kohana_Validate
 				array_unshift($params, $value);
 				
 				// Call and verify success
-				if (FALSE === $this->_call($callback, $params))
+				if (FALSE === $this->_call($field, $callback, $params))
 				{
 					// Remove the value from the parameters
 					array_shift($params);
@@ -326,7 +354,7 @@ abstract class Jelly_Core_Validate extends Kohana_Validate
 				array_unshift($params, $this, $field, $this->_model);
 				
 				// Call the callback
-				$this->_call($callback, $params);
+				$this->_call($field, $callback, $params);
 
 				if (isset($this->_errors[$field]))
 				{
@@ -348,17 +376,38 @@ abstract class Jelly_Core_Validate extends Kohana_Validate
 	/**
 	 * Method caller.
 	 * 
-	 * Handles conversion of the :model context.
+	 * Handles conversion of the contexts.
 	 *
-	 * @param   callback     $callback 
-	 * @param   mixed        $params 
+	 * @param   string    $field
+	 * @param   callback  $callback 
+	 * @param   mixed     $params 
 	 * @return  mixed
 	 */
-	protected function _call($callback, $params)
+	protected function _call($field, $callback, $params)
 	{
 		// Check to see if we need to replace the context
-		if (is_array($callback) AND isset($callback[0]) AND $callback[0] === ':model')
+		if (is_array($callback) AND isset($callback[0]) AND substr($callback[0], 0, 1) === ':')
 		{
+			switch ($callback[0])
+			{
+				case ':model':
+					$callback[0] = $this->_model;
+					break;
+					
+				case ':field':
+					$callback[0] = Jelly::meta($this->_model)->field($field);
+					
+					// We should have a field
+					if (!$callback[0])
+					{
+						throw new Kohana_Exception('Field :column not found on model :model'.
+						' while trying to determine :field validation context', array(
+							':field' => $field, ':model' => $this->_model))
+					}
+					
+					break;
+			}
+			
 			$callback[0] = $this->_model;
 		}
 		
@@ -384,7 +433,7 @@ abstract class Jelly_Core_Validate extends Kohana_Validate
 	 * @param   array   $callbacks 
 	 * @return  $this
 	 */
-	protected function _callbacks(array &$array, $field, array $callbacks)
+	protected function _parse_callbacks(array &$array, $field, array $callbacks)
 	{
 		// Ensure there is a label
 		if ($field !== TRUE AND ! isset($this->_labels[$field]))
@@ -445,9 +494,9 @@ abstract class Jelly_Core_Validate extends Kohana_Validate
 		if (is_string($callback))
 		{
 			// Check if this is a method to call in this class
-			if (strpos($callback, '::') === FALSE AND is_callable(array('Jelly_Validate', $callback)))
+			if (strpos($callback, '::') === FALSE AND is_callable(array('Jelly_Validator', $callback)))
 			{
-				$callback = array('Jelly_Validate', $callback);
+				$callback = array('Jelly_Validator', $callback);
 			}
 		}
 		

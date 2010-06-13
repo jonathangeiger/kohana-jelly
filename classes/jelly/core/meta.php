@@ -145,9 +145,6 @@ abstract class Jelly_Core_Meta
 			$this->_foreign_key = $model.'_id';
 		}
 		
-		// Create our default validator
-		$this->_validator = new Jelly_Validate;
-		
 		// Initialize all of the fields with their column and the model name
 		foreach($this->_fields as $column => $field)
 		{
@@ -183,12 +180,6 @@ abstract class Jelly_Core_Meta
 			}
 
 			$this->_columns[$field->column][] = $column;
-			
-			// Add our filters, rules, and callbacks
-			$this->_validator->label($column, $field->label);
-			$this->_validator->filters($column, $field->filters);
-			$this->_validator->rules($column, $field->rules);
-			$this->_validator->callbacks($column, $field->callbacks);
 		}
 
 		// Meta object is initialized and no longer writable
@@ -417,11 +408,44 @@ abstract class Jelly_Core_Meta
 	/**
 	 * Gets the validator attached to the model.
 	 * 
-	 * @return  Jelly_Validate
+	 * @param   Jelly_Model $model 
+	 * @param   array       $data 
+	 * @param   boolean     $new 
+	 * @return  Jelly_Validator
 	 */
-	public function validator()
+	public function validator(Jelly_Model $model, array $data, $new = FALSE)
 	{
-		return $this->_validator;
+		// Allow returning an empty validator
+		if ($new) 
+		{
+			return new Jelly_Validator($model, $data);
+		}
+		
+		// Create a default validator so we don't have to go through
+		// recreating all of the filters and such, which is an expensive process.
+		if ( ! $this->_validator)
+		{
+			// Create our default validator, which we will clone from
+			$this->_validator = new Jelly_Validator($model, $data);
+			
+			// Add our filters, rules, and callbacks
+			foreach ($this->_fields as $name => $field)
+			{
+				$this->_validator->label($name, $field->label);
+				$this->_validator->filters($name, $field->filters);
+				$this->_validator->rules($name, $field->rules);
+				$this->_validator->callbacks($name, $field->callbacks);
+			}
+			
+			// Don't forget aliases
+			foreach ($this->_aliases as $alias => $field)
+			{
+				$this->_validator->alias($field, $alias);
+			}
+		}
+		
+		// Return a copy to prevent mucking with the original validator
+		return $this->_validator->copy($data, $model);
 	}
 	
 	/**

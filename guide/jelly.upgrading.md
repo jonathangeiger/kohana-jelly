@@ -43,6 +43,50 @@ We've done this because it allows transposable queries, which is especially usef
 	// Or update them:
 	$post->get('comments')->set('approved', 1)->update();
 	
+#### The filters, rules, and callbacks declaration syntax has changed slightly
+
+There is a new declaration syntax for filters, rules, and callbacks. This change should actually be *backwards-compatible* since every attempt has been made to ensure the old `Kohana_Validate` style of declaration still works.
+
+The new style is unified across filters, rules, and callbacks, which means callbacks now accept extra parameters, and filters can be called on objects.
+
+	// New way for filters, rules, and callbacks
+	'field' => array(
+		array(callback $callback [, array $params])
+	)
+	
+	// The following is also acceptable:
+	'field' => array(
+		callback $callback
+	)
+
+As you can see, any valid callback is accept for the first part of the array and an optional array of params can be passed.
+
+For reference here is the old style that remains acceptable:
+
+	// Old way for filters and rules
+	'field' => array(
+		'Class::method' => NULL,
+		'function'      => array('arg1', 'arg2'),
+	)
+	
+	// Old way for callbacks
+	'field' => array(
+		($object, $method),
+		'Class::method',
+	)
+
+#### Filters are no longer called on validation
+
+Instead, filters are called when the value is being set. This, coupled with the new declaration syntax, means filters can be lovely little callbacks on your fields or models to add custom processing to set data.
+
+	'filters' => array(
+		'field' => array(
+			array(':model', 'set_field')
+		)
+	)
+	
+See that `:model` part of the callback? That's converted the actual model instance that's being filtered, so you can now call methods on the actual model that's being validated.
+
 #### Jelly_Builder->load() has been removed
 
 This is also because of `Jelly::query()`. You can pass a second argument to `Jelly::query()` which effectively duplicates the functionality, except it works on selects, deletes, and updates:

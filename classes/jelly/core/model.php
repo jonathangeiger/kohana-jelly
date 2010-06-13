@@ -44,7 +44,7 @@ abstract class Jelly_Core_Model
 	protected $_meta = NULL;
 	
 	/**
-	 * @var  Jelly_Validate  A copy of this object's validator
+	 * @var  Jelly_Validator  A copy of this object's validator
 	 */
 	protected $_validator = NULL;
 
@@ -428,6 +428,11 @@ abstract class Jelly_Core_Model
 		{
 			$key = $this->_original[$this->_meta->primary_key()];
 		}
+		// Key was passed, set the original ID of this object to the key passed
+		else if ($key)
+		{
+			$this->_original[$this->_meta->primary_key()] = $key;
+		}
 
 		// Run validation
 		$this->validate($data);
@@ -436,7 +441,7 @@ abstract class Jelly_Core_Model
 		$values = $relations = array();
 		
 		// Trigger callbacks and ensure we should proceed
-		if (FALSE === $this->_meta->behaviors()->before_model_save($this, $key)))
+		if (FALSE === $this->_meta->behaviors()->before_model_save($this, $key))
 		{
 			return $this;
 		}
@@ -658,7 +663,7 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Create a new copy from the validator
-		$this->_validator->exchangeArray($data);
+		$validator = $this->_validator($data);
 		
 		// Trigger callbacks
 		$this->_meta->behaviors()->before_validate($this, $this->_validator);
@@ -740,14 +745,20 @@ abstract class Jelly_Core_Model
 	/**
 	 * Returns a copy of the model's validator.
 	 *
-	 * @return  void
-	 * @author  Jonathan Geiger
+	 * @param   array  $data
+	 * @return  Jelly_Validator
 	 */
-	protected function _validator(array $data = array())
+	protected function _validator(array $data = NULL)
 	{
 		if ( ! $this->_validator)
+		{	
+			$this->_validator = $this->_meta->validator($this, array());
+		}
+		
+		// Swap out the array if we need to
+		if ($data)
 		{
-			$this->_validator = $this->_meta->validator()->copy($this, $data);
+			$this->_validator->exchangeArray($data);
 		}
 		
 		return $this->_validator;

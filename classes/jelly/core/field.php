@@ -33,11 +33,6 @@ abstract class Jelly_Core_Field
 	public $unique = FALSE;
 
 	/**
-	* @var  string  Description of the field. Default is `''` (an empty string).
-	*/
-	public $description = '';
-
-	/**
 	* @var  boolean  A primary key field.
 	*/
 	public $primary = FALSE;
@@ -58,17 +53,18 @@ abstract class Jelly_Core_Field
 	public $null = FALSE;
 
 	/**
-	* @var  array  {@link Kohana_Validate} filters for this field.
+	* @var  array  {@link Jelly_Validator} filters for this field.
+	*              Filters are called whenever data is set on the field.
 	*/
 	public $filters = array();
 
 	/**
-	* @var  array  {@link Kohana_Validate} rules for this field.
+	* @var  array  {@link Jelly_Validator} rules for this field.
 	*/
 	public $rules = array();
 
 	/**
-	* @var  array  {@link Kohana_Validate} callbacks for this field.
+	* @var  array  {@link Jelly_Validator} callbacks for this field.
 	*/
 	public $callbacks = array();
 
@@ -176,25 +172,21 @@ abstract class Jelly_Core_Field
 	 * @param   Validate $data
 	 * @param   string $field
 	 * @return  void
-	 * @author  Woody Gilk
 	 */
-	public function _is_unique(Validate $data, $field)
-	{
-		if ($data[$field])
+	public function _is_unique(Validate $data, $field, $model)
+	{		
+		$query = Jelly::query($model)
+		              ->where($field, '=', $data[$field]);
+		              
+		// Exclude unique key value from check if this is a lazy save
+		if ($key = $model->id())
 		{
-			$count = Jelly::query($this->model)
-			              ->where($field, '=', $data[$field]);
+			$query->where(':unique_key', '!=', $key);
+		}
 
-			// Exclude unique key value from check if this is a lazy save
-			if (isset($data[':unique_key']))
-			{
-				$count->where(':unique_key', '!=', $data[':unique_key']);
-			}
-
-			if ($count->count())
-			{
-				$data->error($field, 'unique');
-			}
+		if ($query->count())
+		{
+			$data->error($field, 'unique');
 		}
 	}
 
