@@ -10,8 +10,28 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Core_Field_Slug extends Jelly_Field_String
+abstract class Jelly_Core_Field_Slug extends Jelly_Core_Field_String
 {
+	/**
+	 * @var  string|array  The fields used to generate the slug.
+	 */
+	public $fields = array();
+	
+	/**
+	 * @var  int  The maximum length the slug can be
+	 */
+	public $length = 100;
+	
+	/**
+	 * @var  string  The separator to use between fields
+	 */
+	public $separator = '-';
+	
+	/**
+	 * @var  string  Whether or not to regenerate the slug when updating
+	 */
+	public $regenerate_on_update = FALSE;
+	
 	/**
 	 * Converts a slug to value valid for a URL.
 	 *
