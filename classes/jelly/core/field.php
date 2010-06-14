@@ -174,19 +174,23 @@ abstract class Jelly_Core_Field
 	 * @return  void
 	 */
 	public function _is_unique(Validate $data, $field, $model)
-	{		
-		$query = Jelly::query($model)
-		              ->where($field, '=', $data[$field]);
-		              
-		// Exclude unique key value from check if this is a lazy save
-		if ($key = $model->id())
+	{	
+		// According to the SQL standard NULL is not checked by the unique constraint
+		if ($data[$field] !== NULL)
 		{
-			$query->where(':unique_key', '!=', $key);
-		}
+			$query = Jelly::query($model)
+			              ->where($field, '=', $data[$field]);
 
-		if ($query->count())
-		{
-			$data->error($field, 'unique');
+			// Exclude unique key value from check if this is a lazy save
+			if ($key = $model->id())
+			{
+				$query->where(':unique_key', '!=', $key);
+			}
+
+			if ($query->count())
+			{
+				$data->error($field, 'unique');
+			}
 		}
 	}
 
