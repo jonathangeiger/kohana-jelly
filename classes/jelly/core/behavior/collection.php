@@ -253,7 +253,7 @@ abstract class Jelly_Core_Behavior_Collection
 	 * @param   Validate     $data
 	 * @return  void
 	 */
-	public function before_model_validate(Jelly_Model $model, Validate $data) 
+	public function before_model_validate(Jelly_Model $model, Kohana_Validate $data) 
 	{
 		$this->_trigger(__FUNCTION__, $model, array($data));
 	}

@@ -668,7 +668,7 @@ abstract class Jelly_Core_Model
 		$validator = $this->_validator($data);
 		
 		// Trigger callbacks
-		$this->_meta->behaviors()->before_validate($this, $this->_validator);
+		$this->_meta->behaviors()->before_model_validate($this, $this->_validator);
 
 		// Check
 		if ( ! $this->_validator->check())

@@ -31,7 +31,7 @@
  * @author   Kelvin Luck
  * @package  Jelly
  */
-abstract class Jelly_Field_Image extends Field_File
+abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 {
 	protected static $defaults = array(
 		// The path to save to
@@ -69,7 +69,7 @@ abstract class Jelly_Field_Image extends Field_File
 		foreach ($this->thumbnails as $thumbnail) 
 		{
 			// Merge defaults to prevent array access errors down the line
-			$this->thumbnails += Field_Image::$defaults;
+			$this->thumbnails += Jelly_Field_Image::$defaults;
 			
 			// Ensure the path is normalized and writable
 			$thumbnail['path'] = $this->_check_path($thumbnail['path']);

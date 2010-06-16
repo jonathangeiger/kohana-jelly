@@ -265,7 +265,7 @@ abstract class Jelly_Core_Validator extends Kohana_Validate
 		$this->_errors = array();
 
 		// Get a list of the expected fields
-		$expected = array_keys($this);
+		$expected = array_keys($this->getArrayCopy());
 
 		// Import the rules and callbacks locally
 		// Only grab the keys that have been passed
@@ -386,7 +386,7 @@ abstract class Jelly_Core_Validator extends Kohana_Validate
 	protected function _call($field, $callback, $params)
 	{
 		// Check to see if we need to replace the context
-		if (is_array($callback) AND isset($callback[0]) AND substr($callback[0], 0, 1) === ':')
+		if (is_array($callback) AND is_string($callback[0]) AND substr($callback[0], 0, 1) === ':')
 		{
 			switch ($callback[0])
 			{
@@ -402,7 +402,7 @@ abstract class Jelly_Core_Validator extends Kohana_Validate
 					{
 						throw new Kohana_Exception('Field :column not found on model :model'.
 						' while trying to determine :field validation context', array(
-							':field' => $field, ':model' => $this->_model))
+							':field' => $field, ':model' => $this->_model));
 					}
 					
 					break;

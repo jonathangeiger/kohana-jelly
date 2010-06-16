@@ -12,7 +12,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Field_File extends Jelly_Field
+abstract class Jelly_Core_Field_File extends Jelly_Field
 {
 	/**
 	 * @var  boolean  Whether or not to delete the old file when a new file is added
@@ -61,7 +61,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 		}
 
 		// Get the image from the array
-		$file = $array[$input];
+		$file = $array[$field];
 
 		if ( ! Upload::valid($file) OR ! Upload::not_empty($file))
 		{
@@ -72,7 +72,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 		// Check to see if it's a valid type
 		if ($this->types AND ! Upload::type($file, $this->types))
 		{
-			$array->error($field, 'valid');
+			$array->error($field, 'Upload::type');
 		}
 		
 		// Sanitize the filename
@@ -101,7 +101,7 @@ abstract class Jelly_Field_File extends Jelly_Field
 		}
 		else
 		{
-			$array->error($field, 'failed');
+			$array->error($field, 'Upload::save');
 		}
 	}
 	
