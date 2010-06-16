@@ -66,13 +66,16 @@ abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 		parent::__construct($options);
 
 		// Check that all thumbnail directories are writable...
-		foreach ($this->thumbnails as $thumbnail) 
+		foreach ($this->thumbnails as $key => $thumbnail) 
 		{
 			// Merge defaults to prevent array access errors down the line
-			$this->thumbnails += Jelly_Field_Image::$defaults;
+			$thumbnail += Jelly_Field_Image::$defaults;
 			
 			// Ensure the path is normalized and writable
 			$thumbnail['path'] = $this->_check_path($thumbnail['path']);
+			
+			// Merge back in
+			$this->thumbnails[$key] = $thumbnail;
 		}
 	}
 
@@ -87,11 +90,8 @@ abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 	 */
 	public function _upload(Jelly_Validator $array, $field, $model)
 	{
-		// Grab this to test if the file has changed and been re-uploaded
-		$original = $model->get($this->name, FALSE);
-		
 		// Save the original untouched
-		$new = parent::_upload($array, $field, $model);
+		parent::_upload($array, $field, $model);
 		
 		// Don't bother uploading
 		if ($array->errors())
@@ -100,15 +100,17 @@ abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 		}
 		
 		// Has our source file changed?
-		if ($original !== $new)
+		if ($model->changed($field))
 		{
+			$filename = $model->get($field);
+			$source   = $this->path.$filename;
+			
 			foreach ($this->thumbnails as $thumbnail)
 			{
-				$source = $this->path.$new;
-				$dest   = $thumbnail['path'].$new;
+				$dest = $thumbnail['path'].$filename;
 				
 				// Delete old file if necessary
-				$this->_delete_old_file($original, $thumbnail['path']);
+				$this->_delete_old_file($model->get($field, FALSE), $thumbnail['path']);
 				
 				// Let the Image class do its thing
 				$image = Image::factory($source, $thumbnail['driver'] ? $thumbnail['driver'] : Image::$default_driver);
@@ -127,7 +129,5 @@ abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 				$image->save($dest);
 			}
 		}
-		
-		return $new;
 	}
 }

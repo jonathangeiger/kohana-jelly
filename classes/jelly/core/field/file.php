@@ -82,7 +82,7 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 		$file['name'] = preg_replace('/-{2,}/', '-', $file['name']);
 		
 		// Upload a file?
-		if (FALSE !== ($filename = Upload::save($value, NULL, $this->path)))
+		if (FALSE !== ($filename = Upload::save($file, NULL, $this->path)))
 		{
 			// Chop off the original path
 			$value = str_replace($this->path, '', $filename);

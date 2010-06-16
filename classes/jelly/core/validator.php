@@ -310,7 +310,7 @@ abstract class Jelly_Core_Validator extends Validate
 			{
 				$callback = $rule[0];
 				$params   = $rule[1];
-				$method   = isset($callback[1]) ? $callback[1] : $callback;
+				$method   = is_array($callback) ? $callback[1] : $callback;
 				
 				// If the field shouldn't be empty, but is, forgo any other rules
 				if ( ! in_array($method, $this->_empty_rules) AND ! Validate::not_empty($value))

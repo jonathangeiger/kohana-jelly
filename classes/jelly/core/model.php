@@ -516,7 +516,7 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Trigger post-save callback
-		$this->_meta->behaviors()->after_save($this);
+		$this->_meta->behaviors()->after_model_save($this);
 
 		return $this;
 	}
