@@ -121,7 +121,7 @@ abstract class Jelly_Core_Field
 		// Check for a name, because we can easily provide a default
 		if ( ! $this->label)
 		{
-			$this->label = inflector::humanize($column);
+			$this->label = ucwords(inflector::humanize($column));
 		}
 	}
 
