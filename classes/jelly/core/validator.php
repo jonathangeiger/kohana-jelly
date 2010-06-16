@@ -36,7 +36,7 @@
  * @see     Jelly_Model::validate
  * @package Jelly
  */
-abstract class Jelly_Core_Validator extends Kohana_Validate
+abstract class Jelly_Core_Validator extends Validate
 {
 	/**
 	 * @var  Jelly_Model  The current model we're validating against
