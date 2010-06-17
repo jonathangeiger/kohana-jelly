@@ -3,6 +3,16 @@
 abstract class Jelly_Core_Behavior_SoftDeletable implements Jelly_Behavior_Interface
 {
 	/**
+	 * @var  string  The model this is attached to
+	 */
+	protected $_model;
+	
+	/**
+	 * @var  string  The name of this behavior
+	 */
+	protected $_name;
+	
+	/**
 	 * @var  string  The name to use for the field that keeps track of a model's deleted status
 	 */
 	protected $_column = 'deleted_at';
@@ -11,6 +21,36 @@ abstract class Jelly_Core_Behavior_SoftDeletable implements Jelly_Behavior_Inter
 	 * @var  boolean  Whether or not the behavior is disabled on this model.
 	 */
 	protected $_disabled = FALSE;
+	
+	/**
+	 * Constructor.
+	 *
+	 * @param   array   $params 
+	 */
+	public function __construct($params = array())
+	{
+		if (is_string($this->_params))
+		{
+			$this->_params = array('column' => $this->_params);
+		}
+		
+		foreach ($this->_params as $key => $param)
+		{
+			$this->{'_'.$key} = $param;
+		}
+	}
+	
+	/**
+	 * Initialize.
+	 *
+	 * @param   string   $model 
+	 * @param   string   $name 
+	 */
+	public function initialize($model, $name)
+	{
+		$this->_model = $model;
+		$this->_name  = $name;
+	}
 	
 	/**
 	 * Adds the deleted_at column to the meta object, which is
