@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-abstract class Jelly_Core_Behavior_SoftDeletable extends Jelly_Behavior
+abstract class Jelly_Core_Behavior_SoftDeletable implements Jelly_Behavior_Interface
 {
 	/**
 	 * @var  string  The name to use for the field that keeps track of a model's deleted status
@@ -50,17 +50,11 @@ abstract class Jelly_Core_Behavior_SoftDeletable extends Jelly_Behavior
 	{
 		if ($this->_disabled) return;
 		
-		$result = new Jelly_Behavior_Result;
+		// Return a value that's consistent with what delete would normally return
+		$result = (bool) $query->set(array('deleted_at' => time()))->update();
 		
 		// Delete shouldn't continue
-		$result->break = TRUE;
-		
-		// Return a value that's consistent with what delete would normally return
-		$result->value = (bool) $query
-		                   ->set(array('deleted_at' => time()))
-		                   ->update();
-		
-		return $result;
+		return new Jelly_Behavior_Result($result, TRUE);
 	}
 	
 	/**
@@ -74,17 +68,11 @@ abstract class Jelly_Core_Behavior_SoftDeletable extends Jelly_Behavior
 	{		
 		if ($this->_disabled) return;
 		
-		$result = new Jelly_Behavior_Result;
+		// Return a value that's consistent with what delete would normally return
+		$result = (bool) $query->set(array('deleted_at' => time()))->update();
 		
 		// Delete shouldn't continue
-		$result->break = TRUE;
-		
-		// Return a value that's consistent with what delete would normally return
-		$result->value = (bool) Jelly::query($model, $key)
-		                   ->set(array('deleted_at' => time()))
-		                   ->update();
-		
-		return $result;
+		return new Jelly_Behavior_Result($result, TRUE);
 	}
 	
 	/**

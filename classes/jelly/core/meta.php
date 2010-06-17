@@ -106,7 +106,7 @@ abstract class Jelly_Core_Meta
 			return;
 			
 		// Hand over the behaviors to the collection manager
-		$this->_behaviors = new Jelly_Behavior_Collection($this->_behaviors);
+		$this->_behaviors = new Jelly_Behavior($this->_behaviors, $model);
 
 		// Allow modification of this meta object by the behaviors
 		$this->_behaviors->after_initialize($this);
@@ -452,7 +452,7 @@ abstract class Jelly_Core_Meta
 	 * Gets or sets the behaviors attached to the object.
 	 * 
 	 * @param   array  $value
-	 * @return  Jelly_Behavior_Collection|$this
+	 * @return  Jelly_Behavior|$this
 	 */
 	public function behaviors($behaviors = NULL)
 	{

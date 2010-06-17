@@ -22,11 +22,9 @@ abstract class Jelly_Core_Behavior_Result
 	 *
 	 * @param  array  $options 
 	 */
-	public function __construct(array $options = array())
+	public function __construct($value, $break = FALSE)
 	{
-		foreach ($options as $key => $value)
-		{
-			$this->$key = $value;
-		}
+		$this->value = $value;
+		$this->break = FALSE;
 	}
 }
