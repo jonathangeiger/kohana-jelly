@@ -226,9 +226,8 @@ class Jelly_Collection_Core implements Iterator, Countable, SeekableIterator, Ar
 	{
 		if ($object)
 		{
-
 			if (is_array($this->_model))
-			{
+			{				
 				// This is polymorphic, we're not sure which model to return yet
 				$model_type = Arr::get($values, $this->_meta->model_type_field(), FALSE);
 				

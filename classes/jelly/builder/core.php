@@ -625,6 +625,18 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 			{
 				$this->with($relationship);
 			}
+			
+			// If this is a polymorphic subchild, filter out other rows
+			if ($this->_meta->model_type_field())
+			{
+				// If class is NOT abstract (i.e. is a child class) filter the results
+				$class = new ReflectionClass(Jelly::class_name($this->_model));
+				
+				if ( ! $class->isAbstract())
+				{
+					$this->where($this->_meta->model_type_field(), '=', $this->_model);					
+				}
+			}
 		}
 		else
 		{

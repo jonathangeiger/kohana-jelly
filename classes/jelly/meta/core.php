@@ -158,7 +158,7 @@ abstract class Jelly_Meta_Core
 				continue;
 			}
 
-			$field->initialize($model, $column);
+			$field->initialize($model, $column);			
 
 			// Ensure a default primary key is set
 			if ($field->primary AND empty($this->primary_key))
