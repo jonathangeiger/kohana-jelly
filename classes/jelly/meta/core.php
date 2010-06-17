@@ -75,11 +75,6 @@ abstract class Jelly_Meta_Core
 	protected $builder = '';
 
 	/**
-	 * @var  array  A list of columns and how they relate to fields
-	 */
-	protected $columns = array();
-
-	/**
 	 * @var  array  Default data for each field
 	 */
 	protected $defaults = array();
@@ -168,20 +163,12 @@ abstract class Jelly_Meta_Core
 
 			// Set the defaults so they're actually persistent
 			$this->defaults[$column] = $field->default;
-
-			// Set the columns, so that we can access reverse database results properly
-			if ( ! array_key_exists($field->column, $this->columns))
-			{
-				$this->columns[$field->column] = array();
-			}
-
-			$this->columns[$field->column][] = $column;
 			
 			// Handle polymorphic models
 			if ($field instanceof Jelly_Field_ModelType)
 			{
 				// Store alias
-				$this->model_type_field = $column;
+				$this->model_type_field = $field->column;
 			}
 		}
 

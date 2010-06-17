@@ -678,20 +678,20 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	protected function _column($field, $join = TRUE, $value = NULL)
 	{
 		$model = NULL;
-
+		
+		// Test for Database Expressions first
+		if ($field instanceof Database_Expression)
+		{
+			return $field;
+		}
+		
 		// Check for functions
 		if (strpos($field, '"') !== FALSE)
 		{
 			// Quote the column in FUNC("ident") identifiers
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
 		}
-
-		// Test for Database Expressions
-		if ($field instanceof Database_Expression)
-		{
-			return $field;
-		}
-
+		
 		// Set if we find this is a reference to a joined field
 		$join_table_alias = FALSE;
 
