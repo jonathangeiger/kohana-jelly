@@ -195,22 +195,24 @@ abstract class Jelly_Model_Core
 	 * Relationships that are returned are raw Jelly_Builders, and must be
 	 * execute()d before they can be used. This allows you to chain
 	 * extra statements on to them.
+	 * 
+	 * Set $changed to FALSE to get original values from the database.
 	 *
 	 * @param   string  $name  The field's name
 	 * @return  mixed
 	 */
-	public function get($name)
+	public function get($name, $changed = TRUE)
 	{
 		if ($field = $this->_meta->fields($name))
 		{
 			// Alias the name to its actual name
 			$name = $field->name;
 
-			if (array_key_exists($name, $this->_changed))
+			if ($changed AND array_key_exists($name, $this->_changed))
 			{
 				$value = $field->get($this, $this->_changed[$name]);
 			}
-			elseif (array_key_exists($name, $this->_with))
+			elseif ($changed AND array_key_exists($name, $this->_with))
 			{
 				$value = Jelly::factory($field->foreign['model'])->load_values($this->_with[$name]);
 
@@ -474,11 +476,14 @@ abstract class Jelly_Model_Core
 							 ->execute();
 
 			// Gotta make sure to set this
-			$values[$this->_meta->primary_key()] = $id;
+			$this->_changed[$this->_meta->primary_key()] = $id;
 		}
 
-		// Set the changed data back as original
-		$this->_original = array_merge($this->_original, $this->_changed, $values);
+		// Reset the saved data, since save() may have modified it
+		$this->set($values);
+		
+		// Make it appear as original data instead of changed
+		$this->_original = array_merge($this->_original, $this->_changed);
 
 		// We're good!
 		$this->_loaded = $this->_saved = TRUE;

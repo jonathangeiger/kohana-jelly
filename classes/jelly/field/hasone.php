@@ -44,7 +44,7 @@ abstract class Jelly_Field_HasOne extends Jelly_Field_HasMany implements Jelly_F
 		else
 		{
 			return Jelly::select($this->foreign['model'])
-					->where($this->foreign['column'], '=', $model->id())
+					->where($this->foreign['model'].'.'.$this->foreign['column'], '=', $model->id())
 					->limit(1);
 		}
 	}

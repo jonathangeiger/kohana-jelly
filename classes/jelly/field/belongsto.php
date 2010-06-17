@@ -81,13 +81,13 @@ abstract class Jelly_Field_BelongsTo extends Jelly_Field_Relationship implements
 		{
 			$value = $value->id();
 		}
-
-		// Convert NULL values to the default
-		if ($value === NULL)
+		
+		// Respect the null parameter
+		if ($value === NULL OR ($this->null AND empty($value)))
 		{
-			return $this->default;
+			return NULL;
 		}
-
+		
 		return (is_numeric($value)) ? (int) $value : (string) $value;
 	}
 
