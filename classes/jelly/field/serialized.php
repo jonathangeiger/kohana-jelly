@@ -26,7 +26,7 @@ abstract class Jelly_Field_Serialized extends Jelly_Field
 			return NULL;
 		}
 
-	 	if ($return = @unserialize($value))
+	 	if (($return = @unserialize($value)) !== FALSE)
 		{
 			return $return;
 		}
