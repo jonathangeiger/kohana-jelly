@@ -7,7 +7,7 @@
  * For example, if you always wanted the field to return a concatenation
  * of two columns in the database, you can do this:
  * 
- * 'field' => new Field_Expression('array(
+ * 'field' => new Jelly_Field_Expression('array(
  *       'column' => DB::expr("CONCAT(`first_name`, ' ', `last_name`)")
  * ))
  * 

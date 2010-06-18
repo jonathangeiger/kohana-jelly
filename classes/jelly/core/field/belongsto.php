@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles belongs to relationships
+ * Handles belongs to relationships.
  *
  * @package  Jelly
  */

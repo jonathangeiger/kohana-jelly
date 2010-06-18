@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles boolean data types.
+ * Handles boolean values.
  *
  * @package  Jelly
  */
