@@ -347,27 +347,20 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	{
 		return parent::or_where($this->_column($column, TRUE, $value), $op, $value);
 	}
-
+	
 	/**
-	 * Choose the columns to select from.
+	 * Choose the column(s) to select from.
 	 *
-	 * @param   mixed  column name or array($column, $alias) or object
-	 * @param   ...
+	 * @param   string|array  list of column names or aliases
 	 * @return  $this
 	 */
-	public function select_column($column)
+	public function select_column($columns)
 	{
-		return $this->select_columns(array($column));
-	}
-
-	/**
-	 * Choose the columns to select from, using an array.
-	 *
-	 * @param   array  list of column names or aliases
-	 * @return  $this
-	 */
-	public function select_columns(array $columns)
-	{
+		if ( ! is_array($columns))
+		{
+			$columns = array($columns);
+		}
+		
 		foreach ($columns as $i => $column)
 		{
 			if (is_array($column))

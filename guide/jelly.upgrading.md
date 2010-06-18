@@ -110,13 +110,13 @@ Take a look at [Formo](http://github.com/bmidget/kohana-formo) if you're interes
 	
 #### Jelly_Builder->select() has been renamed to Jelly_Builder->select_column()
 
-Since we're using `select()` to find records now, the old `select()` has been renamed to `select_column()` and `select_columns()`:
+Since we're using `select()` to find records now, the old `select()` has been renamed to `select_column()`:
 
 	// Select one at a time
 	$query->select_column('id')->select_column('name')->select();
 	
 	// Or many at a time
-	$query->select_columns(array('id', 'name', 'body'))->select();
+	$query->select_column(array('id', 'name', 'body'))->select();
 	
 #### Jelly_Model->as_array() has changed slightly
 
