@@ -4,9 +4,9 @@
  * Handles passwords by automatically hashing them before they're
  * saved to the database.
  *
- * It is important to note that a new password is hashed only when the
- * model is saved. This means you must save a model if you want to
- * compare hashes of two passwords.
+ * It is important to note that a new password is hashed in a validation
+ * callback. This gives you a chance to validate the password, and have it
+ * be hashed after validation.
  *
  * @package  Jelly
  */
@@ -16,25 +16,37 @@ abstract class Jelly_Core_Field_Password extends Jelly_Field_String
 	 * @var  callback  A valid callback to use for hashing the password or FALSE to not hash
 	 */
 	public $hash_with = 'sha1';
+	
+	/**
+	 * Adds a callback that hashes the password.
+	 *
+	 * @param  array  $options 
+	 */
+	public function __construct($options = array())
+	{
+		parent::__construct($options);
+		
+		// Add a callback that hashes the password when validating
+		$this->callbacks += array(array($this, 'hash'), array(':validate', ':model'));
+	}
 
 	/**
-	 * Hashes the password on save only if it's changed
+	 * Hashes the password only if it's changed
 	 *
-	 * @param   string  $model
-	 * @param   string  $value
-	 * @return  string
+	 * @param   Jelly_Validator  $validate 
+	 * @param   Jelly_Model      $model 
+	 * @return  void
 	 */
-	public function save($model, $value, $loaded)
+	public function hash(Jelly_Validator $validate, Jelly_Model $model)
 	{
-		if ($this->hash_with)
+		// No point in continuing with errors
+		if ($validate->errors()) return;
+		
+		// Do we need to hash the password?
+		if ($this->hash_with AND $model->changed($this->name))
 		{
 			// Verify value has changed
-			if ($model->changed($this->name))
-			{
-				$value = call_user_func($this->hash_with, $value);
-			}
+			$validate[$this->name] = call_user_func($this->hash_with, $validate[$this->name]);
 		}
-
-		return $value;
 	}
 }

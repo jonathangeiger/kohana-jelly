@@ -21,21 +21,21 @@ abstract class Jelly_Core_Field_Serialized extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if ($value === NULL OR ($this->null AND empty($value)))
+		list($value, $return) = $this->_default($value);
+		
+		if ( ! $return)
 		{
-			return NULL;
+		 	if (($new_value = @unserialize($value)) !== FALSE)
+			{
+				$value = $new_value;
+			}
 		}
-
-	 	if (($return = @unserialize($value)) !== FALSE)
-		{
-			return $return;
-		}
-
+		
 		return $value;
 	}
 
 	/**
-	 * Saves the value as a serialized object
+	 * Saves the value as a serialized string
 	 *
 	 * @param   Jelly  $model
 	 * @param   mixed  $value

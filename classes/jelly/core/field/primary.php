@@ -13,6 +13,11 @@ abstract class Jelly_Core_Field_Primary extends Jelly_Field
 	 * @var  boolean  Defaults primary keys to primary
 	 */
 	public $primary = TRUE;
+	
+	/**
+	 * @var  boolean  Default to converting empty values to NULL so keys are auto-incremented properly
+	 */
+	public $null = TRUE;
 
 	/**
 	 * Converts numeric IDs to ints
@@ -22,22 +27,14 @@ abstract class Jelly_Core_Field_Primary extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if ($value)
+		list($value, $return) = $this->_default($value);
+		
+		// Allow only strings and integers as primary keys
+		if ($return)
 		{
-			if (is_numeric($value))
-			{
-				return (int)$value;
-			}
-			else
-			{
-				return (string)$value;
-			}
+			$value = is_numeric($value) ? (int) $value : (string) $value;
 		}
-		else
-		{
-			// Empty values should be null so
-			// they are auto-incremented properly
-			return NULL;
-		}
+		
+		return $value;
 	}
 }

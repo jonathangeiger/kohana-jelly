@@ -11,6 +11,11 @@
 abstract class Jelly_Core_Field_Float extends Jelly_Field
 {
 	/**
+	 * @var  int  Default value is 0, per the SQL standard
+	 */
+	public $default = 0;
+	
+	/**
 	 * @var int The number of places to round the number, NULL to forgo rounding
 	 */
 	public $places = NULL;
@@ -23,16 +28,17 @@ abstract class Jelly_Core_Field_Float extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if ($value === NULL OR ($this->null AND empty($value)))
+		list($value, $return) = $this->_default($value);
+		
+		// Convert to a float and set the places properly
+		if ( ! $return)
 		{
-			return NULL;
-		}
-
-		$value = (float)$value;
-
-		if (is_numeric($this->places))
-		{
-			$value = round($value, $this->places);
+			$value = (float) $value;
+			
+			if (is_numeric($this->places))
+			{
+				$value = round($value, $this->places);
+			}
 		}
 
 		return $value;

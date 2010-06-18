@@ -8,6 +8,11 @@
 abstract class Jelly_Core_Field_Integer extends Jelly_Field
 {
 	/**
+	 * @var  int  Default value is 0, per the SQL standard
+	 */
+	public $default = 0;
+	
+	/**
 	 * Converts the value to an integer
 	 *
 	 * @param   mixed  $value
@@ -15,11 +20,13 @@ abstract class Jelly_Core_Field_Integer extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if ($value === NULL OR ($this->null AND empty($value)))
+		list($value, $return) = $this->_default($value);
+		
+		if ( ! $return)
 		{
-			return NULL;
+			$value = (int) $value;
 		}
-
-		return (int)$value;
+		
+		return $value;
 	}
 }

@@ -1,12 +1,26 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles strings
+ * Handles strings.
+ * 
+ * By default, strings do not allow NULL to be set on them, because 
+ * it is generally redundant to have NULLs be allowed when empty strings
+ * will suffice. 
  *
  * @package  Jelly
  */
 abstract class Jelly_Core_Field_String extends Jelly_Field
 {
+	/**
+	 * @var  string  Default value is a string, since we null is FALSE
+	 */
+	public $default = '';
+	
+	/**
+	 * @var  boolean  Do not allow null values by default
+	 */
+	public $allow_null = FALSE;
+	
 	/**
 	 * Casts to a string, preserving NULLs along the way
 	 *
@@ -15,11 +29,13 @@ abstract class Jelly_Core_Field_String extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if ($value === NULL OR ($this->null AND empty($value)))
+		list($value, $return) = $this->_default($value);
+		
+		if ( ! $return)
 		{
-			return NULL;
+			$value = (string) $value;
 		}
-
-		return (string) $value;
+		
+		return $value;
 	}
 }

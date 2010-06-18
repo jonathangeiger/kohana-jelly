@@ -11,6 +11,16 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Core_Field_Relationship 
 	 * @var  boolean  Defaults belongs_to's to in the database
 	 */
 	public $in_db = TRUE;
+	
+	/**
+	 * @var  int  Default to 0 for no relationship
+	 */
+	public $default = 0;
+	
+	/**
+	 * @var  boolean  Null values are not allowed, 0 represents no record
+	 */
+	public $allow_null = FALSE;
 
 	/**
 	 * A string pointing to the foreign model and (optionally, a
@@ -82,13 +92,14 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Core_Field_Relationship 
 			$value = $value->id();
 		}
 		
-		// Respect the null parameter
-		if ($value === NULL OR ($this->null AND empty($value)))
+		list($value, $return) = $this->_default($value);
+		
+		if ( ! $return)
 		{
-			return NULL;
+			$value = is_numeric($value) ? (int) $value : (string) $value;
 		}
 		
-		return is_numeric($value) ? (int) $value : (string) $value;
+		return $value;
 	}
 
 	/**

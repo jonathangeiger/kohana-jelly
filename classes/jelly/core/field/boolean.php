@@ -13,19 +13,37 @@ abstract class Jelly_Core_Field_Boolean extends Jelly_Field
 	public $true = 1;
 
 	/**
-	 * @var  string  How TRUE is represented to users (mainly in forms)
-	 */
-	public $label_true = "Yes";
-
-	/**
 	 * @var mixed How FALSE is represented in the database
 	 */
 	public $false = 0;
-
+	
 	/**
-	 * @var  string  How FALSE is represented to users (mainly in forms)
+	 * @var  boolean  Null values are not allowed
 	 */
-	public $label_false = "No";
+	public $allow_null = FALSE;
+	
+	/**
+	 * @var  boolean  Default value is FALSE, since NULL isn't allowed
+	 */
+	public $default = FALSE;
+	
+	/**
+	 * Ensures convert_empty is not set on the field, as it prevents FALSE
+	 * from ever being set on the field. 
+	 *
+	 * @param   array  $options 
+	 */
+	public function __construct($options = array())
+	{
+		parent::__construct($options);
+		
+		// Ensure convert_empty is FALSE
+		if ($this->convert_empty)
+		{
+			throw new Kohana_Exception(':class cannot have convert_empty set to TRUE', array(
+				':class' => get_class($this)));
+		}
+	}
 
 	/**
 	 * Validates a boolean out of the value with filter_var
@@ -35,7 +53,14 @@ abstract class Jelly_Core_Field_Boolean extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+		list($value, $return) = $this->_default($value);
+		
+		if ( ! $return)
+		{
+			$value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+		}
+		
+		return $value;
 	}
 
 	/**

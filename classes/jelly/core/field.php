@@ -50,7 +50,12 @@ abstract class Jelly_Core_Field
 	/**
 	 * @var  boolean  Whether or not empty() values should be converted to NULL
 	 */
-	public $null = FALSE;
+	public $convert_empty = FALSE;
+	
+	/**
+	 * @var  boolean  Whether or not NULL values are allowed
+	 */
+	public $allow_null = TRUE;
 
 	/**
 	* @var  array  {@link Jelly_Validator} filters for this field.
@@ -88,12 +93,18 @@ abstract class Jelly_Core_Field
 				$this->$name = $value;
 			}
 		}
-
-		// Check as to whether we need to add
-		// some callbacks for shortcut properties
-		if ($this->unique === TRUE)
+		
+		// If null is TRUE, allow_null needs to be as well
+		if ($this->convert_empty)
 		{
-			$this->callbacks[] = array($this, '_is_unique');
+			$this->allow_null = TRUE;
+		}
+		
+		// Default value is going to be NULL if null is true
+		// to mimic the SQL defaults
+		if ( ! isset($options['default']) AND ($this->convert_empty OR $this->allow_null))
+		{
+			$this->default = NULL;
 		}
 	}
 
@@ -121,7 +132,14 @@ abstract class Jelly_Core_Field
 		// Check for a name, because we can easily provide a default
 		if ( ! $this->label)
 		{
-			$this->label = inflector::humanize($column);
+			$this->label = ucwords(inflector::humanize($column));
+		}
+		
+		// Check as to whether we need to add
+		// some callbacks for shortcut properties
+		if ($this->unique === TRUE)
+		{
+			$this->rules[] = array(array($this, '_is_unique'), array(':validate', ':model', ':value', ':key'));
 		}
 	}
 
@@ -134,6 +152,8 @@ abstract class Jelly_Core_Field
 	 **/
 	public function set($value)
 	{
+		list($value, $return) = $this->_default($value);
+		
 		return $value;
 	}
 
@@ -173,25 +193,62 @@ abstract class Jelly_Core_Field
 	 * @param   string $field
 	 * @return  void
 	 */
-	public function _is_unique(Validate $data, $field, $model)
+	public function _is_unique(Validate $data, Jelly_Model $model, $value, $key)
 	{	
 		// According to the SQL standard NULL is not checked by the unique constraint
-		if ($data[$field] !== NULL)
+		if ($data[$this->name] !== NULL)
 		{
-			$query = Jelly::query($model)
-			              ->where($field, '=', $data[$field]);
+			$query = Jelly::query($model)->where($this->name, '=', $data[$this->name]);
 
 			// Exclude unique key value from check if this is a lazy save
-			if ($key = $model->id())
+			if ($key)
 			{
 				$query->where(':unique_key', '!=', $key);
 			}
 
 			if ($query->count())
 			{
-				$data->error($field, 'unique');
+				$data->error($this->name, 'unique');
 			}
 		}
+	}
+	
+	/**
+	 * Potentially converts the value to NULL or default depending on
+	 * the fields configuration. An array is returned with the first
+	 * element being the new value and the second being a boolean
+	 * as to whether the field should return the value provided or
+	 * continue processing it.
+	 *
+	 * @param   mixed  $value 
+	 * @return  array
+	 */
+	protected function _default($value)
+	{
+		$return = FALSE;
+		
+		// Convert empty values to NULL, if needed
+		if ($this->convert_empty AND empty($value))
+		{
+			$value  = NULL;
+			$return = TRUE;
+		}
+		
+		// Otherwise, convert NULL values to their default
+		if ( ! $this->convert_empty AND ! $this->allow_null AND $value === NULL)
+		{
+			$value  = $this->default;
+			$return = TRUE;
+		}
+		
+		// Allow NULL values to pass through untouched by the field
+		if ($this->allow_null and $value === NULL)
+		{
+			$value  = NULL;
+			$return = TRUE;
+		}
+		
+		return array($value, $return);
 	}
 
 	/**

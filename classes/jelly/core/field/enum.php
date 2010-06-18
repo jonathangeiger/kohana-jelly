@@ -27,36 +27,22 @@ abstract class Jelly_Core_Field_Enum extends Jelly_Field
 		// Ensure we have choices to gather values from
 		if (empty($this->choices))
 		{
-			throw new Kohana_Exception('Field_Enum must have a `choices` property set');
+			throw new Kohana_Exception(':class must have a `choices` property set', array(
+				':class' => get_class($this)));
 		}
 		
-		// Convert non-associative values to associative ones
-		if (!arr::is_assoc($this->choices))
+		// Set allow_null to TRUE if we find a NULL value
+		if (in_array(NULL, $this->choices))
 		{
-			$this->choices = array_combine($this->choices, $this->choices);
+			$this->allow_null = TRUE;
 		}
-	}
-
-	/**
-	 * If $value is in the $choices array, then it is used, otherwise $default is used
-	 *
-	 * @param   mixed  $value
-	 * @return  mixed
-	 */
-	public function set($value)
-	{
-		if ((is_int($value) OR is_string($value)) AND array_key_exists($value, $this->choices))
+		// We're allowing NULLs but the value isn't set. Create it so validation won't fail.
+		else if ($this->allow_null)
 		{
-			return $value;
+			$this->choices[] = NULL;
 		}
-		else
-		{
-			if ($this->null AND empty($value))
-			{
-				return NULL;
-			}
-
-			return $this->default;
-		}
+		
+		// Add a rule to validate that the value is proper
+		$this->rules += array('in_array' => array($this->choices));
 	}
 }

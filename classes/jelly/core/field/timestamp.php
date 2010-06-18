@@ -8,7 +8,7 @@
  * converted back to the format specified by $format (which is a valid
  * date() string).
  *
- * This means that you can have timestamp logic exist relatively indepentently
+ * This means that you can have timestamp logic exist relatively independently
  * of your database's format. If, one day, you wish to change the format used
  * to represent dates in the database, you just have to update the $format
  * property for the field.
@@ -17,6 +17,11 @@
  */
 abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 {
+	/**
+	 * @var  int  Default is 0
+	 */
+	public $default = 0;
+	
 	/**
 	 * @var  boolean  Whether or not to automatically set now() on creation
 	 */
@@ -31,11 +36,22 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	 * @var  string  A date formula representing the time in the database
 	 */
 	public $format = NULL;
-
+	
 	/**
-	 * @var  string  A pretty format used for representing the date to users
+	 * Constructor. Sets the default to 0 if we have no format, or an empty string otherwise.
+	 *
+	 * @param   array   $options 
 	 */
-	public $pretty_format = 'r';
+	public function __construct($options = array())
+	{
+		parent::__construct($options);
+		
+		if ( ! isset($options['default']) AND ! $this->allow_null)
+		{
+			// Having a format implies we're saving a string, so we want a proper default
+			$this->default = $this->format ? '' : 0;
+		}
+	}
 
 	/**
 	 * Converts the time to a UNIX timestamp
@@ -45,21 +61,20 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	 */
 	public function set($value)
 	{
-		if ($value === NULL OR ($this->null AND empty($value)))
+		list($value, $return) = $this->_default($value);
+		
+		if ( ! $return)
 		{
-			return NULL;
+			if (is_numeric($value))
+			{
+				$value = (int) $value;
+			}
+			else if (FALSE !== ($to_time = strtotime($value)))
+			{
+				$value = $to_time;
+			}
 		}
-
-		if (FALSE !== strtotime($value))
-		{
-			return strtotime($value);
-		}
-		// Already a timestamp?
-		elseif (is_numeric($value))
-		{
-			return (int) $value;
-		}
-
+		
 		return $value;
 	}
 
@@ -73,6 +88,7 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	 */
 	public function save($model, $value, $loaded)
 	{
+		// Do we need to provide a default since we're creating or updating
 		if (( ! $loaded AND $this->auto_now_create) OR ($loaded AND $this->auto_now_update))
 		{
 			$value = time();

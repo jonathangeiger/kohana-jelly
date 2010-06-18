@@ -316,7 +316,7 @@ abstract class Jelly_Core_Model
 				continue;
 			}
 
-			$value = $this->_filter($field, $field->set($value));
+			$value = $field->set($value);
 			$current_value = array_key_exists($field->name, $this->_changed)
 			               ? $this->_changed[$field->name]
 			               : $this->_original[$field->name];
