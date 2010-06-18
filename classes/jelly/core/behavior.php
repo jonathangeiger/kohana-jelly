@@ -123,7 +123,7 @@ abstract class Jelly_Core_Behavior
 	public function call($method, $sender, $args)
 	{
 		// Is this a custom method?
-		if (!empty($this->_methods[$method]))
+		if ( ! empty($this->_methods[$method]))
 		{
 			$object = $this->_methods[$method][0];
 			$method = $this->_methods[$method][1];
@@ -412,7 +412,7 @@ abstract class Jelly_Core_Behavior
 	{
 		$type = get_class($object);
 		
-		if (!isset($this->_callbacks_discovered[$type]))
+		if ( ! isset($this->_callbacks_discovered[$type]))
 		{
 			$methods = array_intersect(get_class_methods($object), Jelly_Behavior::$_allowed);
 			
