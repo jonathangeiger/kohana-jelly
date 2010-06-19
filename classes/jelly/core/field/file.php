@@ -52,7 +52,7 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 	 * @param   bool   $loaded
 	 * @return  string|NULL
 	 */
-	public function _upload(Jelly_Validator $array, $field, $model)
+	public function _upload(Jelly_Validator $array, $model, $field)
 	{
 		if ($array->errors())
 		{
@@ -97,7 +97,7 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 			$this->_delete_old_file($model->get($this->name, FALSE), $this->path);
 			
 			// Set the new filename on the model
-			$model->set($this->name, $value);
+			$array[$field] = $value;
 		}
 		else
 		{

@@ -747,7 +747,7 @@ abstract class Jelly_Core_Model
 			$this->_validator = $this->_meta->validator(array());
 			
 			// Give it $this as a model context
-			$this->_validate->context('model', $this);
+			$this->_validator->context('model', $this);
 		}
 		
 		// Swap out the array if we need to

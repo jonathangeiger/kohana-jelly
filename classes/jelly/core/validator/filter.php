@@ -5,7 +5,7 @@
  *
  * @package Jelly
  */
-class Jelly_Core_Validator_Rule extends Jelly_Validator_Callback
+class Jelly_Core_Validator_Filter extends Jelly_Validator_Callback
 {
 	/**
 	 * Creates a new filter.

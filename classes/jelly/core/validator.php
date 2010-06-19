@@ -46,7 +46,7 @@ abstract class Jelly_Core_Validator extends Validate
 	 * @param   array   array of filters
 	 * @return  $this
 	 */
-	public function filters($field, $filters)
+	public function filters($field, array $filters)
 	{
 		return $this->_add('filter', $field, $filters);
 	}
@@ -71,7 +71,7 @@ abstract class Jelly_Core_Validator extends Validate
 	 * @param   array   array of rules
 	 * @return  $this
 	 */
-	public function rules($field, $rules)
+	public function rules($field, array $rules)
 	{
 		return $this->_add('rule', $field, $rules);
 	}
@@ -96,7 +96,7 @@ abstract class Jelly_Core_Validator extends Validate
 	 * @param   array   array of callbacks
 	 * @return  $this
 	 */
-	public function callbacks($field, $callbacks)
+	public function callbacks($field, array $callbacks)
 	{
 		return $this->_add('callback', $field, $callbacks);
 	}

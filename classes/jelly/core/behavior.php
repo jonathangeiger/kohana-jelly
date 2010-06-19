@@ -408,7 +408,7 @@ abstract class Jelly_Core_Behavior
 	 * @param   string  $type 
 	 * @return  void
 	 */
-	protected function _discover_callbacks($object, $type)
+	protected function _discover_callbacks($object)
 	{
 		$type = get_class($object);
 		
