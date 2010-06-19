@@ -413,12 +413,12 @@ abstract class Jelly_Core_Meta
 	 * @param   boolean     $new 
 	 * @return  Jelly_Validator
 	 */
-	public function validator(Jelly_Model $model, array $data, $new = FALSE)
+	public function validator(array $data, $new = FALSE)
 	{
 		// Allow returning an empty validator
 		if ($new) 
 		{
-			return new Jelly_Validator($model, $data);
+			return new Jelly_Validator($data);
 		}
 		
 		// Create a default validator so we don't have to go through
@@ -426,7 +426,7 @@ abstract class Jelly_Core_Meta
 		if ( ! $this->_validator)
 		{
 			// Create our default validator, which we will clone from
-			$this->_validator = new Jelly_Validator($model, $data);
+			$this->_validator = new Jelly_Validator($data);
 			
 			// Add our filters, rules, and callbacks
 			foreach ($this->_fields as $name => $field)
@@ -436,16 +436,10 @@ abstract class Jelly_Core_Meta
 				$this->_validator->rules($name, $field->rules);
 				$this->_validator->callbacks($name, $field->callbacks);
 			}
-			
-			// Don't forget aliases
-			foreach ($this->_aliases as $alias => $field)
-			{
-				$this->_validator->alias($field, $alias);
-			}
 		}
 		
 		// Return a copy to prevent mucking with the original validator
-		return $this->_validator->copy($data, $model);
+		return $this->_validator->copy($data);
 	}
 	
 	/**

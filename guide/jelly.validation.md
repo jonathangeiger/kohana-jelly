@@ -1,89 +1,48 @@
 # Validation
 
-All validation of Jelly models is performed by setting filters, rules, and callbacks on fields. Fields are then filtered whenever data is set on them, and validated with rules and callbacks whenever the model is saved (or whenever `validate()` is called directly).
+All validation of Jelly models is performed by setting filters, rules, and callbacks on fields. Fields are then validated whenever the model is saved (or whenever `validate()` is called directly).
 
 ### Filters, rules, and callbacks
 
 Understanding the purpose and semantic difference of each of the different validation properties is important to properly validating your model. Here is an explanation and example of each.
 
+[!!] The surrounding class and `initialize` method have been omitted for the sake of brevity
+
 #### `filters`
 
-Unlike previous versions of Jelly, filters are no longer part of the validation process. Instead, you can think of them as custom callbacks that can alter a value whenever it changes. 
+Filters do not do anything to verify the integrity of data. Instead, you can think of them as custom callbacks that can alter a value before it's validated. For example, it's often useful to trim whitespace off of a string field before validation:
 
-	class Model_Post extends Jelly_Model
-	{
-		public static function initialize(Jelly_Meta $meta)
-		{
-			$meta->fields(array(
-				// ...
-				'name' => new Jelly_Field_String(array(
-					'filters' => array(
-						// $model->set_name($value) will be called whenever 
-						// a value is set on the name field
-						array(':model', 'set_name'),
-					),
-				))
-			))
-		}
-		
-		public function set_name($value)
-		{
-			// ...do stuff to $value...
-			return $value;
-		}
-	}
+	// ...
+	'name' => new Jelly_Field_String(array(
+		'filters' => array(
+			'trim' => NULL,
+		),
+	)),
 	
 #### `rules`
 
 Rules are the most important part of your validation process. They verify the integrity of your data. 
 
-	class Model_Post extends Jelly_Model
-	{
-		public static function initialize(Jelly_Meta $meta)
-		{
-			$meta->fields(array(
-				// ...
-				'name' => new Jelly_Field_String(array(
-					'rules' => array(
-						// Ensure the field is no longer than 128 characters
-						array('max_length', array(128))
-					),
-				))
-			))
-		}
-	}
+	// ...
+	'name' => new Jelly_Field_String(array(
+		'rules' => array(
+			// Ensure the field is no longer than 128 characters
+			array('max_length', array(128))
+		),
+	)),
 	
 #### `callbacks`
 
 Callbacks are used for any final processing of a field after all rules have been processed. They can be used to modify the validation object or the model being validated.
 
-Callbacks are passed three parameters before any other parameters:
+In the following example notice that it is possible to pass *extra* parameters to callbacks, unlike `Kohana_Validate`. As an example, here is how `Jelly_Field_File` implements its file saving method:
 
- * The validation object, which can be used to add errors.
- * The field being validated.
- * The model being validated.
-
-In the following example notice that it is possible to pass *extra* parameters to callbacks, unlike `Kohana_Validate`.
-
-	class Model_Post extends Jelly_Model
-	{
-		public static function initialize(Jelly_Meta $meta)
-		{
-			$meta->fields(array(
-				// ...
-				'name' => new Jelly_Field_String(array(
-					'callbacks' => array(
-						array(array(':model', 'callback'), array('arg1'))
-					),
-				))
-			))
-		}
-		
-		public function callback(Jelly_Validator $array, $field, Jelly_Model $model, $arg1)
-		{
-			// ...do stuff...
-		}
-	}
+	// ...
+	'name' => new Jelly_Field_File(array(
+		'callbacks' => array(
+			array(array(':field_object', '_upload'), array(':validate', ':model', ':field'))
+		),
+	)),
 
 #### A note about the callback syntax
 

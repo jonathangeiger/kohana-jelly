@@ -74,19 +74,7 @@ For reference here is the old style that remains acceptable:
 		($object, $method),
 		'Class::method',
 	)
-
-#### Filters are no longer called on validation
-
-Instead, filters are called when the value is being set. This, coupled with the new declaration syntax, means filters can be lovely little callbacks on your fields or models to add custom processing to set data.
-
-	'filters' => array(
-		'field' => array(
-			array(':model', 'set_field')
-		)
-	)
 	
-See that `:model` part of the callback? That's converted the actual model instance that's being filtered, so you can now call methods on the actual model that's being validated.
-
 #### Jelly_Builder->load() has been removed
 
 This is also because of `Jelly::query()`. You can pass a second argument to `Jelly::query()` which effectively duplicates the functionality, except it works on selects, deletes, and updates:

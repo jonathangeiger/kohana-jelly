@@ -424,20 +424,12 @@ abstract class Jelly_Core_Model
 	{
 		// Determine whether or not we're updating
 		$data = ($this->_loaded OR $key) ? $this->_changed : $this->_changed + $this->_original;
-
-		// Set the key to our id if it isn't set
-		if ($this->_loaded)
-		{
-			$key = $this->_original[$this->_meta->primary_key()];
-		}
-		// Key was passed, set the original ID of this object to the key passed
-		else if ($key)
-		{
-			$this->_original[$this->_meta->primary_key()] = $key;
-		}
+		
+		// Set our :key context, which is useful for 
+		$this->_validator()->context('key', $key);
 
 		// Run validation
-		$this->validate($data);
+		$this->validate($data, $key);
 
 		// These will be processed later
 		$values = $relations = array();
@@ -453,6 +445,13 @@ abstract class Jelly_Core_Model
 		foreach ($this->_changed + $this->_original as $column => $value)
 		{
 			$field = $this->_meta->field($column);
+			
+			// Use validation data if we can, as it may have changed
+			// from a filter or callback
+			if (array_key_exists($column, $data))
+			{
+				$value = $data[$column];
+			}
 
 			// Only save in_db values
 			if ($field->in_db)
@@ -500,6 +499,12 @@ abstract class Jelly_Core_Model
 
 			// Gotta make sure to set this
 			$this->_changed[$this->_meta->primary_key()] = $id;
+		}
+		
+		// Re-set any saved values
+		foreach ($values as $column => $value)
+		{
+			$this->set($column, $value);
 		}
 
 		// Set the changed data back as original
@@ -665,16 +670,18 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Create a new copy from the validator
-		$validator = $this->_validator($data);
+		$data = $this->_validator($data);
 		
 		// Trigger callbacks
-		$this->_meta->behaviors()->before_model_validate($this, $this->_validator);
+		$this->_meta->behaviors()->before_model_validate($this, $data);
 
 		// Check
-		if ( ! $this->_validator->check())
+		if ( ! $data->check())
 		{
-			throw new Validate_Exception($this->_validator);
+			throw new Validate_Exception($data);
 		}
+		
+		return $data->as_array();
 	}
 
 	/**
@@ -728,23 +735,6 @@ abstract class Jelly_Core_Model
 	}
 	
 	/**
-	 * Filters a value using the validator.
-	 *
-	 * @param   Jelly_Field  $field 
-	 * @param   mixed        $value 
-	 * @return  mixed
-	 */
-	protected function _filter($field, $value)
-	{
-		if ($field->filters)
-		{
-			return $this->_validator()->filter_value($field->name, $value);
-		}
-		
-		return $value;
-	}
-	
-	/**
 	 * Returns a copy of the model's validator.
 	 *
 	 * @param   array  $data
@@ -754,7 +744,10 @@ abstract class Jelly_Core_Model
 	{
 		if ( ! $this->_validator)
 		{	
-			$this->_validator = $this->_meta->validator($this, array());
+			$this->_validator = $this->_meta->validator(array());
+			
+			// Give it $this as a model context
+			$this->_validate->context('model', $this);
 		}
 		
 		// Swap out the array if we need to

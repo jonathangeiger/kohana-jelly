@@ -2,36 +2,7 @@
 
 /**
  * Jelly_Validator overrides Kohana's core validation class in order to add a few 
- * Jelly-specific features:
- * 
- *  * Adds filter_value(), since Jelly does not filter when validating but when 
- *    setting data.
- * 
- *  * Requires that a model be set. 
- * 
- *  * Only the data in the actual array passed will be validated. This means it is
- *    the developer's job to pass all keys they need validated.
- * 
- *  * It changes the declaration syntax to be consistent for filters, rules, 
- *    and callbacks, although the old way still works fine. Now, all filters,
- *    rules, and callbacks should be declared as such:
- * 
- *        // Params is entirely optional...
- *        array(callback $callback [, array $params])
- * 
- *        // This shorthand is allowed for those without params
- *        callback $callback
- * 
- *    This means that callbacks can have parameters passed to them, and 
- *    filters can be called on objects.
- * 
- *  * It allows the :model and :field context to be passed so that the method is called
- *    on the model or field being validated. This was not possible previously.
- * 
- *        'field' => array(
- *             array(array(':model', 'method'), array('arg1', 'arg2')),
- *             array(array(':field', 'method'), array('arg1', 'arg2')),
- *         );
+ * Jelly-specific features.
  * 
  * @see     Jelly_Model::validate
  * @package Jelly
@@ -39,217 +10,146 @@
 abstract class Jelly_Core_Validator extends Validate
 {
 	/**
-	 * @var  Jelly_Model  The current model we're validating against
+	 * @var  array  Validators added to the array
 	 */
-	protected $_model;
+	protected $_validate = array(
+		// Filters which modify a value
+		'filter'   => array(),
+		// Rules which verify a value
+		'rule'     => array(),
+		// Custom callbacks
+		'callback' => array(),
+	);
 	
 	/**
-	 * Sets the unique "any field" key and creates an ArrayObject from the
-	 * passed array.
-	 *
-	 * @param   array   array to validate
-	 * @return  void
+	 * @var  array  Current context
 	 */
-	public function __construct(Jelly_Model $model, array $array)
-	{
-		parent::__construct($array, ArrayObject::STD_PROP_LIST);
-		
-		// Save the model
-		$this->_model = $model;
-	}
+	protected $_context = array();
 	
 	/**
-	 * Copies the current filter/rule/callback to a new array.
-	 * 
-	 * $model is required, but simply set as optional to get around
-	 * PHP's strict standards. Also, sorry about the wonky argument
-	 * order, which is so for the same reason.
-	 *
-	 * @param   array        $array
-	 * @param   Jelly_Model  $model
-	 * @return  Jelly_Validator
-	 */
-	public function copy(array $array, Jelly_Model $model = NULL)
-	{
-		$copy = parent::copy($array);
-		
-		// $model is required
-		if ( ! $model instanceof Jelly_Model)
-		{
-			throw new Kohana_Exception('A Jelly_Model must be passed to '.get_class($this).'::copy()');
-		}
-		
-		// Replace model
-		$copy->_model = $model;
-
-		return $copy;
-	}
-	
-	/**
-	 * Adds an alias to a field so that the alias can be 
-	 * validated with the same rules as the original field.
-	 *
-	 * @param   string $field 
-	 * @param   string $column 
-	 * @return  $this
-	 */
-	public function alias($field, $alias)
-	{
-		foreach (array('_filters', '_rules', '_callbacks') as $key)
-		{
-			// Ensure we have something for the actual field
-			if ( ! isset($this->$key[$field]))
-			{
-				$this->$key[$field] = array();
-			}
-			
-			// Create a reference to the actual field
-			$this->$key[$alias] =& $this->$key[$field];
-		}
-		
-		return $this;
-	}
-	
-	/**
-	 * Overwrites or appends filters to a field. Each filter will be executed once.
-	 * All rules must be valid callbacks.
-	 *
-	 *     // Run trim() on all fields
-	 *     $validation->filter(TRUE, 'trim');
+	 * Add a filter to a field. Each filter will be executed once.
 	 *
 	 * @param   string  field name
 	 * @param   mixed   valid PHP callback
 	 * @param   array   extra parameters for the callback
 	 * @return  $this
 	 */
-	public function filter($field, $filter, array $params = NULL)
+	public function filter($field, $callback, array $params = NULL)
 	{
-		return $this->filters($field, array($filter, $params));
+		return $this->_add('filter', $field, array(array($callback, $params)));
+	}
+
+	/**
+	 * Adds multiple filters to a field.
+	 *
+	 * @param   string  field name
+	 * @param   array   array of filters
+	 * @return  $this
+	 */
+	public function filters($field, $filters)
+	{
+		return $this->_add('filter', $field, $filters);
 	}
 	
 	/**
-	 * Add filters using an array.
+	 * Add a rule to a field. Each rule will be executed once.
 	 *
 	 * @param   string  field name
-	 * @param   array   list of functions or static method name
-	 * @return  $this
-	 */
-	public function filters($field, array $filters)
-	{
-		return $this->_parse_callbacks($this->_filters, $field, $filters);
-	}
-
-	/**
-	 * Overwrites or appends rules to a field. Each rule will be executed once.
-	 * All rules must be string names of functions method names.
-	 *
-	 *     // The "username" must not be empty and have a minimum length of 4
-	 *     $validation->rule('username', 'not_empty')
-	 *                ->rule('username', 'min_length', array(4));
-	 *
-	 * @param   string  field name
-	 * @param   string  function or static method name
+	 * @param   mixed   valid PHP callback
 	 * @param   array   extra parameters for the callback
 	 * @return  $this
 	 */
-	public function rule($field, $rule, array $params = NULL)
+	public function rule($field, $callback, array $params = NULL)
 	{
-		return $this->rules($field, array($rule, $params));
+		return $this->_add('rule', $field, array(array($callback, $params)));
 	}
 
 	/**
-	 * Add rules using an array.
+	 * Adds multiple rules to a field.
 	 *
 	 * @param   string  field name
-	 * @param   array   list of functions or static method name
+	 * @param   array   array of rules
 	 * @return  $this
 	 */
-	public function rules($field, array $rules)
+	public function rules($field, $rules)
 	{
-		return $this->_parse_callbacks($this->_rules, $field, $rules);
+		return $this->_add('rule', $field, $rules);
 	}
-
+	
 	/**
-	 * Adds a callback to a field. Each callback will be executed only once.
-	 * No extra parameters can be passed as the format for callbacks is
-	 * predefined as (Validate $array, $field, array $errors).
-	 *
-	 *     // The "username" must be checked with a custom method
-	 *     $validation->callback('username', array($this, 'check_username'));
-	 *
-	 * To add a callback to every field already set, use TRUE for the field name.
+	 * Add a callback to a field. Each callback will be executed once.
 	 *
 	 * @param   string  field name
-	 * @param   mixed   callback to add
+	 * @param   mixed   valid PHP callback
+	 * @param   array   extra parameters for the callback
 	 * @return  $this
 	 */
 	public function callback($field, $callback, array $params = NULL)
 	{
-		return $this->callbacks($field, array($callback, $params));
+		return $this->_add('callback', $field, array(array($callback, $params)));
 	}
 
 	/**
-	 * Add callbacks using an array.
+	 * Adds multiple callbacks to a field.
 	 *
 	 * @param   string  field name
-	 * @param   array   list of callbacks
+	 * @param   array   array of callbacks
 	 * @return  $this
 	 */
-	public function callbacks($field, array $callbacks)
+	public function callbacks($field, $callbacks)
 	{
-		return $this->_parse_callbacks($this->_callbacks, $field, $callbacks);
+		return $this->_add('callback', $field, $callbacks);
 	}
 	
 	/**
-	 * Processes all filters on a specific value.
-	 *
-	 * @param   string       $field 
-	 * @param   mixed        $value 
-	 * @return  mixed
-	 */
-	public function filter_value($field, $value)
-	{
-		// Copy locally and process TRUE fields
-		$fiters = $this->_filters;
-		
-		if (isset($filters[TRUE]))
-		{
-			if ( ! isset($filters[$field]))
-			{
-				// Initialize the filters for this field
-				$filters[$field] = array();
-			}
-
-			// Append the filters
-			$filters[$field] += $filters[TRUE];
-		}
-		
-		// Don't process fields without filters
-		if (empty($filters[$field]))
-		{
-			return $value;
-		}
-		
-		foreach ($filters[$field] as $filter)
-		{
-			$callback = $filter[0];
-			$params   = $filter[1];
-			
-			// Add the value as the first argument
-			array_unshift($params, $value);
-			
-			// Call
-			$value = $this->_call($field, $callback, $params);
-		}
-		
-		return $value;
-	}
-	
-	/**
-	 * Executes all validation rules and callbacks. 
+	 * Add a context to the validation object. 
 	 * 
-	 * This does not execute filters, since Jelly processes 
-	 * filters on set and not when validating. 
+	 * The context key should not have a ':' on the front of it.
+	 * 
+	 * Omit passing a value to return the value for the context.
+	 *
+	 * @param   string  context name
+	 * @param   mixed   context value
+	 * @return  $this
+	 */
+	public function context($key, $value = NULL)
+	{
+		// Return a value for the context, since nothing was passed for $value
+		if (func_num_args() === 1)
+		{
+			return isset($this->_context[$key]) ? $this->_context[$key] : NULL;
+		}
+		
+		return $this->contexts(array($key => $value));
+	}
+
+	/**
+	 * Adds multiple contexts to the validation object. 
+	 * 
+	 * The context keys should not have a ':' on the front.
+	 *
+	 * @param   string  field name
+	 * @param   array   array of callbacks
+	 * @return  $this
+	 */
+	public function contexts(array $array)
+	{
+		foreach ($array as $key => $value)
+		{
+			$this->_context[$key] = $value;
+		}
+		
+		return $this;
+	}
+
+	/**
+	 * Executes all validation filters, rules, and callbacks. This should
+	 * typically be called within an if/else block.
+	 *
+	 *     if ($validation->check())
+	 *     {
+	 *          // The data is valid, do something here
+	 *     }
 	 *
 	 * @return  boolean
 	 */
@@ -262,108 +162,80 @@ abstract class Jelly_Core_Validator extends Validate
 		}
 
 		// New data set
-		$this->_errors = array();
+		$data = $this->_errors = array();
 
-		// Get a list of the expected fields
+		// Assume nothing has been submitted
+		$submitted = FALSE;
+
+		// Only validate passed data
 		$expected = array_keys($this->getArrayCopy());
-
-		// Import the rules and callbacks locally
-		// Only grab the keys that have been passed
-		$rules     = Arr::extract($this->_rules, $expected);
-		$callbacks = Arr::extract($this->_callbacks, $expected);
 		
-		// Process TRUE fields
+		// Import the validators locally
+		$validate = $this->_validate;
+
 		foreach ($expected as $field)
 		{
-			if (isset($rules[TRUE]))
+			if (isset($this[$field]))
 			{
-				if ( ! isset($rules[$field]))
-				{
-					// Initialize the rules for this field
-					$rules[$field] = array();
-				}
+				// Some data has been submitted, continue validation
+				$submitted = TRUE;
 
-				// Append the rules
-				$rules[$field] += $rules[TRUE];
+				// Use the submitted value
+				$data[$field] = $this[$field];
 			}
-
-			if (isset($callbacks[TRUE]))
+			else
 			{
-				if ( ! isset($callbacks[$field]))
-				{
-					// Initialize the callbacks for this field
-					$callbacks[$field] = array();
-				}
+				// No data exists for this field
+				$data[$field] = NULL;
+			}
+		}
 
-				// Append the callbacks
-				$callbacks[$field] += $callbacks[TRUE];
+		// Overload the current array with the new one
+		$this->exchangeArray($data);
+
+		if ($submitted === FALSE)
+		{
+			// Because no data was submitted, validation will not be forced
+			return FALSE;
+		}
+		
+		// Execute all callbacks
+		foreach ($validate as $type => $fields)
+		{
+			foreach ($fields as $field => $set)
+			{
+				// Skip TRUE callbacks and errored out fields
+				if ($field === 1 OR isset($this->_errors[$field])) continue;
+				
+				// Add the TRUE callbacks to the array
+				if (isset($validate[$type][TRUE]))
+				{
+					$set = array_merge($validate[$type][TRUE], $set);
+				}
+				
+				// Process each callback
+				foreach ($set as $callback)
+				{
+					// Set the current context
+					$this->_current_context(array(
+						'field'    => $field,
+						'callback' => $callback,
+						'value'    => $this[$field],
+						'validate' => $this,
+					));
+					
+					// Call
+					$callback->call($this);
+					
+					// Any new errors? Then we're done for this field
+					if (isset($this->_errors[$field]))
+					{
+						break;
+					}
+				}
 			}
 		}
 		
-		// Execute the rules
-		foreach ($rules as $field => $set)
-		{
-			// Get the field value
-			$value = $this[$field];
-
-			foreach ($set as $rule)
-			{
-				$callback = $rule[0];
-				$params   = $rule[1];
-				$method   = is_array($callback) ? $callback[1] : $callback;
-				
-				// If the field shouldn't be empty, but is, forgo any other rules
-				if ( ! in_array($method, $this->_empty_rules) AND ! Validate::not_empty($value))
-				{
-					continue;
-				}
-
-				// Add the field value to the parameters
-				array_unshift($params, $value);
-				
-				// Call and verify success
-				if (FALSE === $this->_call($field, $callback, $params))
-				{
-					// Remove the value from the parameters
-					array_shift($params);
-
-					// Add the rule to the errors
-					$this->error($field, $method, $params);
-
-					// This field has an error, stop executing rules
-					break;
-				}
-			}
-		}
-
-		// Execute the callbacks
-		foreach ($callbacks as $field => $set)
-		{
-			if (isset($this->_errors[$field]))
-			{
-				// Skip any field that already has an error
-				continue;
-			}
-
-			foreach ($set as $_callback)
-			{
-				$callback = $_callback[0];
-				$params   = $_callback[1];
-				
-				// Add the Validate object, field, and model to the beginning of the argument list
-				array_unshift($params, $this, $field, $this->_model);
-				
-				// Call the callback
-				$this->_call($field, $callback, $params);
-
-				if (isset($this->_errors[$field]))
-				{
-					// An error was added, stop processing callbacks
-					break;
-				}
-			}
-		}
-
 		if (isset($benchmark))
 		{
 			// Stop benchmarking
@@ -374,132 +246,184 @@ abstract class Jelly_Core_Validator extends Validate
 	}
 	
 	/**
-	 * Method caller.
-	 * 
-	 * Handles conversion of the contexts.
+	 * Returns the error messages. If no file is specified, the error message
+	 * will be the name of the rule that failed. When a file is specified, the
+	 * message will be loaded from "field/rule", or if no rule-specific message
+	 * exists, "field/default" will be used. If neither is set, the returned
+	 * message will be "file/field/rule".
 	 *
-	 * @param   string    $field
-	 * @param   callback  $callback 
-	 * @param   mixed     $params 
-	 * @return  mixed
+	 * By default all messages are translated using the default language.
+	 * A string can be used as the second parameter to specified the language
+	 * that the message was written in.
+	 *
+	 *     // Get errors from messages/forms/login.php
+	 *     $errors = $validate->errors('forms/login');
+	 *
+	 * @uses    Kohana::message
+	 * @param   string  file to load error messages from
+	 * @param   mixed   translate the message
+	 * @return  array
 	 */
-	protected function _call($field, $callback, $params)
+	public function errors($file = NULL, $translate = TRUE)
 	{
-		// Check to see if we need to replace the context
-		if (is_array($callback) AND is_string($callback[0]) AND substr($callback[0], 0, 1) === ':')
+		if ($file === NULL)
 		{
-			switch ($callback[0])
+			// Return the error list
+			return $this->_errors;
+		}
+
+		// Create a new message list
+		$messages = array();
+
+		foreach ($this->_errors as $field => $set)
+		{
+			list($error, $params) = $set;
+
+			// Get the label for this field
+			$label = $this->_labels[$field];
+
+			if ($translate)
 			{
-				case ':model':
-					$callback[0] = $this->_model;
-					break;
-					
-				case ':field':
-					$callback[0] = Jelly::meta($this->_model)->field($field);
-					
-					// We should have a field
-					if (!$callback[0])
-					{
-						throw new Kohana_Exception('Field :column not found on model :model'.
-						' while trying to determine :field validation context', array(
-							':field' => $field, ':model' => $this->_model));
-					}
-					
-					break;
+				// Translate the label
+				$label = __($label);
 			}
-			
-			$callback[0] = $this->_model;
-		}
-		
-		return Jelly::call($callback, $params);
-	}
-	
-	/**
-	 * Generic method for adding filters, rules, or callbacks.
-	 * 
-	 * This method is useful because it converts all callbacks to the exact same 
-	 * format and remains backwards-compatible with all of the different ways
-	 * the regular old Validate class allows filters, rules, and callbacks to be called.
-	 * 
-	 * This also means that filter callbacks can now be set in the `array($obj, $method)`
-	 * style and that callbacks can have arguments.
-	 * 
-	 * The preferred style, as documented elsewhere, is this:
-	 * 
-	 *    array(callback $callback[, array $params]); // $params is entirely optional.
-	 *
-	 * @param   array   $array 
-	 * @param   string  $field 
-	 * @param   array   $callbacks 
-	 * @return  $this
-	 */
-	protected function _parse_callbacks(array &$array, $field, array $callbacks)
-	{
-		// Ensure there is a label
-		if ($field !== TRUE AND ! isset($this->_labels[$field]))
-		{
-			// Set the field label to the field name
-			$this->_labels[$field] = preg_replace('/[^\pL]+/u', ' ', $field);
-		}
-		
-		// Ensure we have a set to work on
-		if ( ! isset($array[$field]))
-		{
-			$array[$field] = array();
-		}
-		
-		// Switch to the real array we're modifying
-		$array =& $array[$field];
-			
-		// We've alot of different types to handle here
-		foreach ($callbacks as $key => $value)
-		{
-			if (is_numeric($key))
+
+			// Add the field name to the params, everything else should be set in place by the callback
+			$values = array(':field' => $label) + (array) $params;
+
+			if ($message = Kohana::message($file, "{$field}.{$error}"))
 			{
-				// Callback without arguments
-				if (is_string($value) OR (is_array($value) AND isset($value[1]) AND is_string($value[1])))
+				// Found a message for this field and error
+			}
+			elseif ($message = Kohana::message($file, "{$field}.default"))
+			{
+				// Found a default message for this field
+			}
+			elseif ($message = Kohana::message($file, $error))
+			{
+				// Found a default message for this error
+			}
+			elseif ($message = Kohana::message('validate', $error))
+			{
+				// Found a default message for this error
+			}
+			else
+			{
+				// No message exists, display the path expected
+				$message = "{$file}.{$field}.{$error}";
+			}
+
+			if ($translate == TRUE)
+			{
+				if (is_string($translate))
 				{
-					$array[] = $this->_callback(array($value));
+					// Translate the message using specified language
+					$message = __($message, $values, $translate);
 				}
 				else
 				{
-					// Callback is in the preferred style
-					$array[] = $this->_callback($value);
+					// Translate the message using the default language
+					$message = __($message, $values);
 				}
 			}
-			// Callback in the style of 'field' => array('callback' => $args)
 			else
 			{
-				$array[] = $this->_callback(array($key, $value));
+				// Do not translate, just replace the values
+				$message = strtr($message, $values);
 			}
+
+			// Set the message for this field
+			$messages[$field] = $message;
+		}
+
+		return $messages;
+	}
+	
+	/**
+	 * Generic method for adding a new validator.
+	 *
+	 * @param   string  the validator type
+	 * @param   string  field name
+	 * @param   array   an array of callbacks and params
+	 * @return  $this
+	 */
+	protected function _add($type, $field, $callbacks)
+	{
+		// Ensure the validator type exists
+		if ( ! isset($this->_validate[$type]))
+		{
+			$this->_validate[$type] = array();
+		}
+		
+		// Ensure the validator field exists
+		if ( ! isset($this->_validate[$type][$field]))
+		{
+			$this->_validate[$type][$field] = array();
+		}
+		
+		// Set the field label to the field name if it doesn't exist
+		if ($field !== TRUE AND ! isset($this->_labels[$field]))
+		{
+			$this->_labels[$field] = inflector::humanize($field);
+		}
+		
+		// The class we'll be converting all callbacks to
+		$class = 'Jelly_Validator_'.$type;
+		
+		// Loop through each, adding them all
+		foreach ($callbacks as $key => $set)
+		{
+			// Allow old style callbacks 'callback' => $params
+			if (is_string($key))
+			{
+				$set = array($key, $set ? $set : NULL);
+			}
+			
+			$callback = $set[0];
+			$params   = isset($set[1]) ? $set[1] : NULL;
+			
+			// Are we supposed to convert this to a callback of this class?
+			if (is_string($callback) AND is_callable(array(get_class($this), $callback)))
+			{
+				// Test to see if the method is static or not
+				$method = new ReflectionMethod(get_class($this), $callback);
+				
+				if ($method->isStatic())
+				{
+					$callback = array(get_class($this), $callback);
+				}
+				else
+				{
+					$callback = array(':validate', $callback);
+				}
+			}
+			
+			// Create an object out of the callback if it isn't already one
+			if ( ! $callback instanceof $class)
+			{
+				$callback = new $class($callback, $params);
+			}
+
+			// Append to the list
+			$this->_validate[$type][$field][] = $callback;
 		}
 		
 		return $this;
 	}
 	
 	/**
-	 * Converts all callbacks to the following format:
+	 * Sets the default context using the values provided.
 	 * 
-	 *     array(callback $callback, array $args);
+	 * This is a simple method to override to provide default 
+	 * contexts. It is re-called every time a new callback is called
+	 * on each field when check()ing.
 	 *
-	 * @param   mixed  $callback 
-	 * @return  array
+	 * @param   array  $array 
+	 * @return  NULL
 	 */
-	protected function _callback($value)
+	protected function _current_context($array)
 	{
-		// Split apart
-		$callback = $value[0];
-		$args     = isset($value[1]) ? $value[1] : array();
-		
-		if (is_string($callback))
-		{
-			// Check if this is a method to call in this class
-			if (strpos($callback, '::') === FALSE AND is_callable(array('Jelly_Validator', $callback)))
-			{
-				$callback = array('Jelly_Validator', $callback);
-			}
-		}
-		
-		return array($callback, (array) $args);
+		$this->contexts($array);
 	}
+	
 }
