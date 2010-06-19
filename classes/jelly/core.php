@@ -219,7 +219,7 @@ abstract class Jelly_Core
 		}
 		else
 		{
-			return strtolower(Jelly::$_model_prefix.$model);
+			return strtolower(Jelly::model_prefix().$model);
 		}
 	}
 
@@ -236,10 +236,10 @@ abstract class Jelly_Core
 			$model = get_class($model);
 		}
 
-		$prefix_length = strlen(Jelly::$_model_prefix);
+		$prefix_length = strlen(Jelly::model_prefix());
 
 		// Compare the first parts of the names and chomp if they're the same
-		if (strtolower(substr($model, 0, $prefix_length)) === strtolower(Jelly::$_model_prefix))
+		if (strtolower(substr($model, 0, $prefix_length)) === strtolower(Jelly::model_prefix()))
 		{
 			$model = substr($model, $prefix_length);
 		}
