@@ -203,9 +203,10 @@ abstract class Jelly_Core_Validator extends Validate
 		foreach ($validate as $type => $fields)
 		{
 			foreach ($fields as $field => $set)
-			{
+			{	
 				// Skip TRUE callbacks and errored out fields
-				if ($field === 1 OR isset($this->_errors[$field])) continue;
+				if ( ! in_array($field, $expected) OR $field === 1 OR isset($this->_errors[$field])) 
+					continue;
 				
 				// Add the TRUE callbacks to the array
 				if (isset($validate[$type][TRUE]))

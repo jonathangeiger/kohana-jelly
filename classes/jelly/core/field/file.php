@@ -45,11 +45,12 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 	}
 
 	/**
-	 * Uploads a file if we have a valid upload
+	 * Logic to deal with uploading the image file and generating thumbnails according to
+	 * what has been specified in the $thumbnails array.
 	 *
-	 * @param   Jelly  $model
-	 * @param   mixed  $value
-	 * @param   bool   $loaded
+	 * @param   Jelly_Validator  $model
+	 * @param   Jelly_Model      $model
+	 * @param   string           $field
 	 * @return  string|NULL
 	 */
 	public function _upload(Jelly_Validator $array, $model, $field)
@@ -59,7 +60,7 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 			// Don't bother uploading
 			return;
 		}
-
+		
 		// Get the image from the array
 		$file = $array[$field];
 

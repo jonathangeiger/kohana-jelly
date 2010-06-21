@@ -425,11 +425,17 @@ abstract class Jelly_Core_Model
 		// Determine whether or not we're updating
 		$data = ($this->_loaded OR $key) ? $this->_changed : $this->_changed + $this->_original;
 		
+		 // Set the key to our id if it isn't set
+		if ($this->_loaded)
+		{
+			$key = $this->_original[$this->_meta->primary_key()];
+		}
+
 		// Set our :key context, which is useful for 
 		$this->_validator()->context('key', $key);
 
 		// Run validation
-		$this->validate($data, $key);
+		$data = $this->validate($data);
 
 		// These will be processed later
 		$values = $relations = array();
@@ -465,7 +471,7 @@ abstract class Jelly_Core_Model
 					$values[$field->name] = $value;
 				}
 				else
-				{
+				{	
 					// Insert defaults
 					if ( ! $key AND ! $this->changed($field->name) AND ! $field->primary)
 					{

@@ -88,10 +88,10 @@ abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 	 * @param   bool   $loaded
 	 * @return  string|NULL
 	 */
-	public function _upload(Jelly_Validator $array, $field, $model)
+	public function _upload(Jelly_Validator $array, $model, $field)
 	{
 		// Save the original untouched
-		parent::_upload($array, $field, $model);
+		parent::_upload($array, $model, $field);
 		
 		// Don't bother uploading
 		if ($array->errors())
@@ -102,7 +102,7 @@ abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 		// Has our source file changed?
 		if ($model->changed($field))
 		{
-			$filename = $model->get($field);
+			$filename = $array[$field];
 			$source   = $this->path.$filename;
 			
 			foreach ($this->thumbnails as $thumbnail)
