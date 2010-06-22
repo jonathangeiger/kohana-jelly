@@ -233,7 +233,6 @@ abstract class Jelly_Core_Model
 	 */
 	public function get($name, $changed = TRUE)
 	{
-		var_dump($name);
 		if ($field = $this->_meta->field($name))
 		{
 			// Alias the name to its actual name
