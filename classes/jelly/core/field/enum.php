@@ -8,7 +8,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Core_Field_Enum extends Jelly_Field
+abstract class Jelly_Core_Field_Enum extends Jelly_Field_String
 {
 	/**
 	 * @var array An array of valid choices
@@ -39,7 +39,15 @@ abstract class Jelly_Core_Field_Enum extends Jelly_Field
 		// We're allowing NULLs but the value isn't set. Create it so validation won't fail.
 		else if ($this->allow_null)
 		{
-			$this->choices[] = NULL;
+			array_unshift($this->choices, NULL);
+		}
+		
+		reset($this->choices);
+		
+		// Set the default value from the first choice in the array
+		if ( ! array_key_exists('default', $options))
+		{
+			$this->default = current($this->choices);
 		}
 		
 		// Add a rule to validate that the value is proper

@@ -234,13 +234,6 @@ abstract class Jelly_Core_Field
 			$return = TRUE;
 		}
 		
-		// Otherwise, convert NULL values to their default
-		if ( ! $this->convert_empty AND ! $this->allow_null AND $value === NULL)
-		{
-			$value  = $this->default;
-			$return = TRUE;
-		}
-		
 		// Allow NULL values to pass through untouched by the field
 		if ($this->allow_null and $value === NULL)
 		{
