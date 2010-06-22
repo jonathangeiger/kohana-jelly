@@ -5,7 +5,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Behavior_Joinable
+abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Supports_With
 {
 	/**
 	 * @param   mixed  $value

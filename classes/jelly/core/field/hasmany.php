@@ -6,8 +6,8 @@
  * @package  Jelly
  */
 abstract class Jelly_Core_Field_HasMany
-extends Jelly_Core_Field_Relationship
-implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
+extends Jelly_Field_Relationship
+implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 {
 	/**
 	 * A string pointing to the foreign model and (optionally, a

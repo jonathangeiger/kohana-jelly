@@ -676,7 +676,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		{
 			$field = Jelly::meta($parent)->field($path);
 
-			if ( ! ($field instanceof Jelly_Field_Behavior_Joinable))
+			if ( ! $field->supports(Jelly_Field::WITH))
 			{
 				// Entire list is invalid
 				break;
@@ -810,7 +810,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 			list($model, $field) = explode('.', $field, 2);
 
 			// Check to see if the 'model' passed is actually a relationship alias
-			if ($field_object = $this->_meta->field($model) AND $field_object instanceof Jelly_Field_Behavior_Joinable)
+			if ($field_object = $this->_meta->field($model) AND $field_object->supports(Jelly_Field::WITH))
 			{
 				// The model specified looks like a relationship alias in this context
 				// that means we alias the field name to a column but use the join alias for the table

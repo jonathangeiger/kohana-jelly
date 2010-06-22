@@ -7,7 +7,7 @@
  *
  * @package  Jelly
  */
-interface Jelly_Core_Field_Behavior_Haveable
+interface Jelly_Core_Field_Supports_Has
 {
 	/**
 	 * This method should return a boolean that indicates whether or

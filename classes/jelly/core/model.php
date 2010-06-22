@@ -482,7 +482,7 @@ abstract class Jelly_Core_Model
 					}
 				}
 			}
-			elseif ($this->changed($column) AND $field instanceof Jelly_Field_Behavior_Saveable)
+			elseif ($this->changed($column) AND $field->supports(Jelly_Field::SAVE))
 			{
 				$relations[$column] = $value;
 			}
@@ -625,7 +625,7 @@ abstract class Jelly_Core_Model
 		$field = $this->_meta->field($name);
 
 		// Don't continue without knowing we have something to work with
-		if ($field instanceof Jelly_Field_Behavior_Haveable)
+		if ($field AND $field->supports(Jelly_Field::HAS))
 		{
 			return $field->has($this, $this->_ids($models));
 		}
@@ -780,7 +780,7 @@ abstract class Jelly_Core_Model
 	{
 		$field = $this->_meta->field($name);
 
-		if ($field instanceof Jelly_Field_Behavior_Changeable)
+		if ($field AND $field->supports(Jelly_Field::ADD_REMOVE))
 		{
 			$name = $field->name;
 		}

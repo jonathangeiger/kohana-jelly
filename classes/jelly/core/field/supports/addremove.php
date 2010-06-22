@@ -8,7 +8,7 @@
  *
  * In general, relationships that are not 1:1 but are 1:many or many:many should
  * implement this interface. This means that in the field's set() method, it should
- * expect to handle a multitude of values including:
+ * expect to handle a multitude of values, including:
  *
  * - A primary key
  * - Another Jelly model
@@ -19,7 +19,7 @@
  *
  * @package  Jelly
  */
-interface Jelly_Core_Field_Behavior_Changeable
+interface Jelly_Core_Field_Supports_AddRemove extends Jelly_Field_Supports_Save
 {
 
 }

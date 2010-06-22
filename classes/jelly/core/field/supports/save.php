@@ -6,7 +6,7 @@
  *
  * @package  Jelly
  */
-interface Jelly_Core_Field_Behavior_Saveable
+interface Jelly_Core_Field_Supports_Save
 {
 	/**
 	 * This method is called after an insert or update is finished on

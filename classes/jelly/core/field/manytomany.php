@@ -6,8 +6,8 @@
  * @package  Jelly
  */
 abstract class Jelly_Core_Field_ManyToMany
-extends Jelly_Core_Field_Relationship
-implements Jelly_Field_Behavior_Saveable, Jelly_Field_Behavior_Haveable, Jelly_Field_Behavior_Changeable
+extends Jelly_Field_Relationship
+implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 {
 	/**
 	 * This is expected to contain an assoc. array containing the key

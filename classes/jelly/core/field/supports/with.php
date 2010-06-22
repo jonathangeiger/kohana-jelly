@@ -7,7 +7,7 @@
  *
  * @package  Jelly
  */
-interface Jelly_Core_Field_Behavior_Joinable
+interface Jelly_Core_Field_Supports_With
 {
 	/**
 	 * This method should add a join() and on() clause

@@ -8,6 +8,15 @@
 abstract class Jelly_Core_Field
 {
 	/**
+	 * Constants for checking field support
+	 */
+	const SAVE       = 'save';
+	const HAS        = 'has';
+	const WITH       = 'with';
+	const ADD_REMOVE = 'add_remove';
+	const JOIN       = 'join';
+	
+	/**
 	 * @var  string  The model's name
 	 */
 	public $model;
@@ -72,6 +81,11 @@ abstract class Jelly_Core_Field
 	* @var  array  {@link Jelly_Validator} callbacks for this field.
 	*/
 	public $callbacks = array();
+	
+	/**
+	 * @var  array  Special functions the field supports
+	 */
+	protected $_supports = array();
 
 	/**
 	 * Sets all options
@@ -185,6 +199,39 @@ abstract class Jelly_Core_Field
 	{
 		return $value;
 	}
+	
+	/**
+	 * Returns whether or not a field supports a particular feature.
+	 * 
+	 * This is abstracted away so Jelly_Model and Jelly_Builder don't
+	 * have to litter their code with instanceof checks and so we
+	 * can change the underlying implementation at will.
+	 * 
+	 * It is also easily overridable so custom fields can add their
+	 * own support for specific features if they want.
+	 * 
+	 * @param   string   The feature you're checking for support
+	 * @return  boolean
+	 */
+	public function supports($feature)
+	{
+		switch ($feature)
+		{
+			case Jelly_Field::SAVE:
+				return $this instanceof Jelly_Field_Supports_Save;
+			case Jelly_Field::WITH:
+				return $this instanceof Jelly_Field_Supports_With;
+			case Jelly_Field::HAS:
+				return $this instanceof Jelly_Field_Supports_Has;
+			case Jelly_Field::ADD_REMOVE:
+				return $this instanceof Jelly_Field_Supports_AddRemove;
+			case Jelly_Field::JOIN:
+				return $this instanceof Jelly_Field_Supports_Join;
+		}
+		
+		return FALSE;
+	}
+	
 
 	/**
 	 * Callback for validating that a field is unique.

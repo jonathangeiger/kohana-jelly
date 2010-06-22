@@ -5,7 +5,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Core_Field_BelongsTo extends Jelly_Core_Field_Relationship implements Jelly_Field_Behavior_Joinable
+abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field_Relationship implements Jelly_Field_Supports_With
 {
 	/**
 	 * @var  boolean  Defaults belongs_to's to in the database
