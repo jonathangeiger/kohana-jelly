@@ -275,7 +275,9 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	public function compile(Database $db = NULL, $type = NULL)
 	{
 		$type === NULL AND $type = $this->_type;
-		$db   = Database::instance($this->_db($db));
+		
+		// Do we need to convert to a database instance?
+		! $db instanceof Database AND $db = Database::instance($this->_db($db));
 		
 		// Select all of the columns for the model if we haven't already
 		$this->_meta AND empty($this->_select) AND $this->select_column('*');
