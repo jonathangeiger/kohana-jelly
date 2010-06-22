@@ -275,7 +275,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	public function compile(Database $db = NULL, $type = NULL)
 	{
 		$type === NULL AND $type = $this->_type;
-		$db   = Database::instance($this->_db());
+		$db   = Database::instance($this->_db($db));
 		
 		// Select all of the columns for the model if we haven't already
 		$this->_meta AND empty($this->_select) AND $this->select_column('*');
@@ -739,23 +739,6 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 
 		return $this;
 	}
-	
-	/**
-	 * Callback that can be overridden in the Builder.
-	 *
-	 * @see     Jelly_Behavior::before_select
-	 * @return  void
-	 */
-	public function before_select() { }
-	
-	/**
-	 * Callback that can be overridden in the Builder.
-	 *
-	 * @see     Jelly_Behavior::before_select
-	 * @param   Jelly_Collection|Jelly_Model  $result
-	 * @return  void
-	 */
-	public function after_select($result) { }
 
 	/**
 	 * This method aliases models to tables.
