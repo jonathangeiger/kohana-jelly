@@ -76,7 +76,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		$this->_initialize();
 		
 		// Default to using our key
-		if ($key)
+		if ($key !== NULL)
 		{
 			$this->where($this->unique_key($key), '=', $key)->limit(1);
 		}
@@ -272,9 +272,10 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 * @param   Database $db
 	 * @return  Database_Query
 	 */
-	public function compile(Database $db, $type = NULL)
+	public function compile(Database $db = NULL, $type = NULL)
 	{
 		$type === NULL AND $type = $this->_type;
+		$db   = Database::instance($this->_db());
 		
 		// Select all of the columns for the model if we haven't already
 		$this->_meta AND empty($this->_select) AND $this->select_column('*');
@@ -349,15 +350,27 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	}
 	
 	/**
-	 * Choose the column(s) to select from.
+	 * Choose the fields(s) to select from. 
+	 * 
+	 *     $query->select_column('column');
+	 *     $query->select_column('field', 'alias');
+	 *     $query->select_column(array('column', 'column2', '...'));
 	 *
-	 * @param   string|array  list of column names or aliases
+	 * @param   string|array  list of field names or actual columns
+	 * @param   string        An optional alias if passing a string for $columns
 	 * @return  $this
 	 */
-	public function select_column($columns)
+	public function select_column($columns, $alias = NULL)
 	{
+		// Allow passing a single argument
 		if ( ! is_array($columns))
 		{
+			// Check for an alias
+			if ($alias)
+			{
+				$columns = array($columns, $alias);
+			}
+			
 			$columns = array($columns);
 		}
 		
@@ -691,7 +704,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 				{
 					// We have to manually alias, since the path does not necessarily correspond to the path
 					// We select from the field alias rather than the model to allow multiple joins to same model
-					$this->select_column(array($field->name.'.'.$alias, $chain.':'.$alias));
+					$this->select_column(array(array($field->name.'.'.$alias, $chain.':'.$alias)));
 				}
 			}
 
