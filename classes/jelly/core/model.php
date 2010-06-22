@@ -113,9 +113,12 @@ abstract class Jelly_Core_Model
 	public function __get($name)
 	{
 		// Alias the field to its actual name. We must do this now
-		// so that any aliases will be cached under the real fields
+		// so that any aliases will be cached under the real field's
 		// name, rather than under its alias name
-		$name = $this->_meta->field($name, TRUE);
+		if ($field = $this->_meta->field($name, TRUE))
+		{
+			$name = $field;
+		}
 
 		if ( ! array_key_exists($name, $this->_retrieved))
 		{
@@ -230,6 +233,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function get($name, $changed = TRUE)
 	{
+		var_dump($name);
 		if ($field = $this->_meta->field($name))
 		{
 			// Alias the name to its actual name
