@@ -29,12 +29,12 @@ abstract class Jelly_Core_Behavior_SoftDeletable implements Jelly_Behavior_Inter
 	 */
 	public function __construct($params = array())
 	{
-		if (is_string($this->_params))
+		if (is_string($params))
 		{
-			$this->_params = array('column' => $this->_params);
+			$params = array('column' => $params);
 		}
 		
-		foreach ($this->_params as $key => $param)
+		foreach ($params as $key => $param)
 		{
 			$this->{'_'.$key} = $param;
 		}
@@ -60,10 +60,10 @@ abstract class Jelly_Core_Behavior_SoftDeletable implements Jelly_Behavior_Inter
 	 * @param  Jelly_Meta $meta 
 	 * @return void
 	 */
-	public function after_initialize(Jelly_Meta $meta)
+	public function before_meta_finalize(Jelly_Meta $meta)
 	{
 		$meta->fields(array(
-			$this->_column => new Field_Timestamp
+			$this->_column => new Field_Timestamp,
 		));
 	}
 	

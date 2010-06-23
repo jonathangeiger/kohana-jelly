@@ -110,7 +110,7 @@ abstract class Jelly_Core_Model
 	 * @param   string  $name
 	 * @return  mixed
 	 */
-	public function __get($name)
+	public function &__get($name)
 	{
 		// Alias the field to its actual name. We must do this now
 		// so that any aliases will be cached under the real field's
@@ -207,6 +207,8 @@ abstract class Jelly_Core_Model
 
 		// We can safely delete this no matter what
 		unset($this->_unmapped[$name]);
+		
+		return $this;
 	}
 	
 	/**

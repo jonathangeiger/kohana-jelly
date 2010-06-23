@@ -810,7 +810,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 			list($model, $field) = explode('.', $field, 2);
 
 			// Check to see if the 'model' passed is actually a relationship alias
-			if ($field_object = $this->_meta->field($model) AND $field_object->supports(Jelly_Field::WITH))
+			if ($this->_meta AND $field_object = $this->_meta->field($model) AND $field_object->supports(Jelly_Field::WITH))
 			{
 				// The model specified looks like a relationship alias in this context
 				// that means we alias the field name to a column but use the join alias for the table

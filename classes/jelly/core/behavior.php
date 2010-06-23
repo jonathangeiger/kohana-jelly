@@ -36,7 +36,7 @@ abstract class Jelly_Core_Behavior
 	protected static $_allowed = array
 	(
 		// Meta callbacks
-		'after_initialize', 
+		'before_meta_finalize', 'after_meta_finalize', 
 		
 		// Builder callbacks
 		'before_builder_select', 'after_builder_select', 
@@ -140,19 +140,34 @@ abstract class Jelly_Core_Behavior
 	}
 	
 	/**
-	 * Called just after the model's initialize method has been run.
+	 * Called just after the model's initialize method has been run
+	 * but before the properties have been finalized.
 	 * 
 	 * This gives the behavior a chance to override any part
 	 * of the model's meta object, add fields, etc.
-	 * 
-	 * There is no 'before_initialize' because we cannot know 
-	 * what behaviors have been added to the meta object before
-	 * initialization.
 	 *
 	 * @param   Jelly_Meta  $meta 
 	 * @return  void
 	 */
-	public function after_initialize(Jelly_Meta $meta)
+	public function before_meta_finalize(Jelly_Meta $meta)
+	{
+		$this->_trigger(__FUNCTION__, $meta, array(), array('discover' => FALSE));
+	}
+	
+	/**
+	 * Called just after the meta object has finished
+	 * its finalize() routine. This gives the behavior complete
+	 * access to the model's meta object the moment after
+	 * it has been created. 
+	 * 
+	 * No more properties can be set on the meta object, however
+	 * it is useful if you need to get at certain properties of
+	 * the meta object.
+	 *
+	 * @param   Jelly_Meta  $meta 
+	 * @return  void
+	 */
+	public function after_meta_finalize(Jelly_Meta $meta)
 	{
 		$this->_trigger(__FUNCTION__, $meta, array(), array('discover' => FALSE));
 	}

@@ -109,7 +109,7 @@ abstract class Jelly_Core_Meta
 		$this->_behaviors = new Jelly_Behavior($this->_behaviors, $model);
 
 		// Allow modification of this meta object by the behaviors
-		$this->_behaviors->after_initialize($this);
+		$this->_behaviors->before_meta_finalize($this);
 		
 		// Ensure certain fields are not overridden
 		$this->_model       = $model;
@@ -184,6 +184,9 @@ abstract class Jelly_Core_Meta
 
 		// Meta object is initialized and no longer writable
 		$this->_initialized = TRUE;
+		
+		// Final meta callback
+		$this->_behaviors->after_meta_finalize($this);
 	}
 	
 	/**
