@@ -523,6 +523,7 @@ abstract class Jelly_Core_Model
 				}
 			}
 			// Field can save itself,
+			// @TODO: This doesn't seem to work right. Values are always reporting as changed.
 			elseif ($field->supports(Jelly_Field::SAVE) AND $this->changed($column))
 			{
 				$saveable[$column] = $value;
