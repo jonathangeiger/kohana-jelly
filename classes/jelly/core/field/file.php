@@ -95,7 +95,7 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 			}
 			
 			// Garbage collect
-			$this->_delete_old_file($model->get($this->name, FALSE), $this->path);
+			$this->_delete_old_file($model->original($this->name), $this->path);
 			
 			// Set the new filename on the model
 			$array[$field] = $value;

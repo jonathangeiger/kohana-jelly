@@ -110,7 +110,7 @@ abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 				$dest = $thumbnail['path'].$filename;
 				
 				// Delete old file if necessary
-				$this->_delete_old_file($model->get($field, FALSE), $thumbnail['path']);
+				$this->_delete_old_file($model->original($field), $thumbnail['path']);
 				
 				// Let the Image class do its thing
 				$image = Image::factory($source, $thumbnail['driver'] ? $thumbnail['driver'] : Image::$default_driver);
