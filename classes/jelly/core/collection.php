@@ -19,8 +19,7 @@
 abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIterator, ArrayAccess
 {
 	/**
-	 * @var  Jelly  The current model we're placing results into
-	 *
+	 * @var  Jelly  The current class we're placing results into
 	 */
 	protected $_model = NULL;
 
@@ -28,6 +27,11 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 * @var  mixed  The current result set
 	 */
 	protected $_result = NULL;
+	
+	/**
+	 * @var  boolean  How to return the type
+	 */
+	protected $_as_object = NULL;
 
 	/**
 	 * Tracks a database result
@@ -35,19 +39,25 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 * @param  mixed  $model
 	 * @param  mixed  $result
 	 */
-	public function __construct($model, $result)
+	public function __construct($meta, $result, $as_object = TRUE)
 	{
-		if ($model)
-		{
-			// Convert to a model
-			$model = Jelly::class_name($model);
-
-			// Instantiate the model, which we'll continually
-			// fill with values when iterating
-			$this->_model = new $model;
-		}
-
+		$this->_meta = $meta;
 		$this->_result = $result;
+		$this->_as_object = $as_object;
+		
+		// Load our default model
+		if ($this->_as_object)
+		{
+			if ($this->_as_object === TRUE)
+			{
+				// Default to using the model
+				if ($this->_meta)
+				{
+					$class = Jelly::class_name($this->_meta->model());
+					$this->_model = new $class;
+				}
+			}
+		}
 	}
 
 	/**
@@ -112,7 +122,7 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 * Implementation of the Iterator interface
 	 * @return  Jelly
 	 */
-    public function current($object = TRUE)
+    public function current()
 	{
 		// Database_Result causes errors if you call current()
 		// on an object with no results, so we check first.
@@ -125,7 +135,7 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 			$result = array();
 		}
 
-		return $this->_load($result, $object);
+		return $this->_load($result);
 	}
 
 	/**
@@ -218,9 +228,9 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 * @param   array $values
 	 * @return  Jelly_Model|array
 	 */
-	protected function _load($values, $object)
+	protected function _load($values)
 	{
-		if ($this->_model AND $object)
+		if ($this->_model)
 		{
 			$model = clone $this->_model;
 

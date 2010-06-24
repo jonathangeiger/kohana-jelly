@@ -80,9 +80,6 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		{
 			$this->where($this->unique_key($key), '=', $key)->limit(1);
 		}
-		
-		// Default to loading as arrays
-		$this->as_object(FALSE);
 	}
 
 	/**
@@ -119,12 +116,33 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		// Trigger before_select callback
 		$this->_meta AND $this->_meta->behaviors()->before_builder_select($this);
 		
-		// Ready to leave the builder
-		$this->_result = $this->_build(Database::SELECT)->execute($db);
+		// Ready to leave the builder, we need to figure out what type to return
+		$this->_result = $this->_build(Database::SELECT);
 		
-		// Figure out our result type
-		$model = ($this->_meta) ? $this->_meta->model() : NULL;
-		$this->_result = new Jelly_Collection($model, $this->_result);
+		$as_object = $this->_as_object;
+		$meta      = $this->_meta;
+		
+		// All model results are returned as arrays and converted in the collection
+		if ($this->_as_object === FALSE OR ($this->_as_object === TRUE AND $this->_meta))
+		{
+			$this->_result->as_assoc();
+		}
+		else if (is_string($this->_as_object))
+		{
+			if (Jelly::meta(Jelly::model_name($this->_as_object)))
+			{
+				$as_object = TRUE;
+				$meta = Jelly::meta(Jelly::model_name($this->_as_object));
+				$this->_result->as_assoc();
+			}
+			else
+			{
+				$this->_result->as_object($this->_as_object);
+			}
+		}
+		
+		// Pass off to Jelly_Collection, which manages the result
+		$this->_result = new Jelly_Collection($meta, $this->_result->execute(), $as_object);
 		
 		// Trigger after_query callbacks
 		$this->_meta AND $this->_meta->behaviors()->after_builder_select($this, $this->_result);
@@ -929,7 +947,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	protected function _initialize()
 	{
-		// Can we set the default from?
+		// Set a few defaults
 		if ($this->_meta)
 		{
 			$this->from($this->_meta->table());
@@ -939,6 +957,9 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 			{
 				$this->with($relationship);
 			}
+
+			// Default to loading the current model
+			$this->as_object(TRUE);
 		}
 		else
 		{
