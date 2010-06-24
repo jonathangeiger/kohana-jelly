@@ -209,6 +209,10 @@ abstract class Jelly_Core_Validator extends Validate
 		{
 			foreach ($fields as $field => $set)
 			{	
+				// Skip TRUE callbacks and errored out fields
+				if ( ! in_array($field, $expected) OR $field === 1 OR isset($this->_errors[$field])) 
+					continue;
+					
 				// Field is empty and not required; skip rules
 				if ($type === 'rule')
 				{
@@ -222,10 +226,6 @@ abstract class Jelly_Core_Validator extends Validate
 						}
 					}
 				}
-				
-				// Skip TRUE callbacks and errored out fields
-				if ( ! in_array($field, $expected) OR $field === 1 OR isset($this->_errors[$field])) 
-					continue;
 				
 				// Add the TRUE callbacks to the array
 				if (isset($validate[$type][TRUE]))
