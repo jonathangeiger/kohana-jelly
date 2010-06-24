@@ -26,6 +26,16 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 	 * @var  string
 	 */
 	public $foreign = '';
+	
+	/**
+	 * @var  boolean  Null values are not allowed
+	 */
+	public $allow_null = FALSE;
+	
+	/**
+	 * @var  array  Default is an empty array
+	 */
+	public $default = array();
 
 	/**
 	 * Overrides the initialize to automatically provide the column name
@@ -95,9 +105,6 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 
 	/**
 	 * Implementation of Jelly_Field_Behavior_Saveable
-	 * 
-	 * @TODO Fix this. Defaults aren't right and it seems to 
-	 * perform an update when nothing's changed on an INSERT.
 	 *
 	 * @param   Jelly  $model
 	 * @param   mixed  $value

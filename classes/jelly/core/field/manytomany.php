@@ -10,6 +10,16 @@ extends Jelly_Field_Relationship
 implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 {
 	/**
+	 * @var  boolean  Null values are not allowed
+	 */
+	public $allow_null = FALSE;
+	
+	/**
+	 * @var  array  Default is an empty array
+	 */
+	public $default = array();
+	
+	/**
 	 * This is expected to contain an assoc. array containing the key
 	 * 'model', and the key 'columns'
 	 *

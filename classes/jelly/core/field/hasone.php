@@ -8,6 +8,16 @@
 abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Supports_With
 {
 	/**
+	 * @var  boolean  Null values are not allowed
+	 */
+	public $allow_null = FALSE;
+	
+	/**
+	 * @var  array  Default is an empty array
+	 */
+	public $default = 0;
+	
+	/**
 	 * @param   mixed  $value
 	 * @return  mixed
 	 */
@@ -20,7 +30,7 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Je
 		}
 		else
 		{
-			return $value;
+			return (int) $value;
 		}
 	}
 
