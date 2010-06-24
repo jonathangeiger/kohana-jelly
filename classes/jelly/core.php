@@ -48,7 +48,7 @@ abstract class Jelly_Core
 	{
 		$class = Jelly::class_name($model);
 
-		return new $class($values);
+		return new $class($key);
 	}
 
 	/**
