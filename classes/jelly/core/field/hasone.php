@@ -23,15 +23,20 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Je
 	 */
 	public function set($value)
 	{
-		// Handle Database Results
+		// Convert models to their id
 		if (is_object($value))
 		{
-			return $value->id();
+			$value = $value->id();
 		}
-		else
+		
+		list($value, $return) = $this->_default($value);
+		
+		if ( ! $return)
 		{
-			return (int) $value;
+			$value = is_numeric($value) ? (int) $value : (string) $value;
 		}
+		
+		return $value;
 	}
 
 	/**

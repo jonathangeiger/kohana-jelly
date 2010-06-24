@@ -13,6 +13,17 @@ The following properties apply to nearly all fields.
 
 **`in_db`** — Whether or not the field represents an actual column in the table.
 
+**`default`** — A default value for the field.
+
+**`allow_null`** — Whether or not `NULL` values can be set on the field. This defaults to `TRUE` for most fields, except for the string-based fields and relationship fields, in which case it defaults to `FALSE`.
+
+ * If this is `FALSE`, most fields will convert the `NULL` to the field's `default` value. 
+ * If this is `TRUE` the field's `default` value will be changed to `NULL` (unless you set the default value yourself).
+
+**`convert_empty`** — If set to `TRUE` any `empty()` values passed to the field will be converted to whatever is set for `empty_value`. This also sets `allow_null` to `TRUE` if `empty_value` is `NULL`.
+
+**`empty_value`** — This is the value that `empty()` values are converted to if `convert_empty` is `TRUE`. The default for this is `NULL`.
+
 ______________
 
 #### in_db field properties
@@ -23,15 +34,6 @@ The following properties mostly apply to fields that actually represent a column
 
 **`primary`** — Whether or not the field is a primary key. The only field that
 has this set to `TRUE` is `Jelly_Field_Primary`. A model can only have one primary field.
-
-**`default`** — A default value for the field.
-
-**`allow_null`** — Whether or not `NULL` values can be set on the field. This defaults to `TRUE` for most fields, except for the string-based fields, in which case it defaults to `FALSE`.
-
- * If this is `FALSE`, most fields will convert the `NULL` to the field's `default` value. 
- * If this is `TRUE` the field's `default` value will be changed to `NULL` (unless you set the default value yourself) and `NULL` values will be allowed.
-
-**`convert_empty`** — If set to `TRUE` any `empty()` values passed to the field will be converted to `NULL`. This also sets `allow_null` to `TRUE`, since `NULL` values must be allowed.
 
 ______________
 
@@ -81,7 +83,7 @@ ______________
 
 #### `Jelly_Field_String`
 
-Represents a string of any length. `NULL` values are not allowed by default on this field.
+Represents a string of any length. `NULL` values are not allowed by default on this field and are simply converted to an empty string.
 
 [API documentation](api/Jelly_Field_String)
 

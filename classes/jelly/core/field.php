@@ -62,6 +62,11 @@ abstract class Jelly_Core_Field
 	public $convert_empty = FALSE;
 	
 	/**
+	 * @var  mixed   The value to convert empty values to. This is only used if convert_empty is TRUE
+	 */
+	public $empty_value = NULL;
+	
+	/**
 	 * @var  boolean  Whether or not NULL values are allowed
 	 */
 	public $allow_null = TRUE;
@@ -81,11 +86,6 @@ abstract class Jelly_Core_Field
 	* @var  array  {@link Jelly_Validator} callbacks for this field.
 	*/
 	public $callbacks = array();
-	
-	/**
-	 * @var  array  Special functions the field supports
-	 */
-	protected $_supports = array();
 
 	/**
 	 * Sets all options
@@ -108,8 +108,8 @@ abstract class Jelly_Core_Field
 			}
 		}
 		
-		// If null is TRUE, allow_null needs to be as well
-		if ($this->convert_empty)
+		// See if we need to allow_null values because of convert_empty
+		if ($this->convert_empty AND $this->empty_value === NULL)
 		{
 			$this->allow_null = TRUE;
 		}
@@ -277,12 +277,12 @@ abstract class Jelly_Core_Field
 		// Convert empty values to NULL, if needed
 		if ($this->convert_empty AND empty($value))
 		{
-			$value  = NULL;
+			$value  = $this->empty_value;
 			$return = TRUE;
 		}
 		
 		// Allow NULL values to pass through untouched by the field
-		if ($this->allow_null and $value === NULL)
+		if ($this->allow_null AND $value === NULL)
 		{
 			$value  = NULL;
 			$return = TRUE;

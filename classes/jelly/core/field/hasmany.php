@@ -77,7 +77,14 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 	 */
 	public function set($value)
 	{
-		return $this->_ids($value);
+		list($value, $return) = $this->_default($value);
+		
+		if ( ! $return)
+		{
+			$value = $this->_ids($value);
+		}
+		
+		return $value;
 	}
 
 	/**
