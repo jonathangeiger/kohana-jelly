@@ -119,30 +119,18 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		// Ready to leave the builder, we need to figure out what type to return
 		$this->_result = $this->_build(Database::SELECT);
 		
-		$as_object = $this->_as_object;
-		$meta      = $this->_meta;
-		
-		// All model results are returned as arrays and converted in the collection
-		if ($this->_as_object === FALSE OR ($this->_as_object === TRUE AND $this->_meta))
+		// Return an actual array
+		if ($this->_as_object === FALSE OR Jelly::meta($this->_as_object))
 		{
 			$this->_result->as_assoc();
 		}
-		else if (is_string($this->_as_object))
+		else
 		{
-			if (Jelly::meta(Jelly::model_name($this->_as_object)))
-			{
-				$as_object = TRUE;
-				$meta = Jelly::meta(Jelly::model_name($this->_as_object));
-				$this->_result->as_assoc();
-			}
-			else
-			{
-				$this->_result->as_object($this->_as_object);
-			}
+			$this->_result->as_object($this->_as_object);
 		}
 		
 		// Pass off to Jelly_Collection, which manages the result
-		$this->_result = new Jelly_Collection($meta, $this->_result->execute(), $as_object);
+		$this->_result = new Jelly_Collection($this->_result->execute(), $this->_as_object);
 		
 		// Trigger after_query callbacks
 		$this->_meta AND $this->_meta->behaviors()->after_builder_select($this, $this->_result);
@@ -244,7 +232,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		$this->_meta AND $this->_meta->behaviors()->before_builder_select($this);
 		
 		// Start with a basic SELECT
-		$query = $this->_build(Database::SELECT);
+		$query = $this->_build(Database::SELECT)->as_object(FALSE);
 		
 		// Dump a few unecessary bits that cause problems
 		$query->_select = $query->_order_by = array();
@@ -318,6 +306,23 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		}
 		
 		return $this->_type;
+	}
+	
+	/**
+	 * Returns results as objects
+	 *
+	 * @param   string  classname or TRUE for stdClass
+	 * @return  $this
+	 */
+	public function as_object($class = TRUE)
+	{
+		// Class is TRUE, default to the model
+		if ($class === TRUE AND $this->_meta)
+		{
+			$class = Jelly::class_name($this->_meta->model());
+		}
+		
+		return parent::as_object($class);
 	}
 	
 	/**

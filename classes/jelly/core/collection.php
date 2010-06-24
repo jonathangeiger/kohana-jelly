@@ -19,7 +19,12 @@
 abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIterator, ArrayAccess
 {
 	/**
-	 * @var  Jelly  The current class we're placing results into
+	 * @var  Jelly_Meta  The current meta object, based on the model we're returning
+	 */
+	protected $_meta = NULL;
+	
+	/**
+	 * @var  Jelly_Model  The current class we're placing results into
 	 */
 	protected $_model = NULL;
 
@@ -39,24 +44,16 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 * @param  mixed  $model
 	 * @param  mixed  $result
 	 */
-	public function __construct($meta, $result, $as_object = TRUE)
+	public function __construct($result, $as_object)
 	{
-		$this->_meta = $meta;
 		$this->_result = $result;
 		$this->_as_object = $as_object;
 		
 		// Load our default model
-		if ($this->_as_object)
+		if ($this->_as_object AND Jelly::meta($this->_as_object))
 		{
-			if ($this->_as_object === TRUE)
-			{
-				// Default to using the model
-				if ($this->_meta)
-				{
-					$class = Jelly::class_name($this->_meta->model());
-					$this->_model = new $class;
-				}
-			}
+			$this->_model = ($this->_as_object instanceof Jelly_Model) ? $this->_as_object : new $this->_as_object;
+			$this->_meta  = $this->_model->meta();
 		}
 	}
 
@@ -83,6 +80,16 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	public function __toString()
 	{
 		return get_class($this).': '.Jelly::model_name($this->_model).' ('.$this->count().')';
+	}
+	
+	/**
+	 * Returns the collection's meta object, if it exists.
+	 *
+	 * @return  Jelly_Meta
+	 */
+	public function meta()
+	{
+		return $this->_meta;
 	}
 
 	/**

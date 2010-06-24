@@ -72,7 +72,7 @@ abstract class Jelly_Core_Model
 		// Have an id? Attempt to load it
 		if ($key !== NULL)
 		{
-			$result = Jelly::query($this->_meta->model(), $key)
+			$result = Jelly::query($this, $key)
 			     ->as_object(FALSE)
 			     ->select();
 			
