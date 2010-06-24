@@ -27,7 +27,7 @@ abstract class Jelly_Core_Field_Password extends Jelly_Field_String
 		parent::__construct($options);
 		
 		// Add a callback that hashes the password when validating
-		$this->callbacks += array(array($this, 'hash'), array(':validate', ':model'));
+		$this->callbacks[] = array(array($this, 'hash'), array(':validate', ':model'));
 	}
 
 	/**

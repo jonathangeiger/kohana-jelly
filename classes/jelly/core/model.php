@@ -460,7 +460,7 @@ abstract class Jelly_Core_Model
 		
 		// We've made it thus far, so we need to re-set the
 		// filtered data on to the model
-		$model->set($data->as_array());
+		$this->set($data->as_array());
 	}
 
 	/**
@@ -595,14 +595,14 @@ abstract class Jelly_Core_Model
 			}
 			
 			// Trigger callbacks to ensure we proceed
-			if (NULL === ($result = $this->_meta->behaviors()->before_delete($this, $key)))
+			if (NULL === ($result = $this->_meta->behaviors()->before_model_delete($this, $key)))
 			{
 				$result = Jelly::query($this, $key)->delete();
 			}
 		}
 		
 		// Trigger the after-delete
-		$this->_meta->behaviors()->after_delete($this, $key, $result);
+		$this->_meta->behaviors()->after_model_delete($this, $key, $result);
 		
 		// Clear the object so it appears deleted anyway
 		$this->clear();

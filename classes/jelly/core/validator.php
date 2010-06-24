@@ -27,6 +27,11 @@ abstract class Jelly_Core_Validator extends Validate
 	protected $_context = array();
 	
 	/**
+	 * @var  array  Fields that are required and will have all rules processed
+	 */
+	protected $_required = array();
+	
+	/**
 	 * Add a filter to a field. Each filter will be executed once.
 	 *
 	 * @param   string  field name
@@ -204,6 +209,20 @@ abstract class Jelly_Core_Validator extends Validate
 		{
 			foreach ($fields as $field => $set)
 			{	
+				// Field is empty and not required; skip rules
+				if ($type === 'rule')
+				{
+					// Is the field required?
+					if ( ! isset($this->_required[TRUE]) AND ! isset($this->_required[$field]))
+					{
+						// It's not required, so if it's empty we skip all rules
+						if ( ! Validate::not_empty($this[$field]))
+						{
+							break;
+						}
+					}
+				}
+				
 				// Skip TRUE callbacks and errored out fields
 				if ( ! in_array($field, $expected) OR $field === 1 OR isset($this->_errors[$field])) 
 					continue;
@@ -373,7 +392,7 @@ abstract class Jelly_Core_Validator extends Validate
 		
 		// Loop through each, adding them all
 		foreach ($callbacks as $key => $set)
-		{
+		{	
 			// Allow old style callbacks 'callback' => $params
 			if (is_string($key))
 			{
@@ -386,6 +405,12 @@ abstract class Jelly_Core_Validator extends Validate
 			// Are we supposed to convert this to a callback of this class?
 			if (is_string($callback) AND is_callable(array(get_class($this), $callback)))
 			{
+				// Is the method one that marks the field as required?
+				if (in_array($callback, $this->_empty_rules))
+				{
+					$this->_required[$field] = TRUE;
+				}
+				
 				// Test to see if the method is static or not
 				$method = new ReflectionMethod(get_class($this), $callback);
 				
