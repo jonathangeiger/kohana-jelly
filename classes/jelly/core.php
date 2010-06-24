@@ -37,15 +37,14 @@ abstract class Jelly_Core
 	/**
 	 * Factory for instantiating models.
 	 *
-	 * If $values is passed and it is an array, it will be
-	 * applied to the model as if it were a database result.
-	 * The model is then considered to be loaded.
+	 * A key can be passed to automatically load a model by its
+	 * unique key.
 	 *
 	 * @param   mixed  $model
 	 * @param   mixed  $key
 	 * @return  Jelly
 	 */
-	public static function factory($model, $values = NULL)
+	public static function factory($model, $key = NULL)
 	{
 		$class = Jelly::class_name($model);
 

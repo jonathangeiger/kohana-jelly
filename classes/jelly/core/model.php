@@ -55,14 +55,13 @@ abstract class Jelly_Core_Model
 
 	/**
 	 * Constructor.
+	 * 
+	 * A key can be passed to automatically load a model by its
+	 * unique key.
 	 *
-	 * If $values is passed and it is an array, it will be
-	 * applied to the model as if it were a database result.
-	 * The model is then considered to be loaded and saved.
-	 *
-	 * @param  array  $values
+	 * @param  mixed  $values
 	 **/
-	public function __construct($values = array())
+	public function __construct($key = NULL)
 	{
 		// Load the object's meta data for quick access
 		$this->_meta = Jelly::meta($this);
@@ -71,12 +70,16 @@ abstract class Jelly_Core_Model
 		$this->_original = $this->_meta->defaults();
 
 		// Have an id? Attempt to load it
-		if ($values)
+		if ($key !== NULL)
 		{
-			// Arrays are loaded as values, but not load()ed
-			if (is_array($values))
+			$result = Jelly::query($this->_meta->model(), $key)
+			     ->as_object(FALSE)
+			     ->select();
+			
+			// Only load if a record is found
+			if ($result)
 			{
-				$this->set($values);
+				$this->load_values($result);
 			}
 		}
 	}
