@@ -95,6 +95,9 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 
 	/**
 	 * Implementation of Jelly_Field_Behavior_Saveable
+	 * 
+	 * @TODO Fix this. Defaults aren't right and it seems to 
+	 * perform an update when nothing's changed on an INSERT.
 	 *
 	 * @param   Jelly  $model
 	 * @param   mixed  $value
