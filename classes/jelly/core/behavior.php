@@ -45,7 +45,7 @@ abstract class Jelly_Core_Behavior
 		'before_builder_delete', 'after_builder_delete', 
 		
 		// Model callbacks
-		'before_model_validate', 
+		'after_model_validate', 'before_model_validate', 
 		'before_model_save', 'after_model_save', 
 		'before_model_delete', 'after_model_delete'
 	);
@@ -269,14 +269,26 @@ abstract class Jelly_Core_Behavior
 	
 	/**
 	 * Called before validating when the data is in its raw form
-	 * in the model. Fields have not had a chance to process
-	 * it with their save() method.
+	 * in the model. 
 	 *
-	 * @param   Jelly_Model  $model 
-	 * @param   Validate     $data
+	 * @param   Jelly_Model     $model 
+	 * @param   Kohana_Validate $data
 	 * @return  void
 	 */
 	public function before_model_validate(Jelly_Model $model, Kohana_Validate $data) 
+	{
+		$this->_trigger(__FUNCTION__, $model, array($data));
+	}
+	
+	/**
+	 * Called after calling the validation's check() method 
+	 * but before re-setting the data on the model. 
+	 *
+	 * @param   Jelly_Model     $model 
+	 * @param   Kohana_Validate $data
+	 * @return  void
+	 */
+	public function after_model_validate(Jelly_Model $model, Kohana_Validate $data) 
 	{
 		$this->_trigger(__FUNCTION__, $model, array($data));
 	}
@@ -305,6 +317,9 @@ abstract class Jelly_Core_Behavior
 	/**
 	 * Called after saving, giving the behavior a chance
 	 * to modify data after it's saved.
+	 * 
+	 * $key is not passed since it is now possible to 
+	 * determine the model's id with $model->id().
 	 *
 	 * @param   Jelly_Model  $model 
 	 * @return  void
