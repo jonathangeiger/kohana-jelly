@@ -199,7 +199,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function __toString()
 	{
-		return (string) get_class($this).' ('.$this->id() ? $this->id() : 'NULL'.')';
+		return (string) get_class($this).'('.($this->id() ? $this->id() : 'NULL').')';
 	}
 
 	/**
@@ -259,7 +259,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function original($field)
 	{
-		if ($field = $this->_meta->field($name))
+		if ($field = $this->_meta->field($field))
 		{
 			// Alias the name to its actual name
 			return $field->get($this, $this->_original[$field->name]);
