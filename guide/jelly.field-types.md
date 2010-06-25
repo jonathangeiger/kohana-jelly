@@ -51,7 +51,7 @@ The following properties are available to all of the field types and mostly rela
 
 **`callbacks`** — Callbacks to use for any custom validation after all filters and rules have been processed.
 
-### Core field types
+### Core fields
 
 These fields represent an actual data type that exists in the database. Extra configurable properties will be listed below the field description.
 
@@ -132,7 +132,7 @@ Represents a timestamp. This field always returns its value as a UNIX timestamp,
 
 [API documentation](api/Jelly_Field_Timestamp)
 
-### Special field types
+### Special fields
 
 These fields still represent actual columns in the database but might do special things that don't necessarily equate to any SQL datatype.
 
@@ -234,6 +234,10 @@ Here is an example illustrating the `thumbnails` property. All properties are op
  * **`types`** — Valid file extensions that the file may have. Defaults to allowing JPEGs, GIFs, and PNGs.
 
 [API documentation](api/Jelly_Field_Image)
+
+### Relationship fields
+
+These fields have been [documented elsewhere](jelly.relationships) since they encompass a large portion of Jelly's functionality.
 
 ______________
 

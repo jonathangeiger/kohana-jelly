@@ -28,20 +28,8 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 	public $foreign_default = 0;
 	
 	/**
-	 * A string pointing to the foreign model and (optionally, a
-	 * field, column, or meta-alias).
-	 *
-	 * Assuming an author has_many posts and the field was named 'posts':
-	 *
-	 *  * '' would default to post.:author:foreign_key
-	 *  * 'post' would expand to post.:author:foreign_key
-	 *  * 'post.author_id' would remain untouched.
-	 *
-	 * The model part of this must point to a valid model, but the
-	 * field part can point to anything, as long as it's a valid
-	 * column in the database.
-	 *
-	 * @var  string
+	 * @var  string  A string pointing to the foreign model and (optionally, a
+	 *               field, column, or meta-alias). 
 	 */
 	public $foreign = '';
 	

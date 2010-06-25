@@ -60,14 +60,8 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 			$this->foreign = $this->foreign.'.:primary_key';
 		}
 
-		// Split them apart
-		$foreign = explode('.', $this->foreign);
-
 		// Create an array from them
-		$this->foreign = array(
-			'model' => $foreign[0],
-			'column' => $foreign[1],
-		);
+		$this->foreign = array_combine(array('model', 'field'), explode('.', $this->foreign));
 
 		// Default to the foreign model's primary key
 		if (empty($this->column))
@@ -112,7 +106,7 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 	public function get($model, $value)
 	{
 		return Jelly::query($this->foreign['model'])
-		            ->where($this->foreign['column'], '=', $value)
+		            ->where($this->foreign['field'], '=', $value)
 		            ->limit(1);
 	}
 
@@ -126,7 +120,7 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 	{
 		$join_col1 = $this->model.'.'.$this->column;
 		// We use this field's alias rather than the foreign model so the join alias can be resolved
-		$join_col2 = $this->name.'.'.$this->foreign['column'];
+		$join_col2 = $this->name.'.'.$this->foreign['field'];
 
 		$builder
 			->join(array($this->foreign['model'], Jelly::join_alias($this)), 'LEFT')

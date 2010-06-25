@@ -1,7 +1,10 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles many to many relationships
+ * Handles many to many relationships.
+ * 
+ * With many-to-many relationships there is a "through" table that
+ * connects the two models. 
  *
  * @package  Jelly
  */
@@ -23,51 +26,19 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	public $default = array();
 	
 	/**
-	 * @var  array  The default to set on foreign fields when removing the relationship
+	 * @var  string  A string containing the name of the model and (optionally) 
+	 *               the field of the model we're connecting.
 	 */
-	public $foreign_default = 0;
+	public $foreign = '';
 	
 	/**
-	 * This is expected to contain an assoc. array containing the key
-	 * 'model', and the key 'columns'
-	 *
-	 * If they do not exist, they will be filled in with sensible defaults
-	 * derived from the field's name and from the values in 'foreign'
-	 *
-	 * 'model' => 'a model or table to use as the join table'
-	 *
-	 * If 'model' is empty it is set to the pluralized names of the
-	 * two model's names combined alphabetically with an underscore.
-	 *
-	 * 'columns' => array('column for this model', 'column for foreign model')
-	 *
-	 * 'columns' must be set in the order they appear above.
-	 *
-	 * @var  array
+	 * @var mixed  A string or array that references the through table and 
+	 *             fields we're using to connect the two models.
 	 */
-	public $through = NULL;
+	public $through = '';
 
 	/**
-	 * This is expected to contain an assoc. array containing the key
-	 * 'model', and the key 'column'
-	 *
-	 * If they do not exist, they will be filled in with sensible defaults
-	 * derived from the field's name .
-	 *
-	 * 'model' => 'a model to use as the foreign association'
-	 *
-	 * If 'model' is empty it is set to the singularized name of the field.
-	 *
-	 * 'column' => 'the column (or alias) that is the foreign model's primary key'
-	 *
-	 * If 'column' is empty, it is set to 'id'
-	 *
-	 * @var  array
-	 */
-	public $foreign = NULL;
-
-	/**
-	 * Overrides the initialize to automatically provide the column name
+	 * Sets up foreign and through properly.
 	 *
 	 * @param   string  $model
 	 * @param   string  $column
@@ -82,21 +53,18 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 			$this->foreign = $foreign_model.'.'.$foreign_model.':primary_key';
 		}
 		// Is it model.field?
-		elseif (FALSE === strpos($this->foreign, '.'))
+		elseif (is_string($this->foreign) AND FALSE === strpos($this->foreign, '.'))
 		{
 			$this->foreign = $this->foreign.'.'.$this->foreign.':primary_key';
 		}
 
-		// Split them apart
-		$foreign = explode('.', $this->foreign);
+		// Create an array from them for easier access
+		if ( ! is_array($this->foreign))
+		{
+			$this->foreign = array_combine(array('model', 'field'), explode('.', $this->foreign));
+		}	
 
-		// Create an array from them
-		$this->foreign = array(
-			'model' => $foreign[0],
-			'column' => $foreign[1],
-		);
-
-		// We can work with nothing passed or just a model
+		// Create the default through connection
 		if (empty($this->through) OR is_string($this->through))
 		{
 			if (empty($this->through))
@@ -108,16 +76,13 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 					inflector::plural($model)
 				);
 
-				// Sort
 				sort($through);
-
-				// Bring them back together
 				$this->through = implode('_', $through);
 			}
 
 			$this->through = array(
 				'model' => $this->through,
-				'columns' => array(
+				'fields' => array(
 					inflector::singular($model).':foreign_key',
 					inflector::singular($this->foreign['model']).':foreign_key',
 				)
@@ -128,7 +93,7 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	}
 
 	/**
-	 * Returns an array of ids.
+	 * Sets a value on the field.
 	 *
 	 * @param   mixed  $value
 	 * @return  array
@@ -161,7 +126,7 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 		}
 
 		return Jelly::query($this->foreign['model'])
-		            ->where($this->foreign['column'], 'IN', $value);
+		            ->where($this->foreign['field'], 'IN', $value);
 	}
 
 	/**
@@ -184,8 +149,8 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 		if ($old = array_diff($in, (array)$value))
 		{
 			Jelly::query($this->through['model'])
-			     ->where($this->through['columns'][0], '=', $model->id())
-			     ->where($this->through['columns'][1], 'IN', $old)
+			     ->where($this->through['fields'][0], '=', $model->id())
+			     ->where($this->through['fields'][1], 'IN', $old)
 			     ->delete($model->meta()->db());
 		}
 
@@ -195,7 +160,7 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 			foreach ($new as $new_id)
 			{
 				Jelly::query($this->through['model'])
-					 ->columns($this->through['columns'])
+					 ->columns($this->through['fields'])
 					 ->values(array($model->id(), $new_id))
 					 ->insert($model->meta()->db());
 			}
@@ -236,14 +201,14 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	protected function _in($model, $as_array = FALSE)
 	{
 		$result = Jelly::query($this->through['model'])
-		               ->select_column($this->through['columns'][1])
-		               ->where($this->through['columns'][0], '=', $key)
+		               ->select_column($this->through['fields'][1])
+		               ->where($this->through['fields'][0], '=', $key)
 		               ->type(Database::SELECT);
 
 		if ($as_array)
 		{
 			$result = $result->select($model->meta()->db())
-			                 ->as_array(NULL, $this->through['columns'][1]);
+			                 ->as_array(NULL, $this->through['fields'][1]);
 		}
 
 		return $result;
