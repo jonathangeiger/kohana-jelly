@@ -32,27 +32,20 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 * @var  mixed  The current result set
 	 */
 	protected $_result = NULL;
-	
-	/**
-	 * @var  boolean  How to return the type
-	 */
-	protected $_as_object = NULL;
-
 	/**
 	 * Tracks a database result
 	 *
 	 * @param  mixed  $model
 	 * @param  mixed  $result
 	 */
-	public function __construct($result, $as_object)
+	public function __construct($result, $as_object = NULL)
 	{
 		$this->_result = $result;
-		$this->_as_object = $as_object;
 		
 		// Load our default model
-		if ($this->_as_object AND Jelly::meta($this->_as_object))
+		if ($as_object AND Jelly::meta($as_object))
 		{
-			$this->_model = ($this->_as_object instanceof Jelly_Model) ? $this->_as_object : new $this->_as_object;
+			$this->_model = ($as_object instanceof Jelly_Model) ? $as_object : new $as_object;
 			$this->_meta  = $this->_model->meta();
 		}
 	}

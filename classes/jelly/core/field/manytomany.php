@@ -5,12 +5,15 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Core_Field_ManyToMany
-extends Jelly_Field_Relationship
-implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
+abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 {
 	/**
-	 * @var  boolean  Null values are not allowed
+	 * @var  boolean  False, since this field does not map directly to a column
+	 */
+	public $in_db = FALSE;
+	
+	/**
+	 * @var  boolean  Null values are not allowed since an empty array expresses no relationships
 	 */
 	public $allow_null = FALSE;
 	
@@ -18,6 +21,11 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 	 * @var  array  Default is an empty array
 	 */
 	public $default = array();
+	
+	/**
+	 * @var  array  The default to set on foreign fields when removing the relationship
+	 */
+	public $foreign_default = 0;
 	
 	/**
 	 * This is expected to contain an assoc. array containing the key
@@ -120,7 +128,7 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 	}
 
 	/**
-	 * Converts a Database_Result, Jelly, array of ids, or id to an array of ids
+	 * Returns an array of ids.
 	 *
 	 * @param   mixed  $value
 	 * @return  array
@@ -138,12 +146,11 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 	}
 
 	/**
-	 * Returns a pre-built Jelly model ready to be loaded
+	 * Returns a Jelly_Builder that can be selected, updated, or deleted.
 	 *
 	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
-	 * @param   boolean      $loaded
-	 * @return  void
+	 * @return  Jelly_Builder
 	 */
 	public function get($model, $value)
 	{
@@ -158,14 +165,18 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 	}
 
 	/**
-	 * Implementation for Jelly_Field_Behavior_Saveable.
+	 * Implementation for Jelly_Field_Supports_Save.
 	 *
-	 * @param   Jelly  $model
-	 * @param   mixed  $value
+	 * @param   Jelly_Model  $model
+	 * @param   mixed        $value
+	 * @param   boolean      $key
 	 * @return  void
 	 */
 	public function save($model, $value, $loaded)
 	{
+		// Don't do anything on insert when we don't have anything
+		if ( ! $loaded AND empty($value)) return;
+		
 		// Find all current records so that we can calculate what's changed
 		$in = ($loaded) ? $this->_in($model, TRUE) : array();
 
@@ -175,7 +186,7 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 			Jelly::query($this->through['model'])
 			     ->where($this->through['columns'][0], '=', $model->id())
 			     ->where($this->through['columns'][1], 'IN', $old)
-			     ->delete(Jelly::meta($model)->db());
+			     ->delete($model->meta()->db());
 		}
 
 		// Find new relationships that must be inserted
@@ -186,21 +197,22 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 				Jelly::query($this->through['model'])
 					 ->columns($this->through['columns'])
 					 ->values(array($model->id(), $new_id))
-					 ->insert(Jelly::meta($model)->db());
+					 ->insert($model->meta()->db());
 			}
 		}
 	}
 
 	/**
-	 * Implementation of Jelly_Field_Behavior_Haveable
+	 * Implementation of Jelly_Field_Supports_Has.
 	 *
-	 * @param   Jelly  $model
-	 * @param   array  $ids
+	 * @param   Jelly_Model  $model
+	 * @param   mixed        $models
 	 * @return  boolean
 	 */
-	public function has($model, $ids)
+	public function has($model, $models)
 	{
-		$in = $this->_in($model, TRUE);
+		$in  = $this->_in($model, TRUE);
+		$ids = $this->_ids($models);
 
 		foreach ($ids as $id)
 		{
@@ -224,15 +236,14 @@ implements Jelly_Field_Supports_AddRemove, Jelly_Field_Supports_Has
 	protected function _in($model, $as_array = FALSE)
 	{
 		$result = Jelly::query($this->through['model'])
-			->select_column($this->through['columns'][1])
-			->where($this->through['columns'][0], '=', $model->id())
-			->type(Database::SELECT);
+		               ->select_column($this->through['columns'][1])
+		               ->where($this->through['columns'][0], '=', $key)
+		               ->type(Database::SELECT);
 
 		if ($as_array)
 		{
-			$result = $result
-						->select(Jelly::meta($model)->db())
-						->as_array(NULL, $this->through['columns'][1]);
+			$result = $result->select($model->meta()->db())
+			                 ->as_array(NULL, $this->through['columns'][1]);
 		}
 
 		return $result;

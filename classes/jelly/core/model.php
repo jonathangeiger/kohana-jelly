@@ -366,7 +366,7 @@ abstract class Jelly_Core_Model
 	 * @param   array    $values
 	 * @return  $this
 	 */
-	public function load_values(array $values)
+	public function load_values($values)
 	{
 		// Clear the object
 		$this->clear();
@@ -570,7 +570,7 @@ abstract class Jelly_Core_Model
 		// Save the relations
 		foreach ($saveable as $field => $value)
 		{
-			$this->_meta->field($field)->save($this, $value, $key);
+			$this->_meta->field($field)->save($this, $value, (bool) $key);
 		}
 		
 		// Trigger post-save callback
@@ -636,9 +636,9 @@ abstract class Jelly_Core_Model
 	/**
 	 * Returns whether or not that model is related to the
 	 * $model specified. This only works with relationships
-	 * where the model "has" another model or models:
+	 * where the model "has" other models:
 	 *
-	 * has_many, has_one, many_to_many
+	 * has_many, many_to_many
 	 *
 	 * Pretty much anything can be passed for $models, including:
 	 *
@@ -658,7 +658,7 @@ abstract class Jelly_Core_Model
 		// Don't continue without knowing we have something to work with
 		if ($field AND $field->supports(Jelly_Field::HAS))
 		{
-			return $field->has($this, $this->_ids($models));
+			return $field->has($this, $models);
 		}
 
 		return FALSE;

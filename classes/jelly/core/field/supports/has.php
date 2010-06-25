@@ -11,19 +11,15 @@ interface Jelly_Core_Field_Supports_Has
 {
 	/**
 	 * This method should return a boolean that indicates whether or
-	 * not the $model passed is related to the $ids passed.
+	 * not the $model passed is related to the $models passed.
 	 *
-	 * An array of $ids is always passed. For fields that are a 1:1
-	 * mapping, how they deal having more than 1 primary key passed
-	 * is undefined, though it is recommended to simply use the first
-	 * id in the array.
-	 *
-	 * The $model should not be modified by the time this method
-	 * has finished.
+	 * $models can be any number of values, including a Jelly_Collection,
+	 * an array of models, or a single model. The implementation should
+	 * handle all forms.
 	 *
 	 * @param   Jelly_Model  $model
-	 * @param   array        $ids
+	 * @param   mixed        $models
 	 * @return  boolean
 	 */
-	public function has($model, $ids);
+	public function has($model, $models);
 }

@@ -5,10 +5,15 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Jelly_Field_Supports_With
+abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Field_Supports_With
 {
 	/**
-	 * @var  boolean  Null values are not allowed
+	 * @var  boolean  False, since this field does not map directly to a column
+	 */
+	public $in_db = FALSE;
+	
+	/**
+	 * @var  boolean  Null values are not allowed since an empty array expresses no relationships
 	 */
 	public $allow_null = FALSE;
 	
@@ -18,13 +23,66 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Je
 	public $default = 0;
 	
 	/**
+	 * @var  array  The default to set on foreign fields when removing the relationship
+	 */
+	public $foreign_default = 0;
+	
+	/**
+	 * A string pointing to the foreign model and (optionally, a
+	 * field, column, or meta-alias).
+	 *
+	 * Assuming an author has_many posts and the field was named 'posts':
+	 *
+	 *  * '' would default to post.:author:foreign_key
+	 *  * 'post' would expand to post.:author:foreign_key
+	 *  * 'post.author_id' would remain untouched.
+	 *
+	 * The model part of this must point to a valid model, but the
+	 * field part can point to anything, as long as it's a valid
+	 * column in the database.
+	 *
+	 * @var  string
+	 */
+	public $foreign = '';
+	
+	/**
+	 * Determines the actual foreign model and field that the 
+	 * relationship is tied to.
+	 *
+	 * @param   string  $model
+	 * @param   string  $column
+	 * @return  void
+	 */
+	public function initialize($model, $column)
+	{
+		parent::initialize($model, $column);
+		
+		// Empty? The model defaults to the the singularized name 
+		// of this field, and the field defaults to this field's model's foreign key
+		if (empty($this->foreign))
+		{
+			$this->foreign = inflector::singular($this->name).'.'.$model.':foreign_key';
+		}
+		// We have a model? Default the field to this field's model's foreign key
+		elseif (FALSE === strpos($this->foreign, '.'))
+		{
+			$this->foreign = $this->foreign.'.'.$model.':foreign_key';
+		}
+
+		// Create an array fo easier access to the separate parts
+		$this->foreign = array_combine(array('model', 'field'), explode('.', $this->foreign));
+	}
+	
+	/**
+	 * Sets a relationship on the field
+	 * 
 	 * @param   mixed  $value
 	 * @return  mixed
 	 */
 	public function set($value)
 	{
 		// Convert models to their id
-		if (is_object($value))
+		if ($value instanceof Jelly_Model)
 		{
 			$value = $value->id();
 		}
@@ -44,7 +102,6 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Je
 	 *
 	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
-	 * @param   boolean      $loaded
 	 * @return  mixed
 	 */
 	public function get($model, $value)
@@ -58,56 +115,43 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Je
 		else
 		{
 			return Jelly::query($this->foreign['model'])
-			            ->where($this->foreign['model'].'.'.$this->foreign['column'], '=', $model->id())
+			            ->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $model->id())
 			            ->limit(1);
 		}
 	}
-
+	
 	/**
-	 * Implementation of Jelly_Field_Behavior_Saveable
+	 * Implementation of Jelly_Field_Supports_Save.
 	 *
-	 * @param   Jelly  $model
-	 * @param   mixed  $value
+	 * @param   Jelly_Model  $model
+	 * @param   mixed        $value
+	 * @param   boolean      $loaded
 	 * @return  void
 	 */
 	public function save($model, $value, $loaded)
 	{
+		// Don't do anything on INSERTs when there is nothing in the value
+		if ( ! $loaded and empty($value)) return;
+		
 		// Empty relations to the default value
 		Jelly::query($this->foreign['model'])
-		     ->where($this->foreign['column'], '=', $model->id())
-		     ->set(array($this->foreign['column'] => $this->default))
+		     ->where($this->foreign['field'], '=', $model->id())
+		     ->set(array($this->foreign['field'] => $this->foreign_default))
 		     ->update();
 
 		// Set the new relations
-		if ( ! empty($value))
+		if ( ! empty($value) AND is_array($value))
 		{
 			// Update the ones in our list
 			Jelly::query($this->foreign['model'])
 			     ->where(':primary_key', '=', $value)
-			     ->set(array($this->foreign['column'] => $model->id()))
+			     ->set(array($this->foreign['field'] => $model->id()))
 			     ->update();
 		}
 	}
 
 	/**
-	 * Returns whether or not this field has another model
-	 *
-	 * @param   string  $model
-	 * @return  void
-	 */
-	public function has($model, $id)
-	{
-		// Only accept the first record
-		if (is_array($id) OR $id instanceof Iterator)
-		{
-			$id = array(current($id));
-		}
-
-		return parent::has($model, $id);
-	}
-
-	/**
-	 * Implementation of Jelly_Field_Behavior_Joinable
+	 * Implementation of Jelly_Field_Supports_With.
 	 *
 	 * @param   Jelly_Builder  $builder
 	 * @return  void
@@ -115,10 +159,9 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field_HasMany implements Je
 	public function with($builder)
 	{
 		$join_col1 = $this->model.'.:primary_key';
-		$join_col2 = $this->foreign['model'].'.'.$this->foreign['column'];
+		$join_col2 = $this->foreign['model'].'.'.$this->foreign['field'];
 
-		$builder
-			->join(array($this->foreign['model'], $this->name), 'LEFT')
-			->on($join_col1, '=', $join_col2);
+		$builder->join(array($this->foreign['model'], $this->name), 'LEFT')
+		        ->on($join_col1, '=', $join_col2);
 	}
 }

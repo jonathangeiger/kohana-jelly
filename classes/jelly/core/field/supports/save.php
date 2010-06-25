@@ -14,6 +14,10 @@ interface Jelly_Core_Field_Supports_Save
 	 * interaction and save whatever value is passed to it.
 	 *
 	 * This will only be called if the field has changed somehow.
+	 * 
+	 * Although the model is technically loaded by this time and the
+	 * primary key is set and available, $loaded is useful for determining
+	 * whether the save() was an INSERT or an UPDATE.
 	 *
 	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
