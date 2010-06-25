@@ -202,7 +202,7 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	{
 		$result = Jelly::query($this->through['model'])
 		               ->select_column($this->through['fields'][1])
-		               ->where($this->through['fields'][0], '=', $key)
+		               ->where($this->through['fields'][0], '=', $model->id())
 		               ->type(Database::SELECT);
 
 		if ($as_array)
