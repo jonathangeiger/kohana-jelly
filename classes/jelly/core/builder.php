@@ -130,7 +130,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		}
 		
 		// Pass off to Jelly_Collection, which manages the result
-		$this->_result = new Jelly_Collection($this->_result->execute(), $this->_as_object);
+		$this->_result = new Jelly_Collection($this->_result->execute($db), $this->_as_object);
 		
 		// Trigger after_query callbacks
 		$this->_meta AND $this->_meta->behaviors()->after_builder_select($this, $this->_result);
