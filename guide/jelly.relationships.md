@@ -33,6 +33,10 @@ it actually represents a column in the database. Generally, this property is goi
 	// The default, using the above example
 	'foreign' => 'author.post:primary_key',
 	
+**`convert_empty`** — This defaults to TRUE, unlike most other fields. Empty values are converted to the value set for `empty_value`, which defaults to `0`.
+
+**`empty_value`** — This is the default value that empty values are converted to. The default is `0`.
+	
 **Using this relationship**
 
 	$post = Jelly::factory('post', 1);

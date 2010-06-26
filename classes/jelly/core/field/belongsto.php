@@ -21,24 +21,39 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 	 * @var  boolean  Null values are not allowed, 0 represents no record
 	 */
 	public $allow_null = FALSE;
+	
+	/**
+	 * @var  boolean  Empty values are converted to the default
+	 */
+	public $convert_empty = TRUE;
+	
+	/**
+	 * @var  int  Empty values are converted to 0, not NULL
+	 */
+	public $empty_value = 0;
 
 	/**
-	 * A string pointing to the foreign model and (optionally, a
-	 * field, column, or meta-alias).
-	 *
-	 * Assuming an author belongs to a role named 'role':
-	 *
-	 *  * '' would default to role.:primary_key
-	 *  * 'role' would expand to role.:primary_key
-	 *  * 'role.id' would remain untouched.
-	 *
-	 * The model part of this must point to a valid model, but the
-	 * field part can point to anything, as long as it's a valid
-	 * column in the database.
-	 *
-	 * @var  string
+	 * @var  string  A string pointing to the foreign model and (optionally, a
+	 *               field, column, or meta-alias).
 	 */
 	public $foreign = '';
+	
+	/**
+	 * Constructor
+	 *
+	 * @param  array  $options 
+	 */
+	public function __construct($options = array())
+	{
+		parent::__construct($options);
+		
+		// Default the empty value to NULL when allow_null is TRUE, but be careful not
+		// to override a programmer-configured empty_value
+		if ( ! empty($options['allow_null']) AND ! array_key_exists('empty_value', $options))
+		{
+			$this->empty_value = NULL;
+		}
+	}
 
 	/**
 	 * Automatically sets foreign to sensible defaults
@@ -90,7 +105,7 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 		
 		if ( ! $return)
 		{
-			$value = is_numeric($value) ? (int) $value : (string) $value;
+			$value = ( ! $value OR is_numeric($value)) ? (int) $value : (string) $value;
 		}
 		
 		return $value;
