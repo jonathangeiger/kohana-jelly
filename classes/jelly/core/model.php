@@ -106,8 +106,23 @@ abstract class Jelly_Core_Model
 
 		if ( ! array_key_exists($name, $this->_retrieved))
 		{
-			$value = $this->get($name);
+			// Search for with values first
+			if ( ! array_key_exists($name, $this->_changed) AND array_key_exists($name, $this->_with))
+			{
+				$value = Jelly::factory($field->foreign['model'])->load_values($this->_with[$name]);
 
+				// Try and verify that it's actually loaded
+				if ( ! $value->id())
+				{
+					$value->_loaded = FALSE;
+					$value->_saved = FALSE;
+				}
+			}
+			else
+			{
+				$value = $this->get($name);
+			}
+			
 			// Auto-load relations
 			if ($value instanceof Jelly_Builder)
 			{
@@ -225,17 +240,6 @@ abstract class Jelly_Core_Model
 			if (array_key_exists($name, $this->_changed))
 			{
 				$value = $field->get($this, $this->_changed[$name]);
-			}
-			elseif (array_key_exists($name, $this->_with))
-			{
-				$value = Jelly::factory($field->foreign['model'])->load_values($this->_with[$name]);
-
-				// Try and verify that it's actually loaded
-				if ( ! $value->id())
-				{
-					$value->_loaded = FALSE;
-					$value->_saved = FALSE;
-				}
 			}
 			else
 			{
