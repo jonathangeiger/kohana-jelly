@@ -34,6 +34,16 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 	public $foreign = '';
 	
 	/**
+	 * @var  boolean  Empty values are converted by default
+	 */
+	public $convert_empty = TRUE;
+	
+	/**
+	 * @var  int  Empty values are converted to 0, not NULL
+	 */
+	public $empty_value = 0;
+	
+	/**
 	 * Determines the actual foreign model and field that the 
 	 * relationship is tied to.
 	 *

@@ -28,6 +28,16 @@ abstract class Jelly_Core_Field_HasMany extends Jelly_Field implements Jelly_Fie
 	public $foreign_default = 0;
 	
 	/**
+	 * @var  boolean  Empty values are converted by default
+	 */
+	public $convert_empty = TRUE;
+	
+	/**
+	 * @var  int  Empty values are converted to array(), not NULL
+	 */
+	public $empty_value = array();
+	
+	/**
 	 * @var  string  A string pointing to the foreign model and (optionally, a
 	 *               field, column, or meta-alias). 
 	 */

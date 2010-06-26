@@ -116,9 +116,16 @@ abstract class Jelly_Core_Field
 		
 		// Default value is going to be NULL if null is true
 		// to mimic the SQL defaults
-		if ( ! isset($options['default']) AND $this->allow_null)
+		if ( ! array_key_exists('default', (array) $options) AND $this->allow_null)
 		{
 			$this->default = NULL;
+		}
+		
+		// Default the empty value to NULL when allow_null is TRUE, but be careful not
+		// to override a programmer-configured empty_value
+		if ( ! empty($options['allow_null']) AND ! array_key_exists('empty_value', (array) $options))
+		{
+			$this->empty_value = NULL;
 		}
 	}
 

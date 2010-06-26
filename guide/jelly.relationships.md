@@ -35,7 +35,7 @@ it actually represents a column in the database. Generally, this property is goi
 	
 **`convert_empty`** — This defaults to TRUE, unlike most other fields. Empty values are converted to the value set for `empty_value`, which defaults to `0`.
 
-**`empty_value`** — This is the default value that empty values are converted to. The default is `0`.
+**`empty_value`** — This is the value that empty values are converted to. The default is `0`.
 	
 **Using this relationship**
 
@@ -73,6 +73,12 @@ key of the author that owns the post.
 
 	// The default, using the above example
 	'foreign' => 'post.author:foreign_key',
+	
+**`default`** — This works slightly differently than other fields. Default is the value that will be set on the foreign model's column when a relationship is removed. This should almost always remain 0.
+	
+**`convert_empty`** — This defaults to TRUE, unlike most other fields. Empty values are converted to the value set for `empty_value`, which defaults to `0`.
+
+**`empty_value`** — This is the default value that empty values are converted to. The default is `0`.
 	
 **Using this relationship**
 
@@ -113,7 +119,11 @@ This is exactly the same as `has_many` with the exception that Jelly ensures tha
 
 	// The default, using the above example
 	'foreign' => 'post.author:foreign_key',
-	
+
+**`convert_empty`** — This defaults to TRUE, unlike most other fields. Empty values are converted to the value set for `empty_value`, which defaults to `0`.
+
+**`empty_value`** — This is the default value that empty values are converted to. The default is `array()`.
+
 **Using this relationship**
 
 	$author = Jelly::factory('author', 1);

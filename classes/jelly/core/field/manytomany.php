@@ -36,7 +36,17 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	 *             fields we're using to connect the two models.
 	 */
 	public $through = '';
-
+	
+	/**
+	 * @var  boolean  Empty values are converted by default
+	 */
+	public $convert_empty = TRUE;
+	
+	/**
+	 * @var  int  Empty values are converted to array(), not NULL
+	 */
+	public $empty_value = array();
+	
 	/**
 	 * Sets up foreign and through properly.
 	 *

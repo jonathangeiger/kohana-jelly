@@ -39,23 +39,6 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 	public $foreign = '';
 	
 	/**
-	 * Constructor
-	 *
-	 * @param  array  $options 
-	 */
-	public function __construct($options = array())
-	{
-		parent::__construct($options);
-		
-		// Default the empty value to NULL when allow_null is TRUE, but be careful not
-		// to override a programmer-configured empty_value
-		if ( ! empty($options['allow_null']) AND ! array_key_exists('empty_value', $options))
-		{
-			$this->empty_value = NULL;
-		}
-	}
-
-	/**
 	 * Automatically sets foreign to sensible defaults
 	 *
 	 * @param   string  $model
