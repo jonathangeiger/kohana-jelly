@@ -791,77 +791,119 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	protected function _column($field, $join = TRUE, $value = NULL)
 	{
-		$model = NULL;
-		
-		// Test for Database Expressions and sub-queries
+		// Do nothing for Database Expressions and sub-queries
 		if ($field instanceof Database_Expression OR $field instanceof Database_Query)
 		{
 			return $field;
 		}
 
-		// Check for functions
+		// Alias the field(s) in FUNC("field")
 		if (strpos($field, '"') !== FALSE)
-		{
-			// Quote the column in FUNC("ident") identifiers
+		{	
 			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
 		}
 		
-		// Set if we find this is a reference to a joined field
-		$join_table_alias = FALSE;
-
-		// Field has no model
+		// We're going to try and determine what this guy should be
+		$model = NULL;
+		
+		// Does the field have a model?
 		if (strpos($field, '.') === FALSE)
 		{
-			// If we have a meta alias with no model use this model to resolve it
-			// or if we have a valid field for this model assume that's what we mean
+			// If we have a meta alias with no model or if we have a valid field for this model
+			// we assume that the field was implied to be part of this model
 			if (strpos($field, ':') !== FALSE OR ($this->_meta AND $this->_meta->field($field)))
 			{
-				$field = $this->_model.'.'.$field;
+				$model = $this->_model;
 			}
 			else
 			{
-				// This is not a model field or meta alias, so don't bother trying to alias it and
-				// return it as it is
+				// This is not a model field or meta alias, so don't bother
 				return $field;
 			}
 		}
+		// We know it's in the format of model.field by now, so split it apart
 		else
 		{
 			list($model, $field) = explode('.', $field, 2);
+		}
 
-			// Check to see if the 'model' passed is actually a relationship alias
-			if ($this->_meta AND $field_object = $this->_meta->field($model) AND $field_object->supports(Jelly_Field::WITH))
+		// We'll use this state to potentially pass to the meta-alias method
+		$meta   = Jelly::meta($model);
+		$table  = NULL;
+		$column = NULL;
+
+		// Check for a meta-alias first
+		if (FALSE !== strpos($field, ':'))
+		{
+			// The default operator is the current field's model
+			$operator = $model;
+			$alias    = $field;
+			
+			// Check for a model or field operator
+			if (substr($field, 0, 1) !== ':')
 			{
-				// The model specified looks like a relationship alias in this context
-				// that means we alias the field name to a column but use the join alias for the table
-				$join_table_alias = Jelly::join_alias($field_object);
+				list($operator, $alias) = explode(':', $field);
 
-				// Change the field to use the appropriate model so it can be properly aliased
-				$field = $field_object->foreign['model'].'.'.$field;
+				// Append the : back onto $field, it's key for recognizing the alias below
+				$field = ':'.$field;
 			}
-			else
+			
+			// Complete the meta-alias, allowing it to modify the state
+			extract($this->_meta_alias($alias, $operator, array(
+				'model'  => $model,
+				'field'  => $field,
+				'table'  => NULL,
+				'column' => NULL,
+				'meta'   => Jelly::meta($model),
+				'value'  => $value,
+			)));
+		}
+		
+		// Alias the table if it hasn't been yet
+		if ( ! $table)
+		{
+			$table = $meta ? $meta->table() : $model;
+		}
+		
+		// And the same goes for the column
+		if ( ! $column)
+		{
+			$column = $field;
+			
+			if ($meta AND $f = $meta->field($field))
 			{
-				// Put field back together
-				$field = $model.'.'.$field;
+				$column = $f->column;
 			}
 		}
-
-		$alias = Jelly::alias($field, $value);
-
-		if ($join_table_alias)
+		
+		// Bring it all back together
+		return $join ? implode('.', array($table, $column)) : $column;
+	}
+	
+	protected function _meta_alias($alias, $operator, $state)
+	{
+		switch ($alias)
 		{
-			// Replace the actual table with the join alias
-			$alias['table'] = $join_table_alias;
+			case ':primary_key':
+				$state['field'] = Jelly::meta($operator)->primary_key();
+				break;
+			case ':name_key':
+				$state['field'] = Jelly::meta($operator)->name_key();
+				break;
+			case ':foreign_key':
+				$state['field'] = Jelly::meta($operator)->foreign_key();
+				break;
+			case ':unique_key':
+				$state['field'] = Jelly::query(Jelly::meta($operator)->model())->unique_key($state['value']);
+				break;
+			case ':join_alias':
+				$state['table'] = $state['model'].':'.$state['field'];
+			default:
+				throw new Kohana_Exception('Unknown meta alias :alias', array(
+					':alias' => $alias));
 		}
 
-		if ($join)
-		{
-			return implode('.', $alias);
-		}
-		else
-		{
-			return $alias['column'];
-		}
+		return $state;
 	}
 
 	/**
