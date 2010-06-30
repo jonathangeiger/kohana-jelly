@@ -109,26 +109,6 @@ abstract class Jelly_Core
 	}
 	
 	/**
-	 * Returns a validator that can be used for validating a model.
-	 * 
-	 * The validator is pre-populated with rules, filters, and callbacks.
-	 * If $new is TRUE, an empty validator will be returned without any rules
-	 * filters, or callbacks.
-	 * 
-	 * A model is required since it is necessary to expand :model 
-	 * contexts in the callbacks. 
-	 *
-	 * @param   Jelly_Model  $model
-	 * @param   array        $data
-	 * @param   boolean      $new
-	 * @return  Jelly_Validator
-	 */
-	public static function validate(Jelly_Model $model, array $data, $new = FALSE)
-	{
-		return Jelly::meta($model)->validator($model, $data);
-	}
-	
-	/**
 	 * Gets a particular set of metadata about a model. If the model
 	 * isn't registered, it will attempt to register it.
 	 *

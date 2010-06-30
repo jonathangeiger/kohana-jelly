@@ -726,7 +726,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 				{
 					// We have to manually alias, since the path does not necessarily correspond to the path
 					// We select from the field alias rather than the model to allow multiple joins to same model
-					$this->select_column(array(array($field->name.'.'.$alias, $chain.':'.$alias)));
+					$this->select_column($field->name.'.'.$alias, $chain.':'.$alias);
 				}
 			}
 
