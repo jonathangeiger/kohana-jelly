@@ -94,17 +94,6 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 */
 	public function as_array($key = NULL, $value = NULL)
 	{
-		$model = Jelly::model_name($this->_model);
-
-		foreach (array('key', 'value') as $var)
-		{
-			// Only alias meta-aliases
-			if ($$var && FALSE !== strpos($$var, ':'))
-			{
-				$$var = Jelly::meta_alias($model, $$var, NULL);
-			}
-		}
-
 		return $this->_result->as_array($key, $value);
 	}
 

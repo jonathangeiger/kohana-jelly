@@ -106,6 +106,14 @@ Since we're using `select()` to find records now, the old `select()` has been re
 	// Or many at a time
 	$query->select_column(array('id', 'name', 'body'))->select();
 	
+#### Jelly_Collection->as_array() no longer accepts meta-aliases
+
+This means you can no longer do this:
+
+	$collection->as_array(':primary_key');
+
+As far as I know, this feature was rarely—if ever–used. It's better to alias a column if you need to bring it back as a specific name.
+
 #### Jelly_Model->as_array() has changed slightly
 
 `Jelly_Model->as_array()` used to operate like this:

@@ -211,14 +211,14 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	protected function _in($model, $as_array = FALSE)
 	{
 		$result = Jelly::query($this->through['model'])
-		               ->select_column($this->through['fields'][1])
+		               ->select_column($this->through['fields'][1], 'in')
 		               ->where($this->through['fields'][0], '=', $model->id())
 		               ->type(Database::SELECT);
 
 		if ($as_array)
 		{
 			$result = $result->select($model->meta()->db())
-			                 ->as_array(NULL, $this->through['fields'][1]);
+			                 ->as_array(NULL, 'in');
 		}
 
 		return $result;

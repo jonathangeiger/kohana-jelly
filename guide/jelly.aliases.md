@@ -60,7 +60,7 @@ Generally, you want to be able to reference another model's foreign key, so ther
     
 In this case, you specify a model before the meta-alias to pull it from.
 
-[!!] **Note**: Meta-aliases can only be used in the query builder or with the as_array() method in Jelly\_Collection.
+[!!] **Note**: Meta-aliases can only be used in the query builder.
 
 ## Changing your meta-aliases
 
