@@ -787,7 +787,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 			if ($meta = Jelly::meta($model))
 			{
 				$table = $meta->table();
-				$alias = $alias ? $alias : $model;
+				$alias = $alias ? $alias : $table;
 			}
 			// Joinable field was passed, use its model
 			else if (($pos = strpos($model, ':')) !== FALSE) 
@@ -989,15 +989,15 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 				break;
 
 			case Database::UPDATE:
-				$query = DB::update(current($this->_from));
+				$query = DB::update(current($this->_from[0]));
 				break;
 
 			case Database::INSERT:
-				$query = DB::insert(current($this->_from));
+				$query = DB::insert(current($this->_from[0]));
 				break;
 
 			case Database::DELETE:
-				$query = DB::delete(current($this->_from));
+				$query = DB::delete(current($this->_from[0]));
 				break;
 
 			default:
