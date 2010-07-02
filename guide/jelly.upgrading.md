@@ -101,7 +101,7 @@ Previously, `Jelly_Builder` allowed you to pass a field name as the model and it
 	
 Notice the `:` in front of the field. this is necessary to resolve ambiguity as to what you're referring to, as it's very likely that `author` is both a field *and* model name. 
 
-Conveniently, you can now do this with `has_many` and `has_one` or with completely different models:
+Conveniently, you can now do this with `has_many` and `many_to_many` or with completely different models:
 
 	Jelly::query('post')
 		->with('author:role')
