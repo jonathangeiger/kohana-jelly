@@ -593,7 +593,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	{
 		if ($alias)
 		{
-			$column = $this->_field_alias($column, $value);
+			$column = $this->_field_alias($column, $value, FALSE);
 		}
 
 		$this->_set[$column] = $value;
@@ -613,7 +613,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		{
 			foreach ($columns as $i => $column)
 			{
-				$columns[$i] = $this->_field_alias($column);
+				$columns[$i] = $this->_field_alias($column, NULL, FALSE);
 			}
 		}
 
@@ -834,7 +834,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 * @param   string  A value to pass to unique_key, if necessary
 	 * @return  string
 	 */
-	protected function _field_alias($field, $value = NULL)
+	protected function _field_alias($field, $value = NULL, $join_if_sure = TRUE)
 	{
 		$original = $field;
 		
@@ -885,6 +885,9 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		if ($meta = Jelly::meta($model) AND $field_obj = $meta->field($field) AND $field_obj->in_db)
 		{
 			$column = $field_obj->column;
+			
+			// We're 99% sure adding the table name in front won't cause problems now
+			$join = $join_if_sure ? TRUE : $join;
 		}
 		
 		return $join ? $alias.'.'.$column : $column;
