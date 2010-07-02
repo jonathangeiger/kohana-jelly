@@ -125,7 +125,7 @@ abstract class Jelly_Core_Field_HasMany extends Jelly_Field implements Jelly_Fie
 		
 		// Empty relations to the default value
 		Jelly::query($this->foreign['model'])
-		     ->where($this->foreign['field'], '=', $model->id())
+		     ->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $model->id())
 		     ->set(array($this->foreign['field'] => $this->foreign_default))
 		     ->update();
 
@@ -134,7 +134,7 @@ abstract class Jelly_Core_Field_HasMany extends Jelly_Field implements Jelly_Fie
 		{
 			// Update the ones in our list
 			Jelly::query($this->foreign['model'])
-			     ->where(':primary_key', 'IN', $value)
+			     ->where($this->foreign['model'].'.'.':primary_key', 'IN', $value)
 			     ->set(array($this->foreign['field'] => $model->id()))
 			     ->update();
 		}
@@ -150,8 +150,8 @@ abstract class Jelly_Core_Field_HasMany extends Jelly_Field implements Jelly_Fie
 	public function has($model, $models)
 	{
 		return (bool) Jelly::query($this->foreign['model'])
-		                   ->where($this->foreign['field'], '=', $model->id())
-		                   ->where(':primary_key', 'IN', $this->_ids($models))
+		                   ->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $model->id())
+		                   ->where($this->foreign['model'].'.'.':primary_key', 'IN', $this->_ids($models))
 		                   ->count();
 	}
 }

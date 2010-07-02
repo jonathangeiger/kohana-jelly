@@ -104,7 +104,7 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 	public function get($model, $value)
 	{
 		return Jelly::query($this->foreign['model'])
-		            ->where($this->foreign['field'], '=', $value)
+		            ->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $value)
 		            ->limit(1);
 	}
 

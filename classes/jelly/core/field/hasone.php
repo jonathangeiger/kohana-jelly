@@ -107,7 +107,7 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 		if ($model->changed($this->name))
 		{
 			return Jelly::query($this->foreign['model'])
-			            ->where(':primary_key', '=', $value)
+			            ->where($this->foreign['model'].'.'.':primary_key', '=', $value)
 			            ->limit(1);
 		}
 		else
@@ -133,7 +133,7 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 		
 		// Empty relations to the default value
 		Jelly::query($this->foreign['model'])
-		     ->where($this->foreign['field'], '=', $model->id())
+		     ->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $model->id())
 		     ->set(array($this->foreign['field'] => $this->foreign_default))
 		     ->update();
 
@@ -142,7 +142,7 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 		{
 			// Update the ones in our list
 			Jelly::query($this->foreign['model'])
-			     ->where(':primary_key', '=', $value)
+			     ->where($this->foreign['model'].'.'.':primary_key', '=', $value)
 			     ->set(array($this->foreign['field'] => $model->id()))
 			     ->update();
 		}
@@ -156,10 +156,6 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 	 */
 	public function with($builder)
 	{
-		$join_col1 = $this->model.'.:primary_key';
-		$join_col2 = $this->foreign['model'].'.'.$this->foreign['field'];
-
-		$builder->join(array($this->foreign['model'], $this->name), 'LEFT')
-		        ->on($join_col1, '=', $join_col2);
+		$builder->join(':'.$this->name, 'LEFT')->on($this->model.'.:primary_key', '=', ':'.$this->name.'.'.$this->foreign['field']);
 	}
 }
