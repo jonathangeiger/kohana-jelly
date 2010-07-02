@@ -89,6 +89,24 @@ This is also because of `Jelly::query()`. You can pass a second argument to `Jel
 	Jelly::query('post', 1)->delete();
 	Jelly::query('post', 1)->update();
 	
+#### Jelly_Builder's behavior has changed slightly
+
+Previously, `Jelly_Builder` allowed you to pass a field name as the model and it would expand it if it was a field that supported `with()`. This feature has been modified just slightly.
+
+	// Previously
+	Jelly::select('post')->with('author')->where('author.name', '=', 'FooBar');
+	
+	// Now:
+	Jelly::query('post')->with('author')->where(':author.name', '=', 'FooBar')->select();
+	
+Notice the `:` in front of the field. this is necessary to resolve ambiguity as to what you're referring to, as it's very likely that `author` is both a field *and* model name. 
+
+Conveniently, you can now do this with `has_many` and `has_one` or with completely different models:
+
+	Jelly::query('post')
+		->with('author:role')
+		->where('author:role.type', '=', 'admin');
+	
 #### All of the input() methods have been removed
 
 Jelly no longer supports generating views from fields since we've decided
