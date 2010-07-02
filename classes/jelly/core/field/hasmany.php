@@ -101,7 +101,7 @@ abstract class Jelly_Core_Field_HasMany extends Jelly_Field implements Jelly_Fie
 		if ($model->changed($this->name))
 		{
 			return Jelly::query($this->foreign['model'])
-			            ->where(':primary_key', 'IN', $value);
+			            ->where($this->foreign['model'].'.'.':primary_key', 'IN', $value);
 		}
 		else
 		{

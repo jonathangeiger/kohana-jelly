@@ -52,6 +52,11 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 * @var  boolean  The type of the query, if provided
 	 */
 	protected $_type = NULL;
+	
+	/**
+	 * @var  array  Alias cache
+	 */
+	protected $_model_cache = array();
 
 	/**
 	 * Constructs a new Jelly_Builder instance.
@@ -78,7 +83,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		// Default to using our key
 		if ($key !== NULL)
 		{
-			$this->where($this->unique_key($key), '=', $key)->limit(1);
+			$this->where($this->_model.'.'.$this->unique_key($key), '=', $key)->limit(1);
 		}
 	}
 
@@ -355,7 +360,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function and_where($column, $op, $value)
 	{
-		return parent::and_where($this->_column($column, TRUE, $value), $op, $value);
+		return parent::and_where($this->_field_alias($column, $value), $op, $value);
 	}
 
 	/**
@@ -368,7 +373,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function or_where($column, $op, $value)
 	{
-		return parent::or_where($this->_column($column, TRUE, $value), $op, $value);
+		return parent::or_where($this->_field_alias($column, $value), $op, $value);
 	}
 	
 	/**
@@ -400,7 +405,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		{
 			if (is_array($column))
 			{
-				$columns[$i][0] = $this->_column($column[0], TRUE);
+				$columns[$i][0] = $this->_field_alias($column[0]);
 			}
 			else
 			{
@@ -418,22 +423,22 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 					// Can we continue? Only if there's a valid meta object
 					if ($meta)
 					{
-						$add_columns = array();
+						$add = array();
 
 						foreach ($meta->fields() as $field)
 						{
 							if ($field->in_db)
 							{
-								$add_columns[] = array($meta->table().'.'.$field->column, $field->name);
+								$add[] = array($this->_field_alias($field->model.'.'.$field->name), $field->name);
 							}
-							else if($field->column instanceof Database_Expression)
+							else if ($field->column instanceof Database_Expression)
 							{
-							    $add_columns[] = array($field->column, $field->name);
+							    $add[] = array($field->column, $field->name);
 							}
 						}
 
 						// Add these columns before we continue
-						parent::select_array($add_columns);
+						parent::select_array($add);
 
 						// Remove the item we just added. It's no longer valid
 						unset($columns[$i]);
@@ -441,7 +446,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 					}
 				}
 
-				$columns[$i] = $this->_column($column, TRUE);
+				$columns[$i] = $this->_field_alias($column);
 			}
 		}
 
@@ -461,31 +466,8 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 
 		foreach ($tables as $i => $table)
 		{
-			// Cache the first meta
-			if ( ! $this->_meta)
-			{
-				$model = $table;
-
-				if (is_array($model))
-				{
-					$model = $model[0];
-				}
-
-				if ($model = Jelly::meta($model))
-				{
-					$this->_meta = $model;
-				}
-			}
-
-			if (is_array($table))
-			{
-				$table[0] = $this->_table($table[0]);
-			}
-			else
-			{
-				$table = $this->_table($table);
-			}
-
+			$table = $this->_model_alias($table);
+			
 			parent::from($table);
 		}
 
@@ -501,16 +483,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function join($table, $type = NULL)
 	{
-		if (is_array($table))
-		{
-			$table[0] = $this->_table($table[0]);
-		}
-		else
-		{
-			$table = $this->_table($table);
-		}
-
-		return parent::join($table, $type);
+		return parent::join($this->_model_alias($table), $type);
 	}
 
 	/**
@@ -523,7 +496,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function on($c1, $op, $c2)
 	{
-		return parent::on($this->_column($c1, TRUE), $op, $this->_column($c2, TRUE));
+		return parent::on($this->_field_alias($c1), $op, $this->_field_alias($c2));
 	}
 
 	/**
@@ -541,11 +514,11 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		{
 			if (is_array($column))
 			{
-				$columns[$i][0] = $this->_column($column[0]);
+				$columns[$i][0] = $this->_field_alias($column[0]);
 			}
 			else
 			{
-				$columns[$i] = $this->_column($column);
+				$columns[$i] = $this->_field_alias($column);
 			}
 		}
 
@@ -565,7 +538,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function and_having($column, $op, $value = NULL)
 	{
-		return parent::and_having($this->_column($column, TRUE, $value), $op, $value);
+		return parent::and_having($this->_field_alias($column, $value), $op, $value);
 	}
 
 	/**
@@ -578,7 +551,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function or_having($column, $op, $value = NULL)
 	{
-		return parent::or_having($this->_column($column, TRUE, $value), $op, $value);
+		return parent::or_having($this->_field_alias($column, $value), $op, $value);
 	}
 
 	/**
@@ -590,7 +563,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function order_by($column, $direction = NULL)
 	{
-		return parent::order_by($this->_column($column, TRUE), $direction);
+		return parent::order_by($this->_field_alias($column), $direction);
 	}
 
 	/**
@@ -620,7 +593,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	{
 		if ($alias)
 		{
-			$column = $this->_column($column, NULL, $value);
+			$column = $this->_field_alias($column, $value);
 		}
 
 		$this->_set[$column] = $value;
@@ -640,7 +613,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		{
 			foreach ($columns as $i => $column)
 			{
-				$columns[$i] = $this->_column($column, FALSE);
+				$columns[$i] = $this->_field_alias($column);
 			}
 		}
 
@@ -724,9 +697,8 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 			{
 				if ($select->in_db)
 				{
-					// We have to manually alias, since the path does not necessarily correspond to the path
 					// We select from the field alias rather than the model to allow multiple joins to same model
-					$this->select_column($field->name.'.'.$alias, $chain.':'.$alias);
+					$this->select_column($parent.':'.$field->name.'.'.$alias, $chain.':'.$alias);
 				}
 			}
 
@@ -761,36 +733,111 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 
 		return $this;
 	}
-
+	
 	/**
-	 * This method aliases models to tables.
+	 * Initializes the builder by setting a default 
+	 * table and adding the load_with joins.
 	 *
-	 * @param   string  $table
-	 * @return  string
+	 * @return void
 	 */
-	protected function _table($model)
+	protected function _initialize()
 	{
-		if ($meta = Jelly::meta($model))
+		// Set a few defaults
+		if ($this->_meta)
 		{
-			$model = $meta->table();
+			$this->from($this->_meta->model());
+
+			// Load with automatically here.
+			foreach ($this->_meta->load_with() as $relationship)
+			{
+				$this->with($relationship);
+			}
+
+			// Default to loading the current model
+			$this->as_object(TRUE);
 		}
-
-		return $model;
+		else
+		{
+			$this->from($this->_model);
+		}
 	}
-
+	
 	/**
-	 * This is an internal method used for aliasing only things coming
-	 * to the query builder, since they can come in so many formats.
+	 * Aliases a model to its actual table name. Returns an alias
+	 * suitable to pass to from() or join().
 	 *
-	 * $value is passed so the :unique_key meta alias can be used.
+	 * @param  string $model 
+	 * @return array
+	 */
+	protected function _model_alias($model)
+	{
+		$original = $table = $model;
+		$alias = NULL;
+		
+		// Split apart array(table, alias)
+		if (is_array($model))
+		{
+			list($model, $alias) = $model;
+		}
+		
+		// We're caching results to improve speed
+		if ( ! isset($this->_model_cache[$original]))
+		{	
+			// Standard model
+			if ($meta = Jelly::meta($model))
+			{
+				$table = $meta->table();
+				$alias = $alias ? $alias : $model;
+			}
+			// Joinable field was passed, use its model
+			else if (($pos = strpos($model, ':')) !== FALSE) 
+			{
+				if ($pos !== 0)
+				{
+					list($parent, $field) = explode(':', $model, 2);
+				}
+				else
+				{
+					$field = substr($model, 1);
+					$parent = $this->_model;
+				}
+				
+				$alias = $alias ? $alias : $parent.':'.$field;
+				$model = Jelly::meta($parent)->field($field)->foreign['model'];
+				$table = Jelly::meta($model)->table();
+			}
+			// Unknown Table
+			else
+			{
+				$table = $model;
+				$model = NULL;
+				$alias = $alias ? $alias : $table;
+			}
+			
+			// Cache what we've found
+			$this->_model_cache[$original] = array($table, $alias, $model);
+		}
+		
+		return $this->_model_cache[$original];
+	}
+	
+	/**
+	 * Aliases a field to its actual representation in the database. Meta-aliases
+	 * are resolved and table-aliases are taken into account.
+	 * 
+	 * Note that the aliased field will be returned in the format you pass it in:
+	 * 
+	 *    model.field => table.column
+	 *    field => column
 	 *
-	 * @param   string   $field
-	 * @param   boolean  $join
-	 * @param   mixed    $value
+	 * @param   mixed   The field to alias, in field or model.field format
+	 * @param   string  A value to pass to unique_key, if necessary
 	 * @return  string
 	 */
-	protected function _column($field, $join = TRUE, $value = NULL)
+	protected function _field_alias($field, $value = NULL)
 	{
+		$original = $field;
+		
 		// Do nothing for Database Expressions and sub-queries
 		if ($field instanceof Database_Expression OR $field instanceof Database_Query)
 		{
@@ -800,109 +847,104 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		// Alias the field(s) in FUNC("field")
 		if (strpos($field, '"') !== FALSE)
 		{	
-			return preg_replace('/"(.+?)"/e', '"\\"".$this->_column("$1")."\\""', $field);
+			return preg_replace('/"(.+?)"/e', '"\\"".$this->_field_alias("$1")."\\""', $field);
 		}
 		
-		// We're going to try and determine what this guy should be
-		$model = NULL;
+		// We always return fields as they came
+		$join = (boolean) strpos($field, '.');
 		
-		// Does the field have a model?
-		if (strpos($field, '.') === FALSE)
+		// Determine the default model
+		if ( ! $join)
 		{
-			// If we have a meta alias with no model or if we have a valid field for this model
-			// we assume that the field was implied to be part of this model
-			if (strpos($field, ':') !== FALSE OR ($this->_meta AND $this->_meta->field($field)))
-			{
-				$model = $this->_model;
-			}
-			else
-			{
-				// This is not a model field or meta alias, so don't bother
-				return $field;
-			}
+			$model = $this->_model;
 		}
-		// We know it's in the format of model.field by now, so split it apart
 		else
 		{
-			list($model, $field) = explode('.', $field, 2);
+			list($model, $field) = explode('.', $field, 2);	
 		}
-
-		// We'll use this state to potentially pass to the meta-alias method
-		$meta   = Jelly::meta($model);
-		$table  = NULL;
-		$column = NULL;
-
-		// Check for a meta-alias first
-		if (FALSE !== strpos($field, ':'))
+		
+		// Have the column default to the field
+		$column = $field;
+		
+		// Alias the model
+ 		list(, $alias, $model) = $this->_model_alias($model);
+		
+		// Expand meta-aliases
+		if (strpos($field, ':') !== FALSE)
 		{
-			// The default operator is the current field's model
-			$operator = $model;
-			$alias    = $field;
-			
-			// Check for a model or field operator
-			if (substr($field, 0, 1) !== ':')
-			{
-				list($operator, $alias) = explode(':', $field);
-
-				// Append the : back onto $field, it's key for recognizing the alias below
-				$field = ':'.$field;
-			}
-			
-			// Complete the meta-alias, allowing it to modify the state
-			extract($this->_meta_alias($alias, $operator, array(
-				'model'  => $model,
-				'field'  => $field,
-				'table'  => NULL,
-				'column' => NULL,
-				'meta'   => Jelly::meta($model),
-				'value'  => $value,
+			extract($this->_meta_alias($field, array(
+				'model' => $model,
+				'field' => $field,
+				'value' => $value,
 			)));
-		}
-		
-		// Alias the table if it hasn't been yet
-		if ( ! $table)
-		{
-			$table = $meta ? $meta->table() : $model;
-		}
-		
-		// And the same goes for the column
-		if ( ! $column)
-		{
-			$column = $field;
 			
-			if ($meta AND $f = $meta->field($field))
-			{
-				$column = $f->column;
-			}
+			$column = $field;
 		}
 		
-		// Bring it all back together
-		return $join ? implode('.', array($table, $column)) : $column;
+		// Alias to the column
+		if ($meta = Jelly::meta($model) AND $field_obj = $meta->field($field) AND $field_obj->in_db)
+		{
+			$column = $field_obj->column;
+		}
+		
+		return $join ? $alias.'.'.$column : $column;
 	}
 	
-	protected function _meta_alias($alias, $operator, $state)
+	/**
+	 * Resolves meta-aliases.
+	 *
+	 * @param   string $alias 
+	 * @param   array  $state 
+	 * @return  array
+	 */
+	protected function _meta_alias($alias, $state)
+	{
+		$original = $alias;
+		
+		// The default model is the current field's model
+		$model = isset($state['model']) ? $state['model'] : $this->_model;
+		
+		// Check for a model operator
+		if (substr($alias, 0, 1) !== ':')
+		{
+			list($model, $alias) = explode(':', $alias);
+
+			// Append the : back onto $field, it's key for recognizing the alias below
+			$alias = ':'.$alias;
+		}
+		
+		return $this->_expand_alias($model, $alias, $state);
+	}
+	
+	/**
+	 * Easy-to-override method that expands aliases.
+	 *
+	 * @param   string $model 
+	 * @param   string $alias
+	 * @param   array $state 
+	 * @return  array
+	 */
+	protected function _expand_alias($model, $alias, $state)
 	{
 		switch ($alias)
 		{
 			case ':primary_key':
-				$state['field'] = Jelly::meta($operator)->primary_key();
+				$state['field'] = Jelly::meta($model)->primary_key();
 				break;
 			case ':name_key':
-				$state['field'] = Jelly::meta($operator)->name_key();
+				$state['field'] = Jelly::meta($model)->name_key();
 				break;
 			case ':foreign_key':
-				$state['field'] = Jelly::meta($operator)->foreign_key();
+				$state['field'] = Jelly::meta($model)->foreign_key();
 				break;
 			case ':unique_key':
-				$state['field'] = Jelly::query(Jelly::meta($operator)->model())->unique_key($state['value']);
+				$state['field'] = Jelly::query(Jelly::meta($model)->model())->unique_key($state['value']);
 				break;
-			case ':join_alias':
-				$state['table'] = $state['model'].':'.$state['field'];
 			default:
 				throw new Kohana_Exception('Unknown meta alias :alias', array(
 					':alias' => $alias));
 		}
-
+		
 		return $state;
 	}
 
@@ -981,34 +1023,6 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		}
 
 		return $query;
-	}
-	
-	/**
-	 * Initializes the builder by setting a default 
-	 * table and adding the load_with joins.
-	 *
-	 * @return void
-	 */
-	protected function _initialize()
-	{
-		// Set a few defaults
-		if ($this->_meta)
-		{
-			$this->from($this->_meta->table());
-
-			// Load with automatically here.
-			foreach ($this->_meta->load_with() as $relationship)
-			{
-				$this->with($relationship);
-			}
-
-			// Default to loading the current model
-			$this->as_object(TRUE);
-		}
-		else
-		{
-			$this->from($this->_model);
-		}
 	}
 	
 	/**

@@ -50,35 +50,7 @@ abstract class Jelly_Core
 
 		return new $class($key);
 	}
-
-	/**
-	 * Factory for instantiating fields.
-	 *
-	 * @param   string $type
-	 * @param   mixed  $options
-	 * @return  Jelly_Field
-	 */
-	public static function field($type, $options = NULL)
-	{
-		$field = Jelly::$_field_prefix.$type;
-                
-		return new $field($options);	
-	}
 	
-	/**
-	 * Factoring for instantiating behaviors.
-	 *
-	 * @param   string $type
-	 * @param   mixed  $options
-	 * @return  Jelly_Behavior
-	 */
-	public static function behavior($type, $options = NULL)
-	{
-		$behavior = Jelly::$_behavior_prefix.$type;
-		
-		return new $behavior($options);
-	}
-        
 	/**
 	 * Returns a query builder that can be used for querying.
 	 *
@@ -131,7 +103,35 @@ abstract class Jelly_Core
 
 		return Jelly::$_models[$model];
 	}
-
+	
+	/**
+	 * Factory for instantiating fields.
+	 *
+	 * @param   string $type
+	 * @param   mixed  $options
+	 * @return  Jelly_Field
+	 */
+	public static function field($type, $options = NULL)
+	{
+		$field = Jelly::$_field_prefix.$type;
+                
+		return new $field($options);	
+	}
+	
+	/**
+	 * Factoring for instantiating behaviors.
+	 *
+	 * @param   string $type
+	 * @param   mixed  $options
+	 * @return  Jelly_Behavior
+	 */
+	public static function behavior($type, $options = NULL)
+	{
+		$behavior = Jelly::$_behavior_prefix.$type;
+		
+		return new $behavior($options);
+	}
+	
 	/**
 	 * Automatically loads a model, if it exists,
 	 * into the meta table.
@@ -219,152 +219,6 @@ abstract class Jelly_Core
 		}
 
 		return strtolower($model);
-	}
-
-	/**
-	 * Returns the actual column name for a field, field alias, or meta-alias.
-	 *
-	 * $field must be in the format of "model.field". Supply $value if
-	 * you want the unique_key meta-alias to work properly.
-	 *
-	 * An array is returned containing the table and column keys. If the model's meta is found,
-	 * but the field can't be found, 'column' will contain the field name passed.
-	 *
-	 * Returns FALSE on failure.
-	 *
-	 * @param   string  $field
-	 * @return  array
-	 */
-	public static function alias($field, $value = NULL)
-	{
-		if (FALSE !== strpos($field, '.'))
-		{
-			list($model, $field) = explode('.', $field);
-		}
-		else
-		{
-			$model = NULL;
-		}
-
-		// We should at least return something now
-		$table = $model;
-		$column = $field;
-
-		// Hopefully we can find a meta object by now
-		$meta = Jelly::meta($model);
-
-		// Check for a meta-alias first
-		if (FALSE !== strpos($field, ':'))
-		{
-			$field = $column = Jelly::meta_alias($meta, $field, $value);
-		}
-
-		if ($meta)
-		{
-			$table = $meta->table();
-
-			// Alias the field
-			if ($field = $meta->field($field))
-			{
-				$column = $field->column;
-			}
-		}
-
-		return array(
-			'table' => $table,
-			'column' => $column,
-		);
-	}
-
-	/**
-	 * Resolves meta-aliases
-	 *
-	 * @param   mixed   $meta
-	 * @param   string  $field
-	 * @param   mixed   $value
-	 * @return  string
-	 */
-	public static function meta_alias($meta, $field, $value = NULL)
-	{
-		// Allow passing the model name
-		if (is_string($meta) OR $meta instanceof Jelly_Model)
-		{
-			$meta = Jelly::meta($meta);
-		}
-
-		// Check for a model operator
-		if (substr($field, 0, 1) !== ':')
-		{
-			list($model, $field) = explode(':', $field);
-
-			// Append the : back onto $field, it's key for recognizing the alias below
-			$field = ':'.$field;
-
-			// We should be able to find a valid meta object here
-			if (FALSE == ($meta = Jelly::meta($model)))
-			{
-				throw new Kohana_Exception('Meta data for :model was not found while trying to resolve :field', array(
-					':model' => $model,
-					':field' => $field));
-			}
-		}
-
-		switch ($field)
-		{
-			case ':primary_key':
-				$field = $meta->primary_key();
-				break;
-			case ':name_key':
-				$field = $meta->name_key();
-				break;
-			case ':foreign_key':
-				$field = $meta->foreign_key();
-				break;
-			case ':unique_key':
-				$field = Jelly::query($meta->model())->unique_key($value);
-				break;
-			default:
-				throw new Kohana_Exception('Unknown meta alias :field', array(
-					':field' => $field));
-		}
-
-		return $field;
-	}
-
-	/**
-	 * Aliases a Joinable column base on the field's alias
-	 *
-	 * Required to allow joins to the same table with different aliases in one query.
-	 *
-	 * If a field object is passed, it's (hopefully unique) join alias is returned.
-	 *
-	 * If a sting is passed, it is converted back to a model identifier if it is a valid join alias format
-	 * or FALSE is returned otherwise. This allows for correctly aliasing fields that have a join alias
-	 * rather than a model identifier.
-	 *
-	 * @param   Jelly_Field | string  Field to alias or alias to convert back to model.field
-	 * @return  string | FALSE
-	 */
-	public static function join_alias($field)
-	{
-		if ($field instanceof Jelly_Field)
-		{
-			// Return join alias for field
-			// Join alias is the foreign model name with the aliased name from the field
-			return '_'.$field->foreign['model'].':'.$field->name;
-		}
-
-		// If this is a join alias
-		if (substr($field, 0, 1) === '_')
-		{
-			list($model, $field) = explode(':', substr($field, 1), 2);
-
-			// This is a valid join alias, return the model it aliases
-			return $model;
-		}
-
-		// Don't know what this is, just return it
-		return FALSE;
 	}
 
 	/**

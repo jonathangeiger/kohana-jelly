@@ -116,12 +116,6 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 	 */
 	public function with($builder)
 	{
-		$join_col1 = $this->model.'.'.$this->column;
-		// We use this field's alias rather than the foreign model so the join alias can be resolved
-		$join_col2 = $this->name.'.'.$this->foreign['field'];
-
-		$builder
-			->join(array($this->foreign['model'], Jelly::join_alias($this)), 'LEFT')
-			->on($join_col1, '=', $join_col2);
+		$builder->join(':'.$this->name, 'LEFT')->on($this->model.'.'.$this->name, '=', ':'.$this->name.'.'.$this->foreign['field']);
 	}
 }
