@@ -172,14 +172,6 @@ abstract class Jelly_Core_Meta
 
 			// Set the defaults so they're actually persistent
 			$this->_defaults[$column] = $field->default;
-
-			// Set the columns, so that we can access reverse database results properly
-			if ( ! array_key_exists($field->column, $this->_columns))
-			{
-				$this->_columns[$field->column] = array();
-			}
-
-			$this->_columns[$field->column][] = $column;
 		}
 
 		// Meta object is initialized and no longer writable
@@ -362,30 +354,6 @@ abstract class Jelly_Core_Meta
 				$this->_fields += $field;
 				return $this;
 			}
-		}
-	}
-
-	/**
-	 * Returns all of the columns for this meta object.
-	 *
-	 * Each key in the array is a column's name, while the value
-	 * is an array of fields the column maps to.
-	 *
-	 * If $name is specified, only the particular column is returned.
-	 *
-	 * @param   string  $name
-	 * @return  array
-	 */
-	public function columns($name = NULL)
-	{
-		if (func_num_args() == 0)
-		{
-			return $this->_columns;
-		}
-
-		if (isset($this->_columns[$name]))
-		{
-			return $this->_columns[$name];
 		}
 	}
 
