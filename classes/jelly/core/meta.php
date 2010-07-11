@@ -42,6 +42,16 @@ abstract class Jelly_Core_Meta
 	 * @var  string  The foreign key for use in other tables. This can be referenced in query building as :foreign_key
 	 */
 	protected $_foreign_key = '';
+	
+	/**
+	 * @var  string  The polymorphic key for the model tree.
+	 */
+	protected $_polymorphic_key = NULL;
+	
+	/**
+	 * @var  array  An array of this model's children
+	 */
+	protected $_children = array();
 
 	/**
 	 * @var  array  An array of ordering options for SELECTs
@@ -93,6 +103,16 @@ abstract class Jelly_Core_Meta
 	 * @var  array  Behaviors attached to this model
 	 */
 	protected $_behaviors = array();
+	
+	/**
+	 * @var  string  The parent model of this model
+	 */
+	protected $_parent = NULL;
+	
+	/**
+	 * @var  array  All models that inherit from this model
+	 */
+	protected $_children = array();
 
 	/**
 	 * This is called after initialization to
@@ -168,6 +188,18 @@ abstract class Jelly_Core_Meta
 			if ($field->primary AND empty($this->_primary_key))
 			{
 				$this->_primary_key = $column;
+			}
+			
+			// Search for a polymorphic key
+			if ( ! empty($field->polymorphic))
+			{
+				$this->_polymorphic_key = $field->name;
+				
+				// Add this class as a child if it hasn't been added yet
+				if ( ! in_array($this->_model, $this->_children))	
+				{
+					$this->_children[] = $this->_model;
+				}
 			}
 
 			// Set the defaults so they're actually persistent
@@ -478,6 +510,33 @@ abstract class Jelly_Core_Meta
 		}
 
 		return $this->_foreign_key;
+	}
+	
+	/**
+	 * Gets the model's polymorphic key.
+	 * @param   string  $value
+	 * @return  string
+	 */
+	public function polymorphic_key($value = NULL)
+	{
+		return $this->_polymorphic_key;
+	}
+	
+	/**
+	 * Gets the model's child models
+	 *
+	 * @param   array  $children 
+	 * @return  array
+	 */
+	public function children($children = array())
+	{
+		if (func_num_args() AND ! $this->_initialized)
+		{
+			$this->_children += $children;
+			return $this;
+		}
+		
+		return $this->_children;
 	}
 
 	/**
