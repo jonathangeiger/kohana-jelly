@@ -222,7 +222,7 @@ abstract class Jelly_Core_Validator extends Validate
 						// It's not required, so if it's empty we skip all rules
 						if ( ! Validate::not_empty($this[$field]))
 						{
-							break;
+							continue;
 						}
 					}
 				}
