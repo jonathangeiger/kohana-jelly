@@ -83,7 +83,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		// Default to using our key
 		if ($key !== NULL)
 		{
-			$this->where($this->_model.'.'.$this->unique_key($key), '=', $key)->limit(1);
+			$this->key($key);
 		}
 	}
 
@@ -291,6 +291,18 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		$this->_meta AND empty($this->_select) AND $this->select_column('*');
 		
 		return $this->_build($type)->compile($db);
+	}
+	
+	/**
+	 * Selects for a specific key and limits the selection to 1 so that
+	 * a single model is returned.
+	 *
+	 * @param   mixed  $key 
+	 * @return  $this
+	 */
+	public function key($key)
+	{
+		return $this->where($this->_model.'.'.$this->unique_key($key), '=', $key)->limit(1);
 	}
 	
 	/**
