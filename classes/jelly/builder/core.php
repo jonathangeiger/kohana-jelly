@@ -174,12 +174,12 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	{
 		if ($this->_type === Database::SELECT)
 		{
-			if (!$key)
+			if ($key !== NULL)
 			{
-				return Jelly::factory($this->_meta->model());
+				$this->where(':unique_key', '=', $key);
 			}
 
-			return $this->where(':unique_key', '=', $key)->limit(1)->execute();
+			return $this->limit(1)->execute();
 		}
 
 		return $this;
