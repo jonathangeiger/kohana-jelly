@@ -184,7 +184,6 @@ abstract class Jelly_Core_Field
 	 *
 	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
-	 * @param   boolean      $loaded
 	 * @return  mixed
 	 **/
 	public function get($model, $value)
