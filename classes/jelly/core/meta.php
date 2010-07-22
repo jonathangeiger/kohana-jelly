@@ -108,11 +108,6 @@ abstract class Jelly_Core_Meta
 	 * @var  string  The parent model of this model
 	 */
 	protected $_parent = NULL;
-	
-	/**
-	 * @var  array  All models that inherit from this model
-	 */
-	protected $_children = array();
 
 	/**
 	 * This is called after initialization to
