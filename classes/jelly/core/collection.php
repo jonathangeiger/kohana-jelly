@@ -57,7 +57,7 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 */
 	public function __sleep()
 	{
-		if ($this->_result instanceof Database_MySQL_Result)
+		if ( ! $this->_result instanceof Database_Result_Cached)
 		{
 			$this->_result = new Database_Result_Cached($this->_result->as_array(), '');
 		}
