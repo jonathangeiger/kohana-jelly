@@ -42,6 +42,14 @@ We've done this because it allows transposable queries, which is especially usef
 	
 	// Or update them:
 	$post->get('comments')->set('approved', 1)->update();
+
+#### Inserting a Record
+
+       // Insert a new comment
+       Jelly::query('comments')
+           ->columns(array('content'))
+           ->values(array('This is the content of my comment.'))
+           ->insert();
 	
 #### The filters, rules, and callbacks declaration syntax has changed slightly
 
