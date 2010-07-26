@@ -156,9 +156,10 @@ abstract class Jelly_Core_Validator extends Validate
 	 *          // The data is valid, do something here
 	 *     }
 	 *
+         * @param   boolean allow empty array?
 	 * @return  boolean
 	 */
-	public function check()
+	public function check($allow_empty = FALSE)
 	{
 		if (Kohana::$profiling === TRUE)
 		{
@@ -201,7 +202,7 @@ abstract class Jelly_Core_Validator extends Validate
 		if ($submitted === FALSE)
 		{
 			// Because no data was submitted, validation will not be forced
-			return FALSE;
+			return (boolean) $allow_empty;
 		}
 		
 		// Execute all callbacks
