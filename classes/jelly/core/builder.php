@@ -790,6 +790,8 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		if (is_array($model))
 		{
 			list($model, $alias) = $model;
+
+			$original = "$model.$alias";
 		}
 		
 		// We're caching results to improve speed
