@@ -448,7 +448,7 @@ abstract class Jelly_Core_Model
 			return;
 		
 		// Create a new copy from the validator
-		$data = $this->_validator($data);
+		$data = $this->validator($data);
 		
 		// Trigger callbacks
 		$this->_meta->behaviors()->before_model_validate($this, $data);
@@ -492,7 +492,7 @@ abstract class Jelly_Core_Model
 
 		// Set our :key context, since we can't reliably determine 
 		// if the model is loaded or not by $model->loaded()
-		$this->_validator()->context('key', $key);
+		$this->validator()->context('key', $key);
 
 		// Run validation
 		$this->validate($data);
@@ -769,7 +769,7 @@ abstract class Jelly_Core_Model
 	 * @param   array  $data
 	 * @return  Jelly_Validator
 	 */
-	protected function _validator(array $data = NULL)
+	public function validator(array $data = NULL)
 	{
 		if ( ! $this->_validator)
 		{	
