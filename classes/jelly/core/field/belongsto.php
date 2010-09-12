@@ -64,7 +64,7 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 		// Default to the foreign model's primary key
 		if (empty($this->column))
 		{
-			$this->column = $this->foreign['model'].'_id';
+			$this->column = $column.'_id';
 		}
 
 		// Column is set and won't be overridden
