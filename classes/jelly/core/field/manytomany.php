@@ -186,7 +186,16 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	 */
 	public function has($model, $models)
 	{
-		$in  = $this->_in($model, TRUE);
+		// If the value hasn't changed, we need to pull from the database
+		if ( ! $model->changed($this->name))
+		{
+			$in = $this->_in($model, TRUE);
+		}
+		else
+		{
+			$in = $this->_ids($model->__get($this->name));
+		}
+		
 		$ids = $this->_ids($models);
 
 		foreach ($ids as $id)
