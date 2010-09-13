@@ -458,16 +458,15 @@ abstract class Jelly_Core_Model
 
 		// Let the callback have at the data if it fails or not
 		$this->_meta->behaviors()->after_model_validate($this, $data);
-		
-		// Throw the exception
-		if ( ! $result)
-		{
-			throw new Validate_Exception($data);
-		}
-		
+
+		// Save the validator
+		$this->_validator = $data;
+
 		// We've made it thus far, so we need to re-set the
 		// filtered data on to the model
 		$this->set($data->as_array());
+
+		return $result;
 	}
 
 	/**
@@ -495,7 +494,10 @@ abstract class Jelly_Core_Model
 		$this->validator()->context('key', $key);
 
 		// Run validation
-		$this->validate($data);
+		if ( ! $this->validate($data))
+		{
+			throw new Validate_Exception($this->validator());
+		}
 
 		// These will be processed later
 		$values = $saveable = array();
