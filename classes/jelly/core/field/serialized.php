@@ -43,6 +43,11 @@ abstract class Jelly_Core_Field_Serialized extends Jelly_Field
 	 */
 	public function save($model, $value, $loaded)
 	{
+		if ($this->allow_null AND $value === NULL)
+		{
+			return NULL;
+		}
+		
 		return @serialize($value);
 	}
 }
