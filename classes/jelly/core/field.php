@@ -8,30 +8,6 @@
 abstract class Jelly_Core_Field
 {
 	/**
-	 * Constants for the default field names
-	 */
-	const BELONGSTO   = 'belongsto';
-	const BOOLEAN     = 'boolean';
-	const EMAIL       = 'email';
-	const ENUM        = 'enum';
-	const EXPRESSION  = 'expression';
-	const FILE        = 'file';
-	const FLOAT       = 'float';
-	const HASMANY     = 'hasmany';
-	const HASONE      = 'hasone';
-	const IMAGE       = 'image';
-	const INTEGER     = 'integer';
-	const MANYTOMANY  = 'manytomany';
-	const PASSWORD    = 'password';
-	const POLYMORPHIC = 'polymorphic';
-	const PRIMARY     = 'primary';
-	const SERIALIZED  = 'serialized';
-	const SLUG        = 'slug';
-	const STRING      = 'string';
-	const TEXT        = 'text';
-	const TIMESTAMP   = 'timestamp';
-
-	/**
 	 * Constants for checking field support
 	 */
 	const SAVE       = 'save';
