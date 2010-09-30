@@ -15,7 +15,7 @@ First, let's start with a sample model:
 			
 			// The table the model is attached to.
 			// It defaults to the name of the model pluralized
-			$meta->table('posts')
+			$meta->table('posts');
 		
 			// Fields defined by the model
 			$meta->fields(array(
