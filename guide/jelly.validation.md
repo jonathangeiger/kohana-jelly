@@ -110,11 +110,18 @@ This is converted to the actual field instance that is being validated.
 
 ### Checking if the model is valid
 
-Validation is performed automatically when calling `save()`, however if you need to validate at some other time you can do so at any time by calling `validate()`.
+Validation can be performed at any time by calling the `validate()` method. If the model is `loaded()` or if you pass a key only changed data on the model is validated. Otherwise, all data will be validated:
+
+	if ($model->validate())
+	{
+		$model->save();
+	}
+
+Validation is also performed automatically when calling `save()`. A `Validate_Exception` will be thrown if the model isn't valid when saving, so you should wrap the `save()` in a `try/catch` to ensure you capture any validation errors:
 
 	try
 	{
-		$model->validate();
+		$model->save();
 	} 
 	catch (Validate_Exception $e)
 	{

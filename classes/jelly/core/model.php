@@ -464,11 +464,9 @@ abstract class Jelly_Core_Model
 			$validator = $this->validator($data);
 			$this->_meta->behaviors()->before_model_validate($this, $validator);
 			
-			if ($validator->check())
+			if ($this->_valid = $validator->check())
 			{
 				$this->set($validator->as_array());
-				$this->_validator = $validator;
-				$this->_valid = TRUE;
 			}
 			
 			$this->_meta->behaviors()->after_model_validate($this, $validator);

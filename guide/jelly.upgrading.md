@@ -83,6 +83,22 @@ For reference here is the old style that remains acceptable:
 		'Class::method',
 	)
 	
+#### Jelly_Model->validate() has changed slightly
+
+`Jelly_Model->validate()` used to accept an array of data to validate. It now only accepts a primary key as all of the other methods do.
+
+    // Validate this model assuming it's loaded, so that only changed data is validated
+	$model->validate($id);
+	
+If you need to perform validation of arbitrary bits of data, you now have direct access to the validator used:
+
+	$validator = $model->validator($data);
+
+	if ($data->check())
+	{
+		// Do stuff
+	}
+	
 #### Jelly_Builder->load() has been removed
 
 This is also because of `Jelly::query()`. You can pass a second argument to `Jelly::query()` which effectively duplicates the functionality, except it works on selects, deletes, and updates:
