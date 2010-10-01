@@ -630,6 +630,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function clear()
 	{
+		$this->_valid  =
 		$this->_loaded = 
 		$this->_saved  = FALSE;
 		
