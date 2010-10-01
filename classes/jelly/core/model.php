@@ -47,6 +47,11 @@ abstract class Jelly_Core_Model
 	 * @var  Jelly_Validator  A copy of this object's validator
 	 */
 	protected $_validator = NULL;
+	
+	/**
+	 * @var  Boolean  A flag that keeps track of whether or not the model is valid
+	 */
+	 protected $_valid = FALSE;
 
 	/**
 	 * @var  array  With data
@@ -354,8 +359,8 @@ abstract class Jelly_Core_Model
 				unset($this->_retrieved[$field->name]);
 			}
 
-			// Model is no longer saved
-			$this->_saved = FALSE;
+			// Model is no longer saved or valid
+			$this->_saved = $this->_valid = FALSE;
 		}
 
 		return $this;
@@ -438,35 +443,42 @@ abstract class Jelly_Core_Model
 	 * @param   mixed  $data
 	 * @return  void
 	 */
-	public function validate($data = NULL)
+	public function validate($key = NULL)
 	{
-		$data === NULL AND $data = $this->_changed;
-		$data === TRUE AND $data = $this->_changed + $this->_original;
+	    // Set the key to our id if it isn't set
+		if ($this->_loaded)
+		{
+			$key = $this->_original[$this->_meta->primary_key()];
+		}
+        
+		// Set our :key context, since we can't reliably determine 
+		// if the model is loaded or not by $model->loaded()
+		$this->validator()->context('key', $key);
+		
+		// For loaded models, we're only checking what's changed, otherwise we check it all
+		$data = ($key) ? $this->_changed : $this->_changed + $this->_original;
 		
 		// Don't validate if there isn't anything
-		if (empty($data))
-			return;
+		if ( ! $this->_valid AND ! empty($data))
+		{
+			$validator = $this->validator($data);
+			$this->_meta->behaviors()->before_model_validate($this, $validator);
+			
+			if ($validator->check())
+			{
+				$this->set($validator->as_array());
+				$this->_validator = $validator;
+				$this->_valid = TRUE;
+			}
+			
+			$this->_meta->behaviors()->after_model_validate($this, $validator);
+		}
+		else
+		{
+			$this->_valid = TRUE;
+		}
 		
-		// Create a new copy from the validator
-		$data = $this->validator($data);
-		
-		// Trigger callbacks
-		$this->_meta->behaviors()->before_model_validate($this, $data);
-
-		// Check
-		$result = $data->check();
-
-		// Let the callback have at the data if it fails or not
-		$this->_meta->behaviors()->after_model_validate($this, $data);
-
-		// Save the validator
-		$this->_validator = $data;
-
-		// We've made it thus far, so we need to re-set the
-		// filtered data on to the model
-		$this->set($data->as_array());
-
-		return $result;
+		return $this->_valid;
 	}
 
 	/**
@@ -480,21 +492,14 @@ abstract class Jelly_Core_Model
 	 **/
 	public function save($key = NULL)
 	{
-		// Determine whether or not we're updating
-		$data = ($this->_loaded OR $key) ? $this->_changed : $this->_changed + $this->_original;
-		
-		 // Set the key to our id if it isn't set
+		// Set the key to our id if it isn't set
 		if ($this->_loaded)
 		{
 			$key = $this->_original[$this->_meta->primary_key()];
 		}
 
-		// Set our :key context, since we can't reliably determine 
-		// if the model is loaded or not by $model->loaded()
-		$this->validator()->context('key', $key);
-
 		// Run validation
-		if ( ! $this->validate($data))
+		if ( ! $this->validate($key))
 		{
 			throw new Validate_Exception($this->validator());
 		}
