@@ -628,6 +628,27 @@ abstract class Jelly_Core_Model
 
 		return (boolean) $result;
 	}
+	
+	/**
+	 * Removes any changes made to a model.
+	 *
+	 * This method only works on loaded models.
+	 * 
+	 * @return $this
+	 */
+	public function revert()
+	{
+		if ($this->_loaded)
+		{
+			$this->_loaded = 
+			$this->_saved  = TRUE;
+
+			$this->_changed   =
+			$this->_retrieved = array();
+		}
+		
+		return $this;
+	}
 
 	/**
 	 * Sets a model to its original state, as if freshly instantiated
