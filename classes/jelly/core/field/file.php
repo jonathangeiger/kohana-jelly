@@ -74,6 +74,7 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 		if ($this->types AND ! Upload::type($file, $this->types))
 		{
 			$array->error($field, 'Upload::type');
+			return;
 		}
 		
 		// Sanitize the filename
