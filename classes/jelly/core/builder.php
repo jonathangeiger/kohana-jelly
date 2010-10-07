@@ -57,6 +57,11 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 * @var  array  Alias cache
 	 */
 	protected $_model_cache = array();
+	
+	/**
+	 * @var  array  Alias cache
+	 */
+	protected $_alias_cache = array();
 
 	/**
 	 * Constructs a new Jelly_Builder instance.
@@ -785,6 +790,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	{
 		$original = $table = $model;
 		$alias = NULL;
+		$found = NULL;
 		
 		// Split apart array(table, alias)
 		if (is_array($model))
@@ -794,6 +800,12 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 			$original = "$model.$alias";
 		}
 		
+		// Check to see if it's a known alias first
+		if (isset($this->_alias_cache[$model]))
+		{
+			return $this->_alias_cache[$model];
+		}
+	
 		// We're caching results to improve speed
 		if ( ! isset($this->_model_cache[$original]))
 		{	
@@ -822,7 +834,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 			}
 			// Unknown Table
 			else
-			{
+			{	
 				$table = $model;
 				$model = NULL;
 				$alias = $alias ? $alias : $table;
@@ -830,7 +842,12 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 			
 			// Cache what we've found
 			$this->_model_cache[$original] = array($table, $alias, $model);
+			$this->_alias_cache[$alias]    = $this->_model_cache[$original];
 		}
+		
+		
+		
+		
 		
 		return $this->_model_cache[$original];
 	}
