@@ -197,13 +197,33 @@ abstract class Jelly_Core_Field
 	 * If $in_db, it is expected to return a value suitable for insertion
 	 * into the database.
 	 *
-	 * @param   Jelly  $model
-	 * @param   mixed  $value
+	 * @param   Jelly_Model  $model
+	 * @param   mixed        $value
+	 * @param   bool         $loaded
 	 * @return  mixed
 	 */
 	public function save($model, $value, $loaded)
 	{
 		return $value;
+	}
+	
+	/**
+	 * Triggered whenever the model this field is attached to is deleted.
+	 * 
+	 * This is useful for fields that need to implement some sort of
+	 * garbage collection. 
+	 * 
+	 * This method is called just before the actual record in the database
+	 * is deleted, and is not called at all if a model behavior stops 
+	 * the actual deletion of the record.
+	 *
+	 * @param   Jelly_Model  $model
+	 * @param   mixed        $key
+	 * @return  void
+	 */
+	public function delete($model, $key)
+	{
+		return;
 	}
 	
 	/**
