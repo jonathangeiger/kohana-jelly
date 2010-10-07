@@ -18,9 +18,9 @@
 abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 {
 	/**
-	 * @var  int  Default is 0
+	 * @var  int  Default is NULL, which implies no date
 	 */
-	public $default = 0;
+	public $default = NULL;
 	
 	/**
 	 * @var  boolean  Whether or not to automatically set now() on creation
