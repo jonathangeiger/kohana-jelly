@@ -135,8 +135,7 @@ abstract class Jelly_Core_Meta
 		}
 
 		// Allow modification of this meta object by the behaviors
-		$this->_events->trigger('meta.before_finalize', array(
-			'meta' => $this));
+		$this->_events->trigger('meta.before_finalize', $this);
 		
 		// Ensure certain fields are not overridden
 		$this->_model       = $model;
@@ -217,8 +216,7 @@ abstract class Jelly_Core_Meta
 		$this->_initialized = TRUE;
 		
 		// Final meta callback
-		$this->_events->trigger('meta.after_finalize', array(
-			'meta' => $this));
+		$this->_events->trigger('meta.after_finalize', $this);
 	}
 	
 	/**

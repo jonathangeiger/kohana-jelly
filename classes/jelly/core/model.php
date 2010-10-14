@@ -169,8 +169,7 @@ abstract class Jelly_Core_Model
 	 **/
 	public function __call($method, $args)
 	{
-		return $this->_meta->events()->trigger('model.call_'.$method, array(
-			'model' => $this, 'args' => $args));
+		return $this->_meta->events()->trigger('model.call_'.$method, $this, $args);
 	}
 
 	/**
@@ -460,8 +459,8 @@ abstract class Jelly_Core_Model
 		{
 			$validator = $this->validator($data);
 			
-			$this->_meta->events()->trigger('model.before_validate', array(
-				'model' => $this, 'validator' => $validator));
+			$this->_meta->events()->trigger('model.before_validate', 
+				$this, array($validator));
 			
 			if ($validator->check())
 			{
@@ -469,8 +468,8 @@ abstract class Jelly_Core_Model
 				$this->_valid = TRUE;
 			}
 			
-			$this->_meta->events()->trigger('model.after_validate', array(
-				'model' => $this, 'validator' => $validator));
+			$this->_meta->events()->trigger('model.after_validate', 
+				$this, array($validator));
 		}
 		else
 		{
@@ -499,7 +498,7 @@ abstract class Jelly_Core_Model
 		$values = $saveable = array();
 		
 		// Trigger callbacks and ensure we should proceed
-		if (FALSE === $this->_meta->events()->trigger('model.before_save', array('model' => $this)))
+		if (FALSE === $this->_meta->events()->trigger('model.before_save', $this))
 		{
 			return $this;
 		}
@@ -576,7 +575,7 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Trigger post-save callback
-		$this->_meta->events()->trigger('model.after_save', array('model' => $this));
+		$this->_meta->events()->trigger('model.after_save', $this);
 
 		return $this;
 	}
@@ -597,8 +596,7 @@ abstract class Jelly_Core_Model
 			$key = $this->_original[$this->_meta->primary_key()];
 			
 			// Trigger callbacks to ensure we proceed
-			$result = $this->_meta->events()->trigger('model.before_delete', array(
-				'model' => $this));
+			$result = $this->_meta->events()->trigger('model.before_delete', $this);
 			
 			if ($result === NULL)
 			{
@@ -613,8 +611,7 @@ abstract class Jelly_Core_Model
 		}
 		
 		// Trigger the after-delete
-		$this->_meta->events()->trigger('model.after_delete', array(
-			'model' => $this, 'return' => $result));
+		$this->_meta->events()->trigger('model.after_delete', $this);
 		
 		// Clear the object so it appears deleted anyway
 		$this->clear();

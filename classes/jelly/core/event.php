@@ -46,18 +46,28 @@ abstract class Jelly_Core_Event
 	 * Triggers an event.
 	 *
 	 * @param   string  $event 
-	 * @param   array   $params 
+	 * @param   mixed   $sender
+	 * @param   mixed   $params...
 	 * @return  mixed
 	 */
-	public function trigger($event, $params = array())
+	public function trigger($event, $sender, $params = array())
 	{
 		if ( ! empty($this->_events[$event]))
 		{
-			$data = new Jelly_Event_Data(arr::merge($params, array('event' => $event)));
+			$data = new Jelly_Event_Data(array(
+				'event'  => $event,
+				'sender' => $sender,
+				'args'   => $params,
+			));
+			
+			// Create the params to be passed to the callback
+			// Sender, Params...and Event as the last one
+			array_unshift($params, $sender);
+			array_push($params, $data);
 			
 			foreach ($this->_events[$event] as $callback)
 			{
-				Jelly::call($callback, array($data));
+				call_user_func_array($callback, $params);
 				
 				if ($data->stop)
 				{

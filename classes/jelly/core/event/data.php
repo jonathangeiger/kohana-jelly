@@ -20,7 +20,17 @@ abstract class Jelly_Core_Event_Data
 	/**
 	 * @var  string  The name of the event
 	 */
-	public $name = NULL;
+	public $event = NULL;
+	
+	/**
+	 * @var  mixed  The sender of the event
+	 */
+	public $sender = NULL;
+	
+	/**
+	 * @var  args  An array of args sent to the event
+	 */
+	public $args = array();
 	
 	/**
 	 * @var  string  The return value of the event

@@ -103,8 +103,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	{
 		if ($this->_meta)
 		{
-			return $this->_meta->events()->trigger('builder.call_'.$method, array(
-				'builder' => $this, 'args' => $args));
+			return $this->_meta->events()->trigger('builder.call_'.$method, $this, $args);
 		}
 		
 		throw new Kohana_Exception('Invalid method :method called on class :class',
@@ -119,14 +118,17 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function select($db = NULL)
 	{
-		$db = $this->_db($db);
+		$db   = $this->_db($db);
+		$meta = $this->_meta;
 		
-		// Select all of the columns for the model if we haven't already
-		$this->_meta AND empty($this->_select) AND $this->select_column('*');
-		
-		// Trigger before_select callback
-		$this->_meta AND $this->_meta->events()->trigger('builder.before_select', array(
-			'builder' => $this));
+		if ($meta)
+		{
+			// Select all of the columns for the model if we haven't already
+			empty($this->_select) AND $this->select_column('*');
+			
+			// Trigger before_select callback
+			$meta->events()->trigger('builder.before_select', $this);
+		}
 		
 		// Ready to leave the builder, we need to figure out what type to return
 		$this->_result = $this->_build(Database::SELECT);
@@ -145,8 +147,10 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		$this->_result = new Jelly_Collection($this->_result->execute($db), $this->_as_object);
 		
 		// Trigger after_query callbacks
-		$this->_meta AND $this->_meta->events()->trigger('builder.after_select', array(
-			'builder' => $this, 'result' => $this->_result));
+		if ($meta)
+		{
+			$meta->events()->trigger('builder.after_select', $this);
+		}
 
 		// If the record was limited to 1, we only return that model
 		// Otherwise we return the whole result set.
@@ -166,18 +170,17 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function insert($db = NULL)
 	{
-		$db = $this->_db($db);
+		$db   = $this->_db($db);
+		$meta = $this->_meta;
 		
 		// Trigger callbacks
-		$this->_meta AND $this->_meta->events()->trigger('builder.before_insert', array(
-			'builder' => $this));
+		$meta AND $meta->events()->trigger('builder.before_insert', $this);
 		
 		// Ready to leave the builder
 		$result = $this->_build(Database::INSERT)->execute($db);
 		
 		// Trigger after_query callbacks
-		$this->_meta AND $this->_meta->events()->trigger('builder.after_insert', array(
-			'builder' => $this, 'result' => $result));
+		$meta AND $meta->events()->trigger('builder.after_insert', $this);
 		
 		return $result;
 	}
@@ -190,18 +193,17 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function update($db = NULL)
 	{
-		$db = $this->_db($db);
+		$db   = $this->_db($db);
+		$meta = $this->_meta;
 		
 		// Trigger callbacks
-		$this->_meta AND $this->_meta->events()->trigger('builder.before_update', array(
-			'builder' => $this));
+		$meta AND $meta->events()->trigger('builder.before_update', $this);
 		
 		// Ready to leave the builder
 		$result = $this->_build(Database::UPDATE)->execute($db);
 		
 		// Trigger after_query callbacks
-		$this->_meta AND $this->_meta->events()->trigger('builder.after_update', array(
-			'builder' => $this, 'result' => $result));
+		$meta AND $meta->events()->trigger('builder.after_update', $this);
 			
 		return $result;
 	}
@@ -214,15 +216,15 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function delete($db = NULL)
 	{
-		$db = $this->_db($db);
+		$db     = $this->_db($db);
+		$meta   = $this->_meta;
 		$result = NULL;
 		
 		// Trigger callbacks
-		if ($this->_meta)
+		if ($meta)
 		{
 			// Listen for a result to see if we need to actually delete the record
-			$result = $this->_meta->events()->trigger('builder.before_delete', array(
-				'builder' => $this));
+			$result = $meta->events()->trigger('builder.before_delete', $this);
 		}
 		
 		if ($result === NULL)
@@ -231,8 +233,11 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		}
 		
 		// Trigger after_query callbacks
-		$this->_meta AND $this->_meta->events()->trigger('builder.after_delete', array(
-			'builder' => $this, 'result' => $result));
+		if ($meta)
+		{
+			// Allow the events to modify the result
+			$result = $meta->events()->trigger('builder.after_delete', $this);
+		}
 		
 		return $result;
 	}
@@ -245,11 +250,11 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 */
 	public function count($db = NULL)
 	{
-		$db = $this->_db($db);
+		$db   = $this->_db($db);
+		$meta = $this->_meta;
 		
 		// Trigger callbacks
-		$this->_meta AND $this->_meta->events()->trigger('builder.before_select', array(
-			'builder' => $this));
+		$meta AND $meta->events()->trigger('builder.before_select', $this);
 		
 		// Start with a basic SELECT
 		$query = $this->_build(Database::SELECT)->as_object(FALSE);
@@ -264,8 +269,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 		               ->get('total');
 		
 		// Trigger after_query callbacks
-		$this->_meta AND $this->_meta->events()->trigger('builder.after_select', array(
-			'builder' => $this, 'result' => $this->_result));
+		$meta AND $meta->events()->trigger('builder.after_select', $this);
 		
 		return $result;
 	}
