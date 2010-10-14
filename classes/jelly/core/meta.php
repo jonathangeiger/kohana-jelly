@@ -100,6 +100,11 @@ abstract class Jelly_Core_Meta
 	protected $_field_cache = array();
 	
 	/**
+	 * @var  array  Events attached to this model
+	 */
+	protected $_events = array();
+	
+	/**
 	 * @var  array  Behaviors attached to this model
 	 */
 	protected $_behaviors = array();
@@ -120,11 +125,18 @@ abstract class Jelly_Core_Meta
 		if ($this->_initialized)
 			return;
 			
-		// Hand over the behaviors to the collection manager
-		$this->_behaviors = new Jelly_Behavior($this->_behaviors, $model);
+		// Set up event system
+		$this->_events = new Jelly_Event($model);
+		
+		// Initialize behaviors
+		foreach ($this->_behaviors as $name => $behavior)
+		{
+			$behavior->initialize($this->_events, $model, $name);
+		}
 
 		// Allow modification of this meta object by the behaviors
-		$this->_behaviors->before_meta_finalize($this);
+		$this->_events->trigger('meta.before_finalize', array(
+			'meta' => $this));
 		
 		// Ensure certain fields are not overridden
 		$this->_model       = $model;
@@ -205,7 +217,8 @@ abstract class Jelly_Core_Meta
 		$this->_initialized = TRUE;
 		
 		// Final meta callback
-		$this->_behaviors->after_meta_finalize($this);
+		$this->_events->trigger('meta.after_finalize', array(
+			'meta' => $this));
 	}
 	
 	/**
@@ -460,6 +473,16 @@ abstract class Jelly_Core_Meta
 		}
 		
 		return $this;
+	}
+	
+	/**
+	 * Gets the events attached to the object.
+	 * 
+	 * @return  Jelly_Behavior|$this
+	 */
+	public function events()
+	{
+		return $this->_events;
 	}
 
 	/**
