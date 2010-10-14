@@ -426,8 +426,8 @@ abstract class Jelly_Core_Model
 	/**
 	 * Validates the current state of the model.
 	 * 
-	 * If nothing is passed for $data, only what has changed
-	 * will be validated. If TRUE, is passed all data—including
+	 * If the model is loaded, only what has changed
+	 * will be validated. Otherwise, is passed all data—including
 	 * original data—will be validated.
 	 * 
 	 * Otherwise, pass an array for data to validate whatever is
@@ -443,14 +443,10 @@ abstract class Jelly_Core_Model
 	 * @param   mixed  $data
 	 * @return  void
 	 */
-	public function validate($key = NULL)
+	public function validate()
 	{
-	    // Set the key to our id if it isn't set
-		if ($this->_loaded)
-		{
-			$key = $this->_original[$this->_meta->primary_key()];
-		}
-        
+		$key = $this->_original[$this->_meta->primary_key()];
+		
 		// Set our :key context, since we can't reliably determine 
 		// if the model is loaded or not by $model->loaded()
 		$this->validator()->context('key', $key);
@@ -483,19 +479,11 @@ abstract class Jelly_Core_Model
 	/**
 	 * Creates or updates the current record.
 	 *
-	 * If $key is passed, the record will be assumed to exist
-	 * and an update will be executed, even if the model isn't loaded().
-	 *
-	 * @param   mixed  A unique key to update
 	 * @return  $this
 	 **/
-	public function save($key = NULL)
+	public function save()
 	{
-		// Set the key to our id if it isn't set
-		if ($this->_loaded)
-		{
-			$key = $this->_original[$this->_meta->primary_key()];
-		}
+		$key = $this->_original[$this->_meta->primary_key()];
 
 		// Run validation
 		if ( ! $this->validate($key))
@@ -595,17 +583,14 @@ abstract class Jelly_Core_Model
 	 * @param   $key  A key to use for non-loaded records
 	 * @return  boolean
 	 **/
-	public function delete($key = NULL)
+	public function delete()
 	{
 		$result = FALSE;
 
 		// Are we loaded? Then we're just deleting this record
-		if ($this->_loaded OR $key)
+		if ($this->_loaded)
 		{
-			if ($this->_loaded)
-			{
-				$key = $this->id();
-			}
+			$key = $this->_original[$this->_meta->primary_key()];
 			
 			// Trigger callbacks to ensure we proceed
 			if (NULL === ($result = $this->_meta->behaviors()->before_model_delete($this, $key)))
