@@ -91,10 +91,7 @@ abstract class Jelly_Core_Field_Image extends Jelly_Core_Field_File
 	public function _upload(Jelly_Validator $array, $model, $field)
 	{
 		// Save the original untouched
-		parent::_upload($array, $model, $field);
-		
-		// Don't bother uploading
-		if ($array->errors())
+		if ( ! parent::_upload($array, $model, $field))
 		{
 			return;
 		}

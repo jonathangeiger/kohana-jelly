@@ -58,7 +58,7 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 		if ($array->errors())
 		{
 			// Don't bother uploading
-			return;
+			return FALSE;
 		}
 		
 		// Get the image from the array
@@ -67,14 +67,14 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 		if ( ! Upload::valid($file) OR ! Upload::not_empty($file))
 		{
 			// No need to do anything right now
-			return;
+			return FALSE;
 		}
 		
 		// Check to see if it's a valid type
 		if ($this->types AND ! Upload::type($file, $this->types))
 		{
 			$array->error($field, 'Upload::type');
-			return;
+			return FALSE;
 		}
 		
 		// Sanitize the filename
@@ -104,7 +104,10 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 		else
 		{
 			$array->error($field, 'Upload::save');
+			return FALSE;
 		}
+		
+		return TRUE;
 	}
 	
 	/**
