@@ -64,12 +64,7 @@ abstract class Jelly_Core_Field_File extends Jelly_Field
 		// Get the image from the array
 		$file = $array[$field];
 
-		if ( ! Upload::valid($file))
-		{
-			return FALSE;
-		}
-		
-		if (! Upload::not_empty($file))
+		if ( ! is_array($file) OR ! Upload::valid($file) OR ! Upload::not_empty($file))
 		{
 			return FALSE;
 		}
