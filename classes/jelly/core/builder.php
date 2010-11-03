@@ -348,7 +348,7 @@ abstract class Jelly_Core_Builder extends Kohana_Database_Query_Builder_Select
 	 * @param   string  classname or TRUE for stdClass
 	 * @return  $this
 	 */
-	public function as_object($class = TRUE, $params = array())
+	public function as_object($class = TRUE, array $params = NULL)
 	{
 		// Class is TRUE, default to the model
 		if ($class === TRUE AND $this->_meta)
