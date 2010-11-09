@@ -8,6 +8,7 @@
 abstract class Jelly_Core_Field
 {
 	/**
+	 * @TODO: REMOVE!!!
 	 * Constants for checking field support
 	 */
 	const SAVE       = 'save';
@@ -114,8 +115,7 @@ abstract class Jelly_Core_Field
 			$this->allow_null = TRUE;
 		}
 		
-		// Default value is going to be NULL if null is true
-		// to mimic the SQL defaults
+		// Default value is going to be NULL if null is true to mimic the SQL defaults
 		if ( ! array_key_exists('default', (array) $options) AND $this->allow_null)
 		{
 			$this->default = NULL;
@@ -155,56 +155,47 @@ abstract class Jelly_Core_Field
 		{
 			$this->label = ucwords(inflector::humanize($column));
 		}
-		
-		// Check as to whether we need to add
-		// some callbacks for shortcut properties
-		if ($this->unique === TRUE)
-		{
-			$this->rules[] = array(array($this, '_is_unique'), array(':validate', ':model', ':value', ':key'));
-		}
 	}
 
 	/**
 	 * Sets a particular value processed according
 	 * to the class's standards.
 	 *
-	 * @param   mixed  $value
+	 * @param   Jelly_Model  $model
+	 * @param   mixed        $value
 	 * @return  mixed
 	 **/
-	public function set($value)
+	public function value($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		
 		return $value;
 	}
-
+	
 	/**
-	 * Returns a particular value processed according
-	 * to the class's standards.
+	 * Compares the values with the original to 
+	 * determine if the value has changed.
 	 *
 	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
-	 * @return  mixed
+	 * @return  boolean
 	 **/
-	public function get($model, $value)
+	public function changed($model, $value)
 	{
-		return $value;
+		return $this->value($model, $model->original($this->name)) !== $this->value($model, $value);
 	}
-
+	
 	/**
-	 * Called just before saving if the field is $in_db, and just after if it's not.
-	 *
-	 * If $in_db, it is expected to return a value suitable for insertion
-	 * into the database.
+	 * Called just before saving, giving the field a chance
+	 * to modify the value before it's saved.
 	 *
 	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
-	 * @param   bool         $loaded
 	 * @return  mixed
 	 */
-	public function save($model, $value, $loaded)
+	public function save($model, $value)
 	{
-		return $value;
+		return $this->value($model, $value);
 	}
 	
 	/**
@@ -243,21 +234,14 @@ abstract class Jelly_Core_Field
 	{
 		switch ($feature)
 		{
-			case Jelly_Field::SAVE:
-				return $this instanceof Jelly_Field_Supports_Save;
 			case Jelly_Field::WITH:
 				return $this instanceof Jelly_Field_Supports_With;
-			case Jelly_Field::HAS:
-				return $this instanceof Jelly_Field_Supports_Has;
-			case Jelly_Field::ADD_REMOVE:
-				return $this instanceof Jelly_Field_Supports_AddRemove;
 			case Jelly_Field::JOIN:
 				return $this instanceof Jelly_Field_Supports_Join;
 		}
 		
 		return FALSE;
 	}
-	
 
 	/**
 	 * Callback for validating that a field is unique.
@@ -315,52 +299,5 @@ abstract class Jelly_Core_Field
 		}
 		
 		return array($value, $return);
-	}
-
-	/**
-	 * Converts a bunch of types to an array of ids
-	 *
-	 * @param   mixed  $models
-	 * @return  array
-	 */
-	protected function _ids($models)
-	{
-		$ids = array();
-
-		// Handle Database Results
-		if ($models instanceof Iterator OR is_array($models))
-		{
-			foreach($models as $row)
-			{
-				if (is_object($row))
-				{
-					// Ignore unloaded relations
-					if ($row->loaded())
-					{
-						$ids[] = $row->id();
-					}
-				}
-				else
-				{
-					$ids[] = $row;
-				}
-			}
-		}
-		// And individual models
-		elseif (is_object($models))
-		{
-			// Ignore unloaded relations
-			if ($models->loaded())
-			{
-				$ids[] = $models->id();
-			}
-		}
-		// And everything else
-		else
-		{
-			$ids[] = $models;
-		}
-
-		return $ids;
 	}
 }

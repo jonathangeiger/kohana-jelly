@@ -16,19 +16,6 @@ abstract class Jelly_Core_Field_Password extends Jelly_Field_String
 	 * @var  callback  A valid callback to use for hashing the password or FALSE to not hash
 	 */
 	public $hash_with = 'sha1';
-	
-	/**
-	 * Adds a callback that hashes the password.
-	 *
-	 * @param  array  $options 
-	 */
-	public function __construct($options = array())
-	{
-		parent::__construct($options);
-		
-		// Add a callback that hashes the password when validating
-		$this->callbacks[] = array(array($this, 'hash'), array(':validate', ':model'));
-	}
 
 	/**
 	 * Hashes the password only if it's changed
@@ -37,16 +24,11 @@ abstract class Jelly_Core_Field_Password extends Jelly_Field_String
 	 * @param   Jelly_Model      $model 
 	 * @return  void
 	 */
-	public function hash(Jelly_Validator $validate, Jelly_Model $model)
+	public function save($model, $value)
 	{
-		// No point in continuing with errors
-		if ($validate->errors()) return;
-		
-		// Do we need to hash the password?
-		if ($this->hash_with AND $model->changed($this->name))
+		if ($this->hash_with)
 		{
-			// Verify value has changed
-			$validate[$this->name] = call_user_func($this->hash_with, $validate[$this->name]);
+			return call_user_func($this->hash_with, $value);
 		}
 	}
 }

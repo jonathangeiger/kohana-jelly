@@ -8,215 +8,238 @@
 abstract class Jelly_Core_Meta
 {
 	/**
-	 * @var  boolean  If this is FALSE, properties can still be set on the meta object
+	 * @var  array  Cache of all meta instances that are attached to a real model
 	 */
-	protected $_initialized = FALSE;
-
+	protected static $_instances = array();
+	
 	/**
-	 * @var  string  The model this meta object belongs to
+	 * Singleton for finding meta objects.
+	 *
+	 * @param   string       $model 
+	 * @return  Jelly_Meta 
 	 */
-	protected $_model = NULL;
+	public static function instance($model)
+	{
+		$class = strtolower(Jelly::$model_prefix.$model); 
+		
+		if ( ! isset(Jelly_Meta::$_instances[$class]))
+		{
+			$meta = new Jelly_Meta($model);
+			
+			if (class_exists($class) AND is_subclass_of($class, 'Jelly_Model'))
+			{
+				call_user_func(array($class, 'initialize'), $meta);
+				
+				// Only cache if this is a known class instance
+				Jelly_Meta::$_instances[$class] = $meta;
+			}
+			
+			$meta->finalize();
+		}
+		else
+		{
+			$meta = Jelly_Meta::$_instances[$class];
+		}
+
+		return $meta;
+	}
 
 	/**
 	 * @var  string  The database key to use for connection
 	 */
-	protected $_db = 'default';
+	public $db;
+	
+	/**
+	 * @var  string  The model this meta object belongs to
+	 */
+	public $model;
 
 	/**
 	 * @var  string  The table this model represents, defaults to the model name pluralized
 	 */
-	protected $_table = '';
+	public $table;
+	
+	/**
+	 * @var  array  A map to the models's fields and how to process each column.
+	 */
+	public $fields = array();
+	
+	/**
+	 * @var  array  A map of aliases to fields
+	 */
+	public $aliases = array();
+	
+	/**
+	 * @var  array  Default data for each field
+	 */
+	public $defaults = array();
+	
+	/**
+	 * @var  string  The manager class the model is associated with.
+	 */
+	public $manager;
 
 	/**
-	 * @var  string  The primary key, defaults to the first Field_Primary found.
-	 *               This can be referenced in query building as :primary_key
+	 * @var  string  The primary key, defaults to the first primary field found.
 	 */
-	protected $_primary_key = '';
+	public $primary_key;
 
 	/**
-	 * @var  string  The title key. This can be referenced in query building as :name_key
+	 * @var  string  The name key. Defaults to the first unique string field found.
 	 */
-	protected $_name_key = 'name';
+	public $name_key;
 
 	/**
 	 * @var  string  The foreign key for use in other tables. This can be referenced in query building as :foreign_key
 	 */
-	protected $_foreign_key = '';
+	public $foreign_key;
 	
 	/**
 	 * @var  string  The polymorphic key for the model tree.
 	 */
-	protected $_polymorphic_key = NULL;
+	public $polymorphic_key;
+	
+	/**
+	 * @var  string  The different validation contexts
+	 */
+	public $validate = array();
+	
+	/**
+	 * @var  string  The different validation filters
+	 */
+	public $filters = array();
+	
+	/**
+	 * @var  string  The different validation rules
+	 */
+	public $rules = array();
+	
+	/**
+	 * @var  string  The different validation callbacks
+	 */
+	public $callbacks = array();
+	
+	/**
+	 * @var  array  Events attached to this model
+	 */
+	public $events = array();
+	
+	/**
+	 * @var  array  Behaviors attached to this model
+	 */
+	public $behaviors = array();
 	
 	/**
 	 * @var  array  An array of this model's children
 	 */
-	protected $_children = array();
-
-	/**
-	 * @var  array  An array of ordering options for SELECTs
-	 */
-	protected $_sorting = array();
-
-	/**
-	 * @var  array  An array of 1:1 relationships to pass to with() for every SELECT
-	 */
-	protected $_load_with = array();
-
-	/**
-	 * @var  array  A map to the models's fields and how to process each column.
-	 */
-	protected $_fields = array();
-
-	/**
-	 * @var  array  A map of aliases to fields
-	 */
-	protected $_aliases = array();
-
-	/**
-	 * @var  string  The builder class the model is associated with. This defaults to
-	 *               Jelly_Builder_Modelname, if that particular class is found.
-	 */
-	protected $_builder = '';
+	public $children = array();
 	
 	/**
-	 * @var  string  The validator attached to the object
+	 * @var  string  The parent model of this model
 	 */
-	protected $_validator = NULL;
-
-	/**
-	 * @var  array  A list of columns and how they relate to fields
-	 */
-	protected $_columns = array();
-
-	/**
-	 * @var  array  Default data for each field
-	 */
-	protected $_defaults = array();
+	public $parent = NULL;
 
 	/**
 	 * @var  array  A cache of retrieved fields, with aliases resolved
 	 */
 	protected $_field_cache = array();
-	
-	/**
-	 * @var  array  Events attached to this model
-	 */
-	protected $_events = array();
-	
-	/**
-	 * @var  array  Behaviors attached to this model
-	 */
-	protected $_behaviors = array();
-	
-	/**
-	 * @var  string  The parent model of this model
-	 */
-	protected $_parent = NULL;
 
+	/**
+	 * Constructor. 
+	 *
+	 * @param   string  $model 
+	 */
+	public function __construct($model)
+	{
+		$this->model = $model;
+	}
+	
 	/**
 	 * This is called after initialization to
 	 * finalize any changes to the meta object.
 	 *
 	 * @return  void
 	 */
-	public function finalize($model)
-	{
-		if ($this->_initialized)
-			return;
+	public function finalize()
+	{	
+		$model = $this->model;
+		
+		if ( ! class_exists(Jelly::$model_prefix.$this->model))
+		{
+			$this->model = NULL;
+		}
+		
+		if (empty($this->events))
+		{
+			$this->events = new Jelly_Event($this->model);
 			
-		// Set up event system
-		$this->_events = new Jelly_Event($model);
-		
-		// Initialize behaviors
-		foreach ($this->_behaviors as $name => $behavior)
-		{
-			$behavior->initialize($this->_events, $model, $name);
-		}
-
-		// Allow modification of this meta object by the behaviors
-		$this->_events->trigger('meta.before_finalize', $this);
-		
-		// Ensure certain fields are not overridden
-		$this->_model       = $model;
-		$this->_columns     =
-		$this->_defaults    =
-		$this->_field_cache =
-		$this->_aliases     = array();
-
-		// Table should be a sensible default
-		if (empty($this->_table))
-		{
-			$this->_table = inflector::plural($model);
-		}
-
-		// See if we have a special builder class to use
-		if (empty($this->_builder))
-		{
-			$builder = Jelly::model_prefix().'builder_'.$model;
-
-			if (class_exists($builder))
+			foreach ($this->behaviors as $name => $behavior)
 			{
-				$this->_builder = $builder;
+				$behavior->initialize($this, $this->model, $name);
+			}
+		}
+
+		if (empty($this->table))
+		{
+			$this->table = $this->model ? inflector::plural($model) : $this->model;
+		}
+
+		if (empty($this->manager))
+		{
+			if (class_exists(Jelly::$manager_prefix.$model))
+			{
+				$this->manager = Jelly::$manager_prefix.$model;
 			}
 			else
 			{
-				$this->_builder = 'Jelly_Builder';
+				$this->manager = 'Jelly_Manager';
 			}
 		}
 
-		// Can we set a sensible foreign key?
-		if (empty($this->_foreign_key))
+		if ($this->model AND empty($this->foreign_key))
 		{
-			$this->_foreign_key = $model.'_id';
+			$this->foreign_key = $this->model.'_id';
 		}
 		
-		// Initialize all of the fields with their column and the model name
-		foreach($this->_fields as $column => $field)
+		foreach ($this->fields as $name => $field)
 		{
-			// Allow aliasing fields
 			if (is_string($field))
 			{
-				if (isset($this->_fields[$field]))
+				if (isset($this->fields[$field]))
 				{
-					$this->_aliases[$column] = $field;
+					$this->aliases[$name] = $field;
 				}
 
-				// Aliases shouldn't pollute fields
-				unset($this->_fields[$column]);
-
+				unset($this->fields[$name]);
 				continue;
 			}
 
-			$field->initialize($model, $column);
+			$field->initialize($model, $name);
 
-			// Ensure a default primary key is set
-			if ($field->primary AND empty($this->_primary_key))
+			if (empty($this->primary_key) AND $field->primary)
 			{
-				$this->_primary_key = $column;
+				$this->primary_key = $name;
 			}
 			
-			// Search for a polymorphic key
-			if ( ! empty($field->polymorphic))
+			if (empty($this->name_key) AND $field->unique AND $field instanceof Jelly_Field_String)
 			{
-				$this->_polymorphic_key = $field->name;
+				$this->name_key = $name;
+			}
+			
+			if (empty($this->polymorphic_key) AND ! empty($field->polymorphic))
+			{
+				$this->polymorphic_key = $name;
 				
-				// Add this class as a child if it hasn't been added yet
-				if ( ! in_array($this->_model, $this->_children))	
+				if ( ! in_array($model, $this->children))	
 				{
-					$this->_children[] = $this->_model;
+					$this->children[] = $model;
 				}
 			}
 
-			// Set the defaults so they're actually persistent
-			$this->_defaults[$column] = $field->default;
+			$this->defaults[$name] = $field->default;
 		}
-
-		// Meta object is initialized and no longer writable
-		$this->_initialized = TRUE;
 		
-		// Final meta callback
-		$this->_events->trigger('meta.after_finalize', $this);
+		$this->events->trigger('meta.after_finalize', $this);
 	}
 	
 	/**
@@ -226,362 +249,34 @@ abstract class Jelly_Core_Meta
 	 */
 	public function __toString()
 	{
-		return (string) get_class($this).': '.$this->_model;
-	}
-
-	/**
-	 * Returns whether or not the meta object has finished initialization
-	 *
-	 * @return  boolean
-	 */
-	public function initialized()
-	{
-		return $this->_initialized;
-	}
-
-	/**
-	 * Allows setting a variable only when initialized
-	 *
-	 * @param   string  $key
-	 * @param   mixed   $value
-	 * @return  $this
-	 */
-	protected function set($key, $value)
-	{
-		if ( ! $this->_initialized)
-		{
-			$this->{'_'.$key} = $value;
-		}
-
-		return $this;
-	}
-
-	/**
-	 * Gets or sets the db group
-	 * @param   string  $value
-	 * @return  string|$this
-	 */
-	public function db($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('db', $value);
-		}
-
-		return $this->_db;
-	}
-
-	/**
-	 * Returns the model name this object is attached to
-	 * @return  string
-	 */
-	public function model()
-	{
-		return $this->_model;
-	}
-
-	/**
-	 * Gets or sets the table
-	 * @param   string  $value
-	 * @return  string|$this
-	 */
-	public function table($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('table', $value);
-		}
-
-		return $this->_table;
-	}
-
-	/**
-	 * Gets or sets the builder attached to this object
-	 * @param   string  $value
-	 * @return  string|$this
-	 */
-	public function builder($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('builder', $value);
-		}
-
-		return $this->_builder;
+		return (string) get_class($this).': '.$this->model;
 	}
 	
 	/**
-	 * Getter/setter for individual fields
+	 * Gets a field object by its name or alias.
 	 * 
 	 * @param   $name     string
-	 * @param   $type     string
-	 * @param   $options  mixed
+	 * @return  Jelly_Field
 	 */
-	public function field($name, $type = FALSE, $options = array())
+	public function field($name)
 	{
-		// If $type is boolean, we're searching for a field
-		if (is_bool($type))
+		if ( ! isset($this->_field_cache[$name]))
 		{
-			if ( ! isset($this->_field_cache[$name]))
+			if (isset($this->aliases[$name]))
 			{
-				$resolved_name = $name;
-
-				if (isset($this->_aliases[$name]))
-				{
-					$resolved_name = $this->_aliases[$name];
-				}
-
-				if (isset($this->_fields[$resolved_name]))
-				{
-					$this->_field_cache[$name] = $this->_fields[$resolved_name];
-				}
-				else
-				{
-					return NULL;
-				}
+				$name = $this->aliases[$name];
 			}
 
-			if ($type)
+			if (isset($this->fields[$name]))
 			{
-				return $this->_field_cache[$name]->name;
+				$this->_field_cache[$name] = $this->fields[$name];
 			}
 			else
 			{
-				return $this->_field_cache[$name];
-			}
-			
-			return NULL;
-		}
-		
-		// If we've made it here it's a standard setter
-		if ( ! $this->_initialized)
-		{
-			// Allows fields to be appended
-			$this->_fields[$name] = Jelly::field($type, $options);
-			
-			return $this;
-		}
-	}
-
-	/**
-	 * Returns the fields for this object.
-	 *
-	 * If $field is specified, only the particular field is returned.
-	 * If $name is TRUE, the name of the field specified is returned.
-	 *
-	 * You can pass an array for $field to set more fields. Calling
-	 * this multiple times while setting will append fields, not
-	 * overwrite fields.
-	 *
-	 * @param   $field  string
-	 * @param   $name   boolean
-	 * @return  array
-	 */
-	public function fields($field = NULL, $name = FALSE)
-	{
-		if (func_num_args() == 0)
-		{
-			return $this->_fields;
-		}
-
-		if (is_array($field))
-		{
-			if ( ! $this->_initialized)
-			{
-				// Allows fields to be appended
-				$this->_fields += $field;
-				return $this;
-			}
-		}
-	}
-
-	/**
-	 * Returns the defaults for the object.
-	 *
-	 * If $name is specified, then the defaults
-	 * for that field are returned.
-	 *
-	 * @param   string  $name
-	 * @return  mixed
-	 */
-	public function defaults($name = NULL)
-	{
-		if ($name === NULL)
-		{
-			return $this->_defaults;
-		}
-
-		return $this->field($name)->default;
-	}
-	
-	/**
-	 * Gets the validator attached to the model.
-	 * 
-	 * @param   Jelly_Model $model 
-	 * @param   array       $data 
-	 * @param   boolean     $new 
-	 * @return  Jelly_Validator
-	 */
-	public function validator(array $data, $new = FALSE)
-	{
-		// Allow returning an empty validator
-		if ($new) 
-		{
-			return new Jelly_Validator($data);
-		}
-		
-		// Create a default validator so we don't have to go through
-		// recreating all of the filters and such, which is an expensive process.
-		if ( ! $this->_validator)
-		{
-			// Create our default validator, which we will clone from
-			$this->_validator = new Jelly_Validator($data);
-			
-			// Add our filters, rules, and callbacks
-			foreach ($this->_fields as $name => $field)
-			{
-				$this->_validator->label($name, $field->label);
-				$this->_validator->filters($name, $field->filters);
-				$this->_validator->rules($name, $field->rules);
-				$this->_validator->callbacks($name, $field->callbacks);
+				return NULL;
 			}
 		}
 		
-		// Return a copy to prevent mucking with the original validator
-		return $this->_validator->copy($data);
-	}
-	
-	/**
-	 * Gets or sets the behaviors attached to the object.
-	 * 
-	 * @param   array  $value
-	 * @return  Jelly_Behavior|$this
-	 */
-	public function behaviors($behaviors = NULL)
-	{
-		if (func_num_args() == 0 OR $this->_initialized)
-		{
-			return $this->_behaviors;
-		}
-
-		if (is_array($behaviors))
-		{
-			// Allows behaviors to be appended
-			$this->_behaviors += $behaviors;
-		}
-		
-		return $this;
-	}
-	
-	/**
-	 * Gets the events attached to the object.
-	 * 
-	 * @return  Jelly_Behavior|$this
-	 */
-	public function events()
-	{
-		return $this->_events;
-	}
-
-	/**
-	 * Gets or sets the model's primary key.
-	 * @param   string  $value
-	 * @return  mixed
-	 */
-	public function primary_key($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('primary_key', $value);
-		}
-
-		return $this->_primary_key;
-	}
-
-	/**
-	 * Gets or sets the model's name key
-	 * @param   string  $value
-	 * @return  string
-	 */
-	public function name_key($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('name_key', $value);
-		}
-
-		return $this->_name_key;
-	}
-
-	/**
-	 * Gets or sets the model's foreign key
-	 * @param   string  $value
-	 * @return  string
-	 */
-	public function foreign_key($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('foreign_key', $value);
-		}
-
-		return $this->_foreign_key;
-	}
-	
-	/**
-	 * Gets the model's polymorphic key.
-	 * @param   string  $value
-	 * @return  string
-	 */
-	public function polymorphic_key($value = NULL)
-	{
-		return $this->_polymorphic_key;
-	}
-	
-	/**
-	 * Gets the model's child models
-	 *
-	 * @param   array  $children 
-	 * @return  array
-	 */
-	public function children($children = array())
-	{
-		if (func_num_args() AND ! $this->_initialized)
-		{
-			$this->_children += $children;
-			return $this;
-		}
-		
-		return $this->_children;
-	}
-
-	/**
-	 * Gets or sets the object's sorting properties
-	 * @param   array  $value
-	 * @return  array
-	 */
-	public function sorting($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('sorting', $value);
-		}
-
-		return $this->_sorting;
-	}
-
-	/**
-	 * Gets or sets the object's load_with properties
-	 * @param   array  $value
-	 * @return  array
-	 */
-	public function load_with($value = NULL)
-	{
-		if (func_num_args() !== 0)
-		{
-			return $this->set('load_with', $value);
-		}
-
-		return $this->_load_with;
+		return $this->_field_cache[$name];
 	}
 }

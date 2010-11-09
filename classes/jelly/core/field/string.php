@@ -12,7 +12,7 @@
 abstract class Jelly_Core_Field_String extends Jelly_Field
 {
 	/**
-	 * @var  string  Default value is a string, since we null is FALSE
+	 * @var  string  Default value is a string, since allow_null is FALSE
 	 */
 	public $default = '';
 	
@@ -22,12 +22,9 @@ abstract class Jelly_Core_Field_String extends Jelly_Field
 	public $allow_null = FALSE;
 	
 	/**
-	 * Casts to a string, preserving NULLs along the way
-	 *
-	 * @param  mixed   $value
-	 * @return string
+	 * @see Jelly_Field::value
 	 */
-	public function set($value)
+	public function value($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		

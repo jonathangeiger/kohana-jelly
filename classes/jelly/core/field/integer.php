@@ -13,12 +13,9 @@ abstract class Jelly_Core_Field_Integer extends Jelly_Field
 	public $default = 0;
 	
 	/**
-	 * Converts the value to an integer
-	 *
-	 * @param   mixed  $value
-	 * @return  int
+	 * @see Jelly_Field::value
 	 */
-	public function set($value)
+	public function value($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		

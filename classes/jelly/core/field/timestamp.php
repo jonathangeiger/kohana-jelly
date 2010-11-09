@@ -23,14 +23,14 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	public $default = NULL;
 	
 	/**
-	 * @var  boolean  Whether or not to automatically set now() on creation
+	 * @var  boolean  Whether or not to automatically set now()
 	 */
-	public $auto_now_create = FALSE;
+	public $auto_now = FALSE;
 
 	/**
-	 * @var  boolean  Whether or not to automatically set now() on update
+	 * @var  boolean  Whether or not to automatically set now() on insertion
 	 */
-	public $auto_now_update = FALSE;
+	public $auto_now_insert = FALSE;
 
 	/**
 	 * @var  string  A date formula representing the time in the database
@@ -38,7 +38,8 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	public $format = NULL;
 	
 	/**
-	 * Constructor. Sets the default to 0 if we have no format, or an empty string otherwise.
+	 * Constructor. Sets the default to 0 if we have no 
+	 * format, or an empty string otherwise.
 	 *
 	 * @param   array   $options 
 	 */
@@ -54,12 +55,9 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	}
 
 	/**
-	 * Converts the time to a UNIX timestamp
-	 *
-	 * @param   mixed  $value
-	 * @return  mixed
+	 * @see Jelly_Field::value
 	 */
-	public function set($value)
+	public function value($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		
@@ -86,18 +84,15 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	 * @param   mixed  $value
 	 * @return  mixed
 	 */
-	public function save($model, $value, $loaded)
+	public function save($model, $value)
 	{
-		// Do we need to provide a default since we're creating or updating
-		if (( ! $loaded AND $this->auto_now_create) OR ($loaded AND $this->auto_now_update))
+		if ($this->auto_now OR ($this->auto_now_insert AND ! $model->id()))
 		{
 			$value = time();
 		}
 
-		// Convert if necessary
 		if ($this->format)
 		{
-			// Does it need converting?
 			if ( ! is_numeric($value) AND FALSE !== strtotime($value))
 			{
 				$value = strtotime($value);

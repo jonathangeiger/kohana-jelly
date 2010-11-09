@@ -3,7 +3,7 @@
 /**
  * Handles "slugs".
  *
- * Slugs are automatically converted .
+ * Slugs are automatically converted.
  *
  * A valid slug consists of lowercase alphanumeric characters, plus
  * underscores, dashes, and forward slashes.
@@ -13,12 +13,9 @@
 abstract class Jelly_Core_Field_Slug extends Jelly_Field_String
 {
 	/**
-	 * Converts a slug to value valid for a URL.
-	 *
-	 * @param   mixed  $value
-	 * @return  mixed
+	 * @see Jelly_Field::value
 	 */
-	public function set($value)
+	public function value($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		

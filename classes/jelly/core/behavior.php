@@ -50,17 +50,17 @@ abstract class Jelly_Core_Behavior
 	/**
 	 * Initialize.
 	 *
-	 * @param   Jelly_Event  $event
+	 * @param   Jelly_Event  $meta
 	 * @param   string       $model
 	 * @param   string       $name
 	 * @return  void
 	 */
-	public function initialize(Jelly_Event $event, $model, $name)
+	public function initialize(Jelly_Meta $meta, $model, $name)
 	{
 		$this->_name  = $name;
 		$this->_model = $model;
 		
-		$this->_discover_events($event);
+		$this->_discover_events($meta->events);
 	}
 	
 	/**

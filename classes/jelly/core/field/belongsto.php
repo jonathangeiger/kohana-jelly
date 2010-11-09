@@ -5,7 +5,7 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_Field_Supports_With
+abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field_Relation implements Jelly_Field_Supports_With
 {
 	/**
 	 * @var  boolean  Defaults belongs_to's to in the database
@@ -39,77 +39,70 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field implements Jelly_F
 	public $foreign = '';
 	
 	/**
-	 * Automatically sets foreign to sensible defaults
-	 *
-	 * @param   string  $model
-	 * @param   string  $column
-	 * @return  void
+	 * Provides sensible defaults for the foreign model.
 	 */
 	public function initialize($model, $column)
 	{
-		// Default to the name of the column
 		if (empty($this->foreign))
 		{
 			$this->foreign = $column.'.:primary_key';
 		}
-		// Is it model.field?
 		elseif (FALSE === strpos($this->foreign, '.'))
 		{
 			$this->foreign = $this->foreign.'.:primary_key';
 		}
 
-		// Create an array from them
 		$this->foreign = array_combine(array('model', 'field'), explode('.', $this->foreign));
 
-		// Default to the foreign model's primary key
 		if (empty($this->column))
 		{
 			$this->column = $column.'_id';
 		}
 
-		// Column is set and won't be overridden
 		parent::initialize($model, $column);
 	}
 
 	/**
-	 * Returns the primary key of the model passed.
+	 * Returns Jelly_Model's directly. All other values
+	 * are used as the primary key for returning a new
+	 * Jelly_Model.
 	 *
-	 * @param   mixed  $value
-	 * @return  mixed
+	 * @return Jelly_Model
 	 */
-	public function set($value)
+	public function value($model, $value)
 	{
-		if (is_object($value))
+		if ($value instanceof Jelly_Model)
 		{
-			$value = $value->id();
+			return $value;
 		}
 		
-		list($value, $return) = $this->_default($value);
-		
-		if ( ! $return)
-		{
-			$value = ( ! $value OR is_numeric($value)) ? (int) $value : (string) $value;
-		}
-		
-		return $value;
-	}
-
-	/**
-	 * Returns the jelly model that this model belongs to
-	 *
-	 * @param   Jelly_Model  $model
-	 * @param   mixed        $value
-	 * @return  Jelly_Builder
-	 */
-	public function get($model, $value)
-	{
 		return Jelly::query($this->foreign['model'])
-		            ->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $value)
-		            ->limit(1);
+			->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $value)
+			->limit(1)
+			->select();
 	}
-
+	
+	/**
+	 * Returns the primary key of value passed.
+	 */
+	public function save($model, $value)
+	{
+		return $this->_id($value);
+	}
+	
+	/**
+	 * Compares not by model instances but primary keys
+	 * of said models.
+	 */
+	public function changed($model, $value)
+	{
+		return $this->_id($value) !== $this->_id($model->original($this->name));
+	}
+	
 	/**
 	 * Implementation of Jelly_Field_Behavior_Joinable
+	 * 
+	 * @TODO Fix!
 	 *
 	 * @param   Jelly_Builder  $builder
 	 * @return  void

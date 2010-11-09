@@ -25,30 +25,9 @@ abstract class Jelly_Core_Field_Primary extends Jelly_Field
 	public $default = NULL;
 	
 	/**
-	 * Ensures allow_null is not set to FALSE on the field, as it prevents 
-	 * proper auto-incrementing of a primary key.
-	 *
-	 * @param   array  $options 
+	 * @see Jelly_Field::value
 	 */
-	public function __construct($options = array())
-	{
-		parent::__construct($options);
-		
-		// Ensure allow_null is TRUE
-		if ( ! $this->allow_null)
-		{
-			throw new Kohana_Exception(':class cannot have allow_null set to FALSE', array(
-				':class' => get_class($this)));
-		}
-	}
-
-	/**
-	 * Converts numeric IDs to ints
-	 *
-	 * @param   mixed  $value
-	 * @return  int|string
-	 */
-	public function set($value)
+	public function value($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		

@@ -70,30 +70,6 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 		// Create an array fo easier access to the separate parts
 		$this->foreign = array_combine(array('model', 'field'), explode('.', $this->foreign));
 	}
-	
-	/**
-	 * Sets a relationship on the field
-	 * 
-	 * @param   mixed  $value
-	 * @return  mixed
-	 */
-	public function set($value)
-	{
-		// Convert models to their id
-		if ($value instanceof Jelly_Model)
-		{
-			$value = $value->id();
-		}
-		
-		list($value, $return) = $this->_default($value);
-		
-		if ( ! $return)
-		{
-			$value = is_numeric($value) ? (int) $value : (string) $value;
-		}
-		
-		return $value;
-	}
 
 	/**
 	 * Returns the record that the model has
@@ -104,18 +80,23 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 	 */
 	public function get($model, $value)
 	{
-		if ($model->changed($this->name))
+		if ($value instanceof Jelly_Model)
 		{
-			return Jelly::query($this->foreign['model'])
-			            ->where($this->foreign['model'].'.'.':primary_key', '=', $value)
-			            ->limit(1);
+			return $value;
+		}
+		
+		$query = Jelly::query($this->foreign['model']);
+		
+		if ($value)
+		{
+			$query->where($this->foreign['model'].'.'.':primary_key', '=', $value);
 		}
 		else
 		{
-			return Jelly::query($this->foreign['model'])
-			            ->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $model->id())
-			            ->limit(1);
+			$query->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $model->id());
 		}
+		
+		return $query->limit(1)->select();
 	}
 	
 	/**
@@ -126,7 +107,7 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 	 * @param   boolean      $loaded
 	 * @return  void
 	 */
-	public function save($model, $value, $loaded)
+	public function save($model, $value)
 	{
 		// Don't do anything on INSERTs when there is nothing in the value
 		if ( ! $loaded and empty($value)) return;

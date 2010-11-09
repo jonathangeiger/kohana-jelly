@@ -72,24 +72,6 @@ abstract class Jelly_Core_Field_HasMany extends Jelly_Field implements Jelly_Fie
 	}
 
 	/**
-	 * Converts a Database_Result, Jelly, array of ids, or an id to an array of ids
-	 *
-	 * @param   mixed  $value
-	 * @return  array
-	 */
-	public function set($value)
-	{
-		list($value, $return) = $this->_default($value);
-		
-		if ( ! $return)
-		{
-			$value = $this->_ids($value);
-		}
-		
-		return $value;
-	}
-
-	/**
 	 * Returns a Jelly_Builder that can then be selected, updated, or deleted.
 	 *
 	 * @param   Jelly_Model  $model
@@ -98,16 +80,13 @@ abstract class Jelly_Core_Field_HasMany extends Jelly_Field implements Jelly_Fie
 	 */
 	public function get($model, $value)
 	{
-		if ($model->changed($this->name))
-		{
-			return Jelly::query($this->foreign['model'])
-			            ->where($this->foreign['model'].'.'.':primary_key', 'IN', $value);
-		}
-		else
+		if ( ! $value instanceof Jelly_Manager)
 		{
 			return Jelly::query($this->foreign['model'])
 			            ->where($this->foreign['model'].'.'.$this->foreign['field'], '=', $model->id());
 		}
+		
+		return $value;
 	}
 
 	/**
@@ -118,8 +97,10 @@ abstract class Jelly_Core_Field_HasMany extends Jelly_Field implements Jelly_Fie
 	 * @param   boolean      $loaded
 	 * @return  void
 	 */
-	public function save($model, $value, $loaded)
+	public function save($model, $value)
 	{
+		// @TODO
+		
 		// Don't do anything on INSERTs when there is nothing in the value
 		if ( ! $loaded and empty($value)) return;
 		

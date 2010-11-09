@@ -28,30 +28,12 @@ abstract class Jelly_Core_Field_Boolean extends Jelly_Field
 	public $default = FALSE;
 	
 	/**
-	 * Ensures convert_empty is not set on the field, as it prevents FALSE
-	 * from ever being set on the field. 
-	 *
-	 * @param   array  $options 
-	 */
-	public function __construct($options = array())
-	{
-		parent::__construct($options);
-		
-		// Ensure convert_empty is FALSE
-		if ($this->convert_empty)
-		{
-			throw new Kohana_Exception(':class cannot have convert_empty set to TRUE', array(
-				':class' => get_class($this)));
-		}
-	}
-
-	/**
 	 * Validates a boolean out of the value with filter_var
 	 *
 	 * @param   mixed  $value
 	 * @return  void
 	 */
-	public function set($value)
+	public function value($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		
@@ -71,8 +53,8 @@ abstract class Jelly_Core_Field_Boolean extends Jelly_Field
 	 * @param   boolean      $loaded
 	 * @return  mixed
 	 */
-	public function save($model, $value, $loaded)
+	public function save($model, $value)
 	{
-		return ($value) ? $this->true : $this->false;
+		return ($this->value($model, $value)) ? $this->true : $this->false;
 	}
 }

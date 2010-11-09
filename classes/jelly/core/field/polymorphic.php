@@ -31,7 +31,7 @@ abstract class Jelly_Core_Field_Polymorphic extends Jelly_Field_String
 	 * @param  mixed   $value
 	 * @return string
 	 */
-	public function set($value)
+	public function set($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		

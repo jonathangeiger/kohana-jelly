@@ -103,24 +103,6 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	}
 
 	/**
-	 * Sets a value on the field.
-	 *
-	 * @param   mixed  $value
-	 * @return  array
-	 */
-	public function set($value)
-	{
-		list($value, $return) = $this->_default($value);
-		
-		if ( ! $return)
-		{
-			$value = $this->_ids($value);
-		}
-		
-		return $value;
-	}
-
-	/**
 	 * Returns a Jelly_Builder that can be selected, updated, or deleted.
 	 *
 	 * @param   Jelly_Model  $model
@@ -147,8 +129,10 @@ abstract class Jelly_Core_Field_ManyToMany extends Jelly_Field implements Jelly_
 	 * @param   boolean      $key
 	 * @return  void
 	 */
-	public function save($model, $value, $loaded)
+	public function save($model, $value)
 	{
+		// @TODO
+		
 		// Don't do anything on insert when we don't have anything
 		if ( ! $loaded AND empty($value)) return;
 		
