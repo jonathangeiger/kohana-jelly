@@ -16,37 +16,32 @@ abstract class Jelly_Core_Model
 	/**
 	 * @var  array  The initial data set on the object
 	 */
-	protected $_original = array();
+	protected $_initial = array();
 
 	/**
 	 * @var  array  The current state of the data on the object
 	 */
-	protected $_data = array();
-
-	/**
-	 * @var  array  Unmapped data that is still accessible
-	 */
-	protected $_unmapped = array();
-
-	/**
-	 * @var  array  With data
-	 */
-	protected $_with = array();
+	protected $_current = array();
 	
 	/**
-	 * @var  array  An array that keeps track of changed fields
+	 * @var  array  Tracks potentially changed fields (not in use yet)
 	 */
 	protected $_changed = array();
 	
 	/**
-	 * @var  boolean  Whether or not the model is loading
+	 * @var  string  Whether or not we consider the model loaded
 	 */
-	protected $_loading = TRUE;
+	protected $_loaded = FALSE;
 	
 	/**
-	 * @var  Boolean  A flag that keeps track of whether or not the model is valid
+	 * @var  array  An array of context => valid flags
 	 */
-	 protected $_valid = FALSE;
+	 protected $_valid = array();
+	
+	/**
+	 * @var  Boolean  All current validators
+	 */
+	 protected $_validators = array();
 	
 	/**
 	 * @var  string  The current meta instance this model uses
@@ -82,7 +77,10 @@ abstract class Jelly_Core_Model
 	}
 	
 	/**
-	 * @see     Jelly_Model::set()
+	 * Set the current value for a single field.
+	 * 
+	 * @param   string  The name of the field
+	 * @return  mixed
 	 */
 	public function __set($name, $value)
 	{
@@ -92,20 +90,24 @@ abstract class Jelly_Core_Model
 			return $this->_load_data[$name] = $value;
 		}
 
-		$this->set(array($name => $value));
+		$this->_set(array($name => $value));
 	}
 	
 	/**
-	 * @see  Jelly_Model::get()
+	 * Gets the current value for a single field.
+	 * 
+	 * @param   string  The name of the field
+	 * @return  mixed
 	 */
 	public function __get($name)
 	{
-		return $this->get($name);
+		return current($this->_get(array($name)));
 	}
 	
 	/**
 	 * Passes unknown methods along to the behaviors.
 	 *
+	 * @todo    Invalid method detection
 	 * @param   string  $method
 	 * @param   array   $args
 	 * @return  mixed
@@ -116,7 +118,7 @@ abstract class Jelly_Core_Model
 	}
 	
 	/**
-	 * Returns true if $name is a field of the model or an unmapped column.
+	 * Returns true if $name is a field of the model.
 	 * 
 	 * This does not conform to the standard of returning FALSE if the
 	 * property is set but the value is NULL. Rather this acts more like
@@ -127,7 +129,7 @@ abstract class Jelly_Core_Model
 	 */
 	public function __isset($name)
 	{
-		return (bool)($this->meta()->field($name) OR array_key_exists($name, $this->_unmapped));
+		return (bool)($this->meta()->field($name));
 	}
 	
 	/**
@@ -144,10 +146,8 @@ abstract class Jelly_Core_Model
 	{
 		if ($field = $this->meta()->field($name))
 		{
-			$this->_data[$field->name] = $field->default;
+			$this->_current[$field->name] = $field->default;
 		}
-
-		unset($this->_unmapped[$name]);
 	}
 	
 	/**
@@ -165,65 +165,186 @@ abstract class Jelly_Core_Model
 	}
 	
 	/**
-	 * Sets the value of a field.
+	 * Sets the value of a field or fields:
 	 * 
-	 * @param   array   $data 
+	 *     $model->set('id', 1);
+	 *     $model->set(array('id' => $id, 'name' => $name));
+	 * 
+	 * @param   string|array   A map of the data to set or the name of the field
+	 * @param   mixed          The value to set if passing a string for the first param
 	 * @return  $this
 	 */
-	public function set(array $data)
+	public function set($data, $value = NULL)
 	{
-		foreach ($data as $key => $value)
+		if (is_array($data))
 		{
-			if ($field = $this->meta()->field($key))
-			{
-				$this->_data[$field->name] = $value;
-			}
-			else
-			{
-				$this->_unmapped[$key] = $value;
-			}
+			$this->_set($data);
+		}
+		else
+		{
+			$this->_set(array($data => $value));
 		}
 		
 		return $this;
 	}
 	
 	/**
-	 * Gets the current value of a field or unmapped column.
-	 *
-	 * @param   string  The name of the field
+	 * Gets the current value of a field or fields:
+	 * 
+	 *     // Returns the value of one field
+	 *     $model->get('id');
+	 *     => 1
+	 * 
+	 *     // Returns a map of the two fields
+	 *     $model->get(array('id', 'name'));
+	 *     => array('id' => 1, 'name' => 'Foo')
+	 * 
+	 *     // Returns a map of all fields
+	 *     $model->get(TRUE);
+	 *     => array('id' => 1, 'name' => 'Foo', ...);
+	 * 
+	 * @param   mixed  The name of the field
 	 * @return  mixed
 	 */
-	public function get($name)
+	public function get($names = TRUE)
 	{
-		$value = NULL;
-		
-		if ($field = $this->meta()->field($name))
+		if ($names === TRUE)
 		{
-			$value = $this->_data[$field->name] = $field->value($this, $this->_data[$field->name]);
-		}
-		else if (isset($this->_unmapped[$name]))
-		{
-			$value = $this->_unmapped[$name];
+			$names = array_keys($this->meta()->fields);
 		}
 		
-		return $value;
+		$data = $this->_get((array) $names);
+		
+		return is_array($names) ? $data : $data[$names];
 	}
 	
 	/**
-	 * Returns the original value of a field, before it was changed.
+	 * Gets the initial value of a field or set of fields,
+	 * before it was processed by the field and before it was
+	 * changed.
 	 * 
-	 * This method—combined with __get(), which first searches for changed 
-	 * values—is useful for comparing changes that occurred on a model. 
-	 *
-	 * @param   string  The field's or alias name
+	 * This is usually the value that was set directly from the
+	 * database, or the value that was set as a default by the field.
+	 * 
+	 *     // Assume $model has id:1 and name:"Foo"
+	 *     $model->set(array('id' => 2, 'name' => 'Bar'));
+	 * 
+	 *     // Returns the value for the id field
+	 *     $model->initial('id');
+	 *     => 1
+	 * 
+	 *     // Returns a map of the two fields
+	 *     $model->initial(array('id', 'name'));
+	 *     => array('id' => 1, 'name' => 'Foo')
+	 * 
+	 *     // Returns a map of all fields
+	 *     $model->initial(TRUE);
+	 *     => array('id' => 1, 'name' => 'Foo', ...);
+	 * 
+	 * @param   mixed  The name(s) of the fields
 	 * @return  mixed
 	 */
-	public function original($name)
+	public function initial($names = TRUE)
 	{
-		if ($field = $this->meta()->field($field))
+		if ($names === TRUE)
 		{
-			return $this->_original[$field->name];
+			$names = array_keys($this->meta()->fields);
 		}
+		
+		// Notice the TRUE, it tells _set() to return initial values
+		$data = $this->_get((array) $names, TRUE);
+		
+		return is_array($names) ? $data : $data[$names];
+	}
+	
+	/**
+	 * Returns the changed fields in the model.
+	 * Returns FALSE if nothing has changed,
+	 * or an array of fields that were changed.
+	 * 
+	 *     $model->changed('id');
+	 *     => FALSE
+	 * 
+	 *     $model->changed(array('id', 'name'));
+	 *     => array('name')
+	 * 
+	 *     $model->changed('name')
+	 *     => 'name'
+	 * 
+	 *     $model->changed()
+	 *     => array('name', 'description', ...);
+	 * 
+	 * Invalid fields are ignored and have no bearing 
+	 * on the outcome of the method.
+	 * 
+	 * @param   mixed  The name(s) of the fields
+	 * @return  mixed
+	 */
+	public function changed($names = TRUE)
+	{
+		if ($names === TRUE)
+		{
+			$names = array_keys($this->meta()->fields);
+		}
+		
+		$meta = $this->meta();
+		
+		// Single field should return a string if changed
+		if ( ! is_array($names))
+		{
+			if ($field = $meta->field($names))
+			{
+				if ($field->changed($this, $this->get($field->name)))
+				{
+					$changed = $names;
+				}
+			}
+		}
+		else
+		{
+			$changed = array();
+			
+			foreach ($names as $name)
+			{
+				if ($field = $meta->field($name))
+				{
+					$initial = $this->_initial[$field->name];
+					$current = $this->_current[$field->name];
+					
+					if ($field->changed($this, $initial, $current))
+					{
+						$changed[] = $name;
+					}
+				}
+			}
+		}
+		
+		return $changed ? $changed : FALSE;
+	}
+	
+	/**
+	 * Reverts any current values back to their initial values.
+	 * 
+	 * @return $this
+	 */
+	public function revert($names = TRUE)
+	{
+		if ($names === TRUE)
+		{
+			$names = array_keys($this->meta()->fields);
+		}
+		
+		$meta = $this->meta();
+		
+		foreach ((array)$names as $name)
+		{
+			if ($field = $meta->field($name))
+			{
+				$this->_current[$field->name] = $this->_initial[$field->name];
+			}
+		}
+		
+		return $this;
 	}
 	
 	/**
@@ -237,25 +358,17 @@ abstract class Jelly_Core_Model
 	 */
 	public function load_values($values)
 	{
-		// Clear the object
 		$this->reset();
-	
-		foreach ($values as $key => $value)
-		{
-			if ($field = $this->meta()->field($key))
-			{
-				$this->_data[$field->name] = $value;
-			}
-			else
-			{
-				$this->_unmapped[$key] = $value;
-			}
-		}
+		$this->_set($values, TRUE);
 		
 		// Changed data should now be in sync with original data
-		$this->_original = $this->_data;
+		$this->_current = $this->_initial;
 		
-		return $this;
+		// Context has changed, since we assume we're loaded
+		if ($this->id())
+		{
+			$this->_loaded = TRUE;
+		}
 	}
 	
 	/**
@@ -265,30 +378,68 @@ abstract class Jelly_Core_Model
 	 * @return  boolean
 	 */
 	public function validate($context = NULL)
-	{
-		$meta = $this->meta();
+	{	
+		$context = $this->_context($context);
 		
-		$validator = $this->validator();
-		$data      = $this->as_array($fields);
-		
-		if ( ! $this->_valid AND ! empty($data))
+		if (empty($this->_valid[$context]))
 		{
+			$validator = $this->_validator($context);
+			
 			$this->_trigger('model.before_validate', array($validator));
 			
 			if ($validator->check())
 			{
-				$this->set($validator->as_array());
-				$this->_valid = TRUE;
+				// We have these callbacks here so fields can do amazing things
+				// without having to attach themselves to the validator
+				foreach ($meta->fields as $field)
+				{
+					$field->validate($this, $validator, $context);
+				}
+				
+				if ($validator->errors())
+				{
+					$this->_valid[$context] = FALSE;
+				}
+				else
+				{
+					$this->_valid[$context] = TRUE;
+					
+					// Re-integrate the changed data, since it may 
+					// have been filtered or otherwise altered
+					$this->set($validator->as_array());
+				}
 			}
 			
 			$this->_trigger('model.after_validate', array($validator));
 		}
-		else
-		{
-			$this->_valid = TRUE;
-		}
 		
-		return $this->_valid;
+		return $this->_valid[$context];
+	}
+	
+	/**
+	 * Invalidates the specified context.
+	 * 
+	 * This must be done manually if you want to revalidate
+	 * a model, as it is almost impossible to keep track
+	 * of all the different changes.
+	 * 
+	 * This is a design decision, since it's very rare that
+	 * you'll validate a model and want to re-validate it
+	 * but very common that you'll want to manually validate
+	 * before saving without the save triggering another 
+	 * pointless validation.
+	 * 
+	 * @param   mixed  $context
+	 * @return  boolean
+	 */
+	public function revalidate($context = NULL)
+	{	
+		$context = $this->_context($context);
+		
+		unset($this->_valid[$context]);
+		unset($this->_validator[$context]);
+		
+		return $this->validate($context);
 	}
 	
 	/**
@@ -300,44 +451,47 @@ abstract class Jelly_Core_Model
 	 */
 	public function validator($context = NULL)
 	{
-		if ($context === NULL)
-		{
-			return $this->_validator;
-		}
+		$context = $this->_context($context);
 		
-		$meta = $this->meta();
-
-		if (isset($meta->validate[$context]))
+		if (empty($this->_validator))
 		{
-			$context = $meta->validate[$context];
-			$fields  = array_keys($context);
-		}
-		else
-		{
-			$context = NULL;
-			$fields  = array_keys($meta->fields);
-		}
-
-		foreach ($fields as $field)
-		{
-			// Add the defaults and then the custom context rules
-			foreach (array('filters', 'rules', 'callbacks') as $prop)
+			$meta = $this->meta();
+			
+			if (isset($meta->validate[$context]))
 			{
-				if (isset($meta->$prop[$field]))
-				{
-					$validator->$prop($field, $meta->$prop[$field]);
-				}
+				$extras = $meta->validate[$context];
+				$fields = array_keys($context);
+			}
+			else
+			{
+				$extras = NULL;
+				$fields = array_keys($meta->fields);
+			}
 
-				if (isset($context[$field][$prop]) AND is_array($context[$field][$prop]))
+			$validator = Validate::factory($this->get($fields));
+
+			foreach ($fields as $field)
+			{
+				foreach (array('filters', 'rules', 'callbacks') as $prop)
 				{
-					$validator->$prop($field, $context[$field][$prop]);
+					// Default rules are defined directly on the meta object
+					if (isset($meta->$prop[$field]))
+					{
+						$validator->$prop($field, $meta->$prop[$field]);
+					}
+
+					// Then augmented (or inherited) by the context
+					if (isset($extras[$field][$prop]) AND is_array($extras[$field][$prop]))
+					{
+						$validator->$prop($field, $extras[$field][$prop]);
+					}
 				}
 			}
+			
+			$this->_validator[$context] = $validator;
 		}
 		
-		$this->_validator = $validator;
-		
-		return $this->_validator;
+		return $this->_validator[$context];
 	}
 	
 	/**
@@ -347,9 +501,15 @@ abstract class Jelly_Core_Model
 	 **/
 	public function insert()
 	{
+		if ($this->_loaded)
+		{
+			throw new Jelly_Exception('Cannot insert unloaded model :model',
+				array(':model' => $this->__tostring()));
+		}
+		
 		if ( ! $this->validate('insert'))
 		{
-			throw new Validate_Exception($this->_validator);
+			throw new Validate_Exception($this->validator('insert'));
 		}
 
 		$meta   = $this->meta();
@@ -362,14 +522,15 @@ abstract class Jelly_Core_Model
 
 		// Iterate through all fields in original in case any unchanged fields
 		// have save() behavior like timestamp updating...
-		foreach ($this->_data as $column => $value)
+		foreach ($this->_current as $column => $value)
 		{
 			$field = $meta->field($column);
 
 			if ($field->primary AND $value === NULL)
+			{
 				continue;
-				
-			if ($field->in_db)
+			}
+			else if ($field->in_db)
 			{
 				$values[$field->name] = $field->save($this, $value);
 			}
@@ -379,7 +540,7 @@ abstract class Jelly_Core_Model
 			}
 		}
 
-		list($id) = Jelly::query($this->_model)
+		list($id) = Jelly::query($meta->model)
 		                 ->set($values)
 		                 ->insert();
 
@@ -402,9 +563,10 @@ abstract class Jelly_Core_Model
 	 **/
 	public function update()
 	{
-		if ( ! $this->id())
+		if ( ! $this->_loaded)
 		{
-			return $this;
+			throw new Jelly_Exception('Cannot update unloaded model :model',
+				array(':model' => $this->__tostring()));
 		}
 		
 		if ( ! $this->validate('update'))
@@ -422,15 +584,16 @@ abstract class Jelly_Core_Model
 		
 		// Iterate through all fields in original in case any unchanged fields
 		// have save() behavior like timestamp updating...
-		foreach ($this->_data as $column => $value)
+		foreach ($this->_current as $column => $value)
 		{
 			$field = $meta->field($column);
 			
 			if ($field->in_db)
 			{
-				$value = $field->save($this, $value);
+				$initial = $this->_initial[$field->name];
+				$value   = $field->save($this, $value);
 				
-				if ($field->changed($this, $value))
+				if ($field->changed($this, $initial, $value))
 				{
 					$values[$field->name] = $value;
 				}
@@ -441,7 +604,7 @@ abstract class Jelly_Core_Model
 			}
 		}
 
-		Jelly::query($this->_model, $this->id())
+		Jelly::query($meta->model, $this->id())
 			 ->set($values)
 			 ->update();
 
@@ -449,7 +612,7 @@ abstract class Jelly_Core_Model
 
 		foreach ($saveable as $field => $value)
 		{
-			$meta->field($field)->update($this, $value);
+			$meta->field($field)->save($this, $value);
 		}
 		
 		$this->_trigger('model.after_update');
@@ -464,81 +627,32 @@ abstract class Jelly_Core_Model
 	 **/
 	public function delete()
 	{
-		$id     = $this->original($meta->primary_key);
-		$meta   = $this->meta();
-		$result = FALSE;
+		$meta = $this->meta();
+		
+		if ( ! $this->_loaded)
+		{
+			throw new Jelly_Exception('Cannot delete unloaded model :model',
+				array(':model' => $this->__tostring()));
+		}
 
-		// Are we loaded? Then we're just deleting this record
-		if ($id)
-		{	
-			// Trigger callbacks to ensure we proceed
-			$result = $this->_trigger('model.before_delete');
-			
-			if ($result === NULL)
+		// Trigger callbacks to ensure we proceed
+		$result = $this->_trigger('model.before_delete');
+		
+		if ($result === NULL)
+		{
+			foreach ($meta->fields as $field)
 			{
-				foreach ($meta->fields as $field)
-				{
-					$field->delete($this);
-				}
-				
-				Jelly::query($meta->model, $id)->delete();
+				$field->delete($this);
 			}
 			
-			$this->_trigger('model.after_delete');
+			Jelly::query($meta->model, $this->id())->delete();
 		}
+		
+		$this->_trigger('model.after_delete');
 
 		return $this->reset();
 	}
 	
-	/**
-	 * Returns the model's primary key value.
-	 *
-	 * @return mixed
-	 **/
-	public function id()
-	{
-		return $this->get($this->meta()->primary_key);
-	}
-	
-	/**
-	 * Returns the model's name key value.
-	 *
-	 * @return mixed
-	 **/
-	public function name()
-	{
-		return $this->get($this->meta()->name_key);
-	}
-	
-	/**
-	 * Returns whether or not the model is loaded.
-	 *
-	 * @return boolean
-	 **/
-	public function loaded()
-	{
-		return $this->_loaded;
-	}
-	
-	/**
-	 * Returns whether or not the model is saved.
-	 *
-	 * @return boolean
-	 **/
-	public function saved()
-	{
-		return $this->_saved;
-	}
-	
-	/**
-	 * Returns the model's meta object
-	 *
-	 * @return Jelly_Meta
-	 */
-	public function meta()
-	{
-		return $this->_meta;
-	}
 	/**
 	 * Sets a model to its original state, as if freshly instantiated.
 	 *
@@ -548,35 +662,125 @@ abstract class Jelly_Core_Model
 	{
 		$this->_meta = Jelly::meta(substr(get_class($this), strlen(Jelly::$model_prefix)));
 		
-		$this->_saved   =
-		$this->_load_data = 
-		$this->_valid   = FALSE;
-		$this->_changed = array();
+		$this->_loaded =
+		$this->_load_data = FALSE;
 		
-		$this->_data = 
-		$this->_original = $this->meta()->defaults;
+		$this->_current = 
+		$this->_initial = $this->meta()->defaults;
 		
-		$this->_with = 
-		$this->_unmapped = array();
+		$this->_changed =
+		$this->_valid =
+		$this->_validators = array();
 		
 		return $this;
 	}
 	
 	/**
-	 * Removes any changes made to a model.
-	 * 
-	 * @return $this
+	 * Returns the model's primary key.
+	 *
+	 * @return  Jelly_Meta
 	 */
-	public function revert()
+	public function id()
 	{
-		if ($this->id())
+		return $this->get($this->meta()->primary_key);
+	}
+	
+	/**
+	 * Returns the model's meta object.
+	 *
+	 * @return  Jelly_Meta
+	 */
+	public function meta()
+	{
+		return $this->_meta;
+	}
+	
+	/**
+	 * Sets values.
+	 *
+	 * @param   array  $values 
+	 * @param   array  $container 
+	 * @return  void
+	 */
+	protected function _set($values, $initial = FALSE)
+	{
+		$meta = $this->meta();
+		
+		foreach ($values as $key => $value)
 		{
-			
+			if ($field = $meta->field($key))
+			{
+				if ($initial)
+				{
+					$this->_initial[$field->name] = $field->set($this, $value);
+				}
+				else
+				{
+					$this->_current[$field->name] = $field->set($this, $value);
+				}
+			}
+			else
+			{
+				$this->_data[$key] = $value;
+			}
 		}
 		
-		$this->_data = $this->_original;
-		
 		return $this;
+	}
+	
+	/**
+	 * Gets values.
+	 *
+	 * @param   array  $values 
+	 * @param   array  $container 
+	 * @return  void
+	 */
+	protected function _get($keys, $initial = FALSE)
+	{
+		$meta = $this->meta();
+		$data = array();
+		
+		foreach ($keys as $key)
+		{
+			$value = NULL;
+			
+			if ($field = $meta->field($key))
+			{
+				if ($initial)
+				{
+					$value = $this->_initial[$field->name] = $field->get($this->_initial[$field->name]);
+				}
+				else
+				{
+					$value = $this->_current[$field->name] = $field->get($this, $this->_current[$field->name]);
+				}
+			}
+			else if (isset($this->_data[$key]))
+			{
+				$value = $this->_data[$key];
+			}
+			
+			$data[$key] = $value;
+		}
+		
+		return $data;
+	}
+	
+	/**
+	 * Returns a usable context for validation based on whether or not
+	 * the model is loaded.
+	 * 
+	 * @param   string  $context
+	 * @return  string
+	 */
+	protected function _context($context)
+	{
+		if ($context === NULL)
+		{
+			$context = $this->_loaded ? 'update' : 'insert';
+		}
+		
+		return $context;
 	}
 	
 	/**
