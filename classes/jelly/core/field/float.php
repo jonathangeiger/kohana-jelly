@@ -26,7 +26,7 @@ abstract class Jelly_Core_Field_Float extends Jelly_Field
 	 * @param   mixed  $value
 	 * @return  mixed
 	 */
-	public function value($model, $value)
+	public function set($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		

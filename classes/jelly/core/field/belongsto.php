@@ -85,7 +85,7 @@ abstract class Jelly_Core_Field_BelongsTo extends Jelly_Field_Relation implement
 	/**
 	 * Returns the primary key of value passed.
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $context)
 	{
 		return $this->_id($value);
 	}

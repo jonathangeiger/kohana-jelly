@@ -107,7 +107,7 @@ abstract class Jelly_Core_Field_HasOne extends Jelly_Field implements Jelly_Fiel
 	 * @param   boolean      $loaded
 	 * @return  void
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $context)
 	{
 		// Don't do anything on INSERTs when there is nothing in the value
 		if ( ! $loaded and empty($value)) return;

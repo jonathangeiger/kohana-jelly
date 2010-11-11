@@ -165,10 +165,23 @@ abstract class Jelly_Core_Field
 	 * @param   mixed        $value
 	 * @return  mixed
 	 **/
-	public function value($model, $value)
+	public function set($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		
+		return $value;
+	}
+	
+	/**
+	 * Gets a particular value processed according
+	 * to the class's standards.
+	 *
+	 * @param   Jelly_Model  $model
+	 * @param   mixed        $value
+	 * @return  mixed
+	 **/
+	public function get($model, $value)
+	{
 		return $value;
 	}
 	
@@ -177,25 +190,67 @@ abstract class Jelly_Core_Field
 	 * determine if the value has changed.
 	 *
 	 * @param   Jelly_Model  $model
-	 * @param   mixed        $value
+	 * @param   mixed        The initial value
+	 * @param   mixed        The current value
 	 * @return  boolean
 	 **/
-	public function changed($model, $value)
+	public function changed($model, $initial = NULL, $current = NULL)
 	{
-		return $this->value($model, $model->original($this->name)) !== $this->value($model, $value);
+		$args = func_num_args();
+		
+		if ($args === 1)
+		{
+			$initial = $model->initial($this->name);
+		}
+		
+		if ($args < 3)
+		{
+			$current = $model->get($this->name);
+		}
+		
+		return $current !== $initial;
+	}
+	
+	/**
+	 * Called just after validating, giving the field a chance
+	 * to perform any other callbacks on the model.
+	 * 
+	 * The field can add errors to the validation object if needed
+	 * as well as modify values on it. Any changes made to the 
+	 * validator will be reintegrated into the mode if it is still valid.
+	 * 
+	 *     if ($context === Jelly::UPDATE)
+	 *     {
+	 *         $validator[$this->name] = 'foo';
+	 *     }
+	 *
+	 * @param   Jelly_Model  $model
+	 * @param   Validate     The validator in use
+	 * @param   int|string   The current context
+	 * @return  void
+	 */
+	public function validate($model, $validator, $context)
+	{
+		return;
 	}
 	
 	/**
 	 * Called just before saving, giving the field a chance
 	 * to modify the value before it's saved.
+	 * 
+	 * Values that are returned here represent what is inserted
+	 * into the database. They will not necessarily be put
+	 * back into the model unless you manually do it with
+	 * 
+	 *     $model->set($this->name, $new_value);
 	 *
 	 * @param   Jelly_Model  $model
 	 * @param   mixed        $value
 	 * @return  mixed
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $context)
 	{
-		return $this->value($model, $value);
+		return $value;
 	}
 	
 	/**

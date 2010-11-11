@@ -53,6 +53,11 @@ abstract class Jelly_Core_Meta
 	 * @var  string  The model this meta object belongs to
 	 */
 	public $model;
+	
+	/**
+	 * @var  string  The class name of the model
+	 */
+	public $class;
 
 	/**
 	 * @var  string  The table this model represents, defaults to the model name pluralized
@@ -152,6 +157,7 @@ abstract class Jelly_Core_Meta
 	public function __construct($model)
 	{
 		$this->model = $model;
+		$this->class = strtolower(Jelly::$model_prefix.$model);
 	}
 	
 	/**

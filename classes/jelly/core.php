@@ -8,6 +8,11 @@
  */
 abstract class Jelly_Core
 {	
+	const SELECT = 1;
+	const INSERT = 2;
+	const UPDATE = 3;
+	const DELETE = 4;
+	
 	/**
 	 * @var  string  The prefix to use for all model's class names
 	 */

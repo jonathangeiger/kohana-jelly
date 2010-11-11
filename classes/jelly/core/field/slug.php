@@ -1,9 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Handles "slugs".
- *
- * Slugs are automatically converted.
+ * Handles "slugs", typically used in URLs and other identifiers. 
  *
  * A valid slug consists of lowercase alphanumeric characters, plus
  * underscores, dashes, and forward slashes.
@@ -13,21 +11,32 @@
 abstract class Jelly_Core_Field_Slug extends Jelly_Field_String
 {
 	/**
-	 * @see Jelly_Field::value
+	 * @var  string  An array of regexps passed to preg_replace
 	 */
-	public function value($model, $value)
+	public $replace = array(
+		// Replace everything but dashes and alphanumeric characters with a dash
+		array('/[^a-zA-Z0-9-]/', '-'),
+		// Strip multiple dashes
+		array('/-{2,}/', ''),
+	);
+	
+	/**
+	 * Automatically converts the value to a slug.
+	 * 
+	 * @return   string
+	 */
+	public function set($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		
 		if ( ! $return)
 		{
-			// Only allow dashes, and lowercase letters
-			$value = preg_replace('/[^a-z0-9-]/', '-', strtolower($value));
+			foreach ($this->replace as $regexp)
+			{
+				$value = preg_replace($regexp[0], $regexp[1], $value);
+			}
 
-			// Strip multiple dashes
-			$value = preg_replace('/-{2,}/', '-', $value);
-
-			// Trim an ending or starting dashes
+			// Trim any ending or starting dashes
 			$value = trim($value, '-');
 		}
 

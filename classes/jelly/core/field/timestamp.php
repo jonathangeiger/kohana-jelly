@@ -55,9 +55,11 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	}
 
 	/**
-	 * @see Jelly_Field::value
+	 * Tries to convert the incoming timestamp to a valid UNIX timestamp.
+	 * 
+	 * @return  int
 	 */
-	public function value($model, $value)
+	public function set($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		
@@ -77,26 +79,28 @@ abstract class Jelly_Core_Field_Timestamp extends Jelly_Field
 	}
 
 	/**
-	 * Automatically creates or updates the time and
-	 * converts it, if necessary
-	 *
-	 * @param   Jelly  $model
-	 * @param   mixed  $value
-	 * @return  mixed
+	 * Automatically creates or updates the time on validation.
+	 * 
+	 * @return  int
 	 */
-	public function save($model, $value)
+	public function validate($model, $validator, $context)
 	{
-		if ($this->auto_now OR ($this->auto_now_insert AND ! $model->id()))
+		if ($this->auto_now OR ($this->auto_now_insert AND ! $context === Jelly::INSERT))
 		{
-			$value = time();
+			$validator[$this->name] = time();
 		}
-
+	}
+	
+	/**
+	 * Converts the timestamp back to its native format, if necessary.
+	 * 
+	 * @return   mixed
+	 */
+	public function save($model, $value, $context)
+	{
 		if ($this->format)
 		{
-			if ( ! is_numeric($value) AND FALSE !== strtotime($value))
-			{
-				$value = strtotime($value);
-			}
+			$value = $this->set($model, $value);
 
 			if (is_numeric($value))
 			{

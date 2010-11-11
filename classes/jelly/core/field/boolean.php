@@ -33,7 +33,7 @@ abstract class Jelly_Core_Field_Boolean extends Jelly_Field
 	 * @param   mixed  $value
 	 * @return  void
 	 */
-	public function value($model, $value)
+	public function set($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		
@@ -53,7 +53,7 @@ abstract class Jelly_Core_Field_Boolean extends Jelly_Field
 	 * @param   boolean      $loaded
 	 * @return  mixed
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $context)
 	{
 		return ($this->value($model, $value)) ? $this->true : $this->false;
 	}

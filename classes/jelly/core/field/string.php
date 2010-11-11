@@ -22,9 +22,11 @@ abstract class Jelly_Core_Field_String extends Jelly_Field
 	public $allow_null = FALSE;
 	
 	/**
-	 * @see Jelly_Field::value
+	 * Casts all values to strings.
+	 * 
+	 * @return  string
 	 */
-	public function value($model, $value)
+	public function set($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		

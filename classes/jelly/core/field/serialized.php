@@ -12,7 +12,9 @@
 abstract class Jelly_Core_Field_Serialized extends Jelly_Field
 {
 	/**
-	 * @see Jelly_Field::value
+	 * Attempts unserialization when set
+	 * 
+	 * @return  mixed
 	 */
 	public function value($model, $value)
 	{
@@ -30,9 +32,11 @@ abstract class Jelly_Core_Field_Serialized extends Jelly_Field
 	}
 
 	/**
-	 * @see Jelly_Field::save
+	 * Returns the serialized value, prepped for saving
+	 * 
+	 * @return string
 	 */
-	public function save($model, $value)
+	public function save($model, $value, $context)
 	{
 		if ($this->allow_null AND $value === NULL)
 		{

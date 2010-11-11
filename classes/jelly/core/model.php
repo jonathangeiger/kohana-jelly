@@ -16,12 +16,10 @@ abstract class Jelly_Core_Model
 	/**
 	 * @var  array  The initial data set on the object
 	 */
-	protected $_initial = array();
-
-	/**
-	 * @var  array  The current state of the data on the object
-	 */
-	protected $_current = array();
+	protected $_data = array(
+		'initial' => array(),
+		'current' => array(),
+	);
 	
 	/**
 	 * @var  array  Tracks potentially changed fields (not in use yet)
@@ -146,7 +144,7 @@ abstract class Jelly_Core_Model
 	{
 		if ($field = $this->meta()->field($name))
 		{
-			$this->_current[$field->name] = $field->default;
+			$this->_data['current'][$field->name] = $field->default;
 		}
 	}
 	
@@ -308,8 +306,8 @@ abstract class Jelly_Core_Model
 			{
 				if ($field = $meta->field($name))
 				{
-					$initial = $this->_initial[$field->name];
-					$current = $this->_current[$field->name];
+					$initial = $this->_data['initial'][$field->name];
+					$current = $this->_data['current'][$field->name];
 					
 					if ($field->changed($this, $initial, $current))
 					{
@@ -340,7 +338,7 @@ abstract class Jelly_Core_Model
 		{
 			if ($field = $meta->field($name))
 			{
-				$this->_current[$field->name] = $this->_initial[$field->name];
+				$this->_data['current'][$field->name] = $this->_data['initial'][$field->name];
 			}
 		}
 		
@@ -362,13 +360,15 @@ abstract class Jelly_Core_Model
 		$this->_set($values, TRUE);
 		
 		// Changed data should now be in sync with original data
-		$this->_current = $this->_initial;
+		$this->_data['current'] = $this->_data['initial'];
 		
 		// Context has changed, since we assume we're loaded
 		if ($this->id())
 		{
 			$this->_loaded = TRUE;
 		}
+		
+		return $this;
 	}
 	
 	/**
@@ -382,12 +382,13 @@ abstract class Jelly_Core_Model
 		$context = $this->_context($context);
 		
 		if (empty($this->_valid[$context]))
-		{
-			$validator = $this->_validator($context);
+		{	
+			$validator = $this->validator($context);
+			$meta      = $this->meta();
 			
 			$this->_trigger('model.before_validate', array($validator));
 			
-			if ($validator->check())
+			if ($validator->check(TRUE))
 			{
 				// We have these callbacks here so fields can do amazing things
 				// without having to attach themselves to the validator
@@ -408,6 +409,10 @@ abstract class Jelly_Core_Model
 					// have been filtered or otherwise altered
 					$this->set($validator->as_array());
 				}
+			}
+			else
+			{				
+				$this->_valid[$context] = FALSE;
 			}
 			
 			$this->_trigger('model.after_validate', array($validator));
@@ -453,7 +458,7 @@ abstract class Jelly_Core_Model
 	{
 		$context = $this->_context($context);
 		
-		if (empty($this->_validator))
+		if (empty($this->_validators[$context]))
 		{
 			$meta = $this->meta();
 			
@@ -488,134 +493,97 @@ abstract class Jelly_Core_Model
 				}
 			}
 			
-			$this->_validator[$context] = $validator;
+			$this->_validators[$context] = $validator;
 		}
 		
-		return $this->_validator[$context];
+		return $this->_validators[$context];
 	}
 	
 	/**
-	 * Inserts the current record.
+	 * Saves the current model.
+	 * 
+	 * If the model is not loaded() an INSERT will be performed.
+	 * Otherwise, an UPDATE will be performed.
+	 * 
+	 * Validation is implicitly performed unless $save is set to FALSE.
+	 * If the validation fails a Validate_Exception will be thrown.
 	 *
 	 * @return  $this
 	 **/
-	public function insert()
+	public function save($validate = TRUE)
 	{
-		if ($this->_loaded)
-		{
-			throw new Jelly_Exception('Cannot insert unloaded model :model',
-				array(':model' => $this->__tostring()));
-		}
+		$context = $this->_context();
 		
-		if ( ! $this->validate('insert'))
+		if ($validate === TRUE AND ! $this->validate($context))
 		{
-			throw new Validate_Exception($this->validator('insert'));
+			throw new Validate_Exception($this->validator($context));
 		}
 
 		$meta   = $this->meta();
 		$values = $saveable = array();
 		
-		if (FALSE === $this->_trigger('model.before_insert'))
+		if (FALSE === $this->_trigger('model.before_save', array($context)))
 		{
 			return $this;
 		}
 
-		// Iterate through all fields in original in case any unchanged fields
-		// have save() behavior like timestamp updating...
-		foreach ($this->_current as $column => $value)
+		foreach ($this->_data['current'] as $column => $value)
 		{
 			$field = $meta->field($column);
 
 			if ($field->primary AND $value === NULL)
 			{
+				// Auto primary keys should not be added to the values
+				// as some databases (SQLite) will take the NULL literally
 				continue;
 			}
 			else if ($field->in_db)
 			{
-				$values[$field->name] = $field->save($this, $value);
+				$values[$field->name] = $field->save($this, $value, $context);
 			}
 			else
 			{
 				$saveable[$field->name] = $value;
 			}
 		}
-
-		list($id) = Jelly::query($meta->model)
-		                 ->set($values)
-		                 ->insert();
-
-		$this->load_values(array($meta->primary_key => $id) + $values + $saveable);
-
-		foreach ($saveable as $field => $value)
-		{
-			$meta->field($field)->save($this, $value);
-		}
 		
-		$this->_trigger('model.after_insert');
-
-		return $this;
-	}
+		$id = $this->id();
 	
-	/**
-	 * Updates the current record.
-	 *
-	 * @return  $this
-	 **/
-	public function update()
-	{
-		if ( ! $this->_loaded)
+		if ($context === Jelly::INSERT)
 		{
-			throw new Jelly_Exception('Cannot update unloaded model :model',
-				array(':model' => $this->__tostring()));
-		}
-		
-		if ( ! $this->validate('update'))
-		{
-			throw new Validate_Exception($this->_validator);
-		}
-		
-		$meta   = $this->meta();
-		$values = $saveable = array();
-		
-		if (FALSE === $this->_trigger('model.before_update'))
-		{
-			return $this;
-		}
-		
-		// Iterate through all fields in original in case any unchanged fields
-		// have save() behavior like timestamp updating...
-		foreach ($this->_current as $column => $value)
-		{
-			$field = $meta->field($column);
+			list($id) = Jelly::query($meta->model)
+			                 ->set($values)
+			                 ->insert();
 			
-			if ($field->in_db)
-			{
-				$initial = $this->_initial[$field->name];
-				$value   = $field->save($this, $value);
-				
-				if ($field->changed($this, $initial, $value))
-				{
-					$values[$field->name] = $value;
-				}
-			}
-			else
-			{
-				$saveable[$field->name] = $value;
-			}
+			// Re-integrate the new primary key
+			$this->set(array($meta->primary_key => $id));
+		}
+		else
+		{
+			Jelly::query($meta->model, $this->id())
+				 ->set($values)
+				 ->update();
+		}
+		
+		// Data is now initial
+		$this->_data['initial'] = $this->_data['current'];
+		
+		// Hopefully we're now loaded, check that
+		if ($this->id())
+		{
+			$this->_loaded = TRUE;
 		}
 
-		Jelly::query($meta->model, $this->id())
-			 ->set($values)
-			 ->update();
-
-		$this->load_values($values + $saveable);
-
+		// Reset validation arrays so that if fields 
+		// are changed on this model they can be re-validated.
+		$this->_validators = $this->_valid = $this->_changed = array();
+		
 		foreach ($saveable as $field => $value)
 		{
-			$meta->field($field)->save($this, $value);
+			$meta->field($field)->save($this, $value, $context);
 		}
 		
-		$this->_trigger('model.after_update');
+		$this->_trigger('model.after_save', array($context));
 
 		return $this;
 	}
@@ -665,8 +633,8 @@ abstract class Jelly_Core_Model
 		$this->_loaded =
 		$this->_load_data = FALSE;
 		
-		$this->_current = 
-		$this->_initial = $this->meta()->defaults;
+		$this->_data['current'] = 
+		$this->_data['initial'] = $this->meta()->defaults;
 		
 		$this->_changed =
 		$this->_valid =
@@ -683,6 +651,16 @@ abstract class Jelly_Core_Model
 	public function id()
 	{
 		return $this->get($this->meta()->primary_key);
+	}
+	
+	/**
+	 * Returns whether or not the model is loaded.
+	 *
+	 * @return  boolean
+	 */
+	public function loaded()
+	{
+		return $this->_loaded;
 	}
 	
 	/**
@@ -712,11 +690,11 @@ abstract class Jelly_Core_Model
 			{
 				if ($initial)
 				{
-					$this->_initial[$field->name] = $field->set($this, $value);
+					$this->_data['initial'][$field->name] = $field->set($this, $value);
 				}
 				else
 				{
-					$this->_current[$field->name] = $field->set($this, $value);
+					$this->_data['current'][$field->name] = $field->set($this, $value);
 				}
 			}
 			else
@@ -748,11 +726,11 @@ abstract class Jelly_Core_Model
 			{
 				if ($initial)
 				{
-					$value = $this->_initial[$field->name] = $field->get($this->_initial[$field->name]);
+					$value = $this->_data['initial'][$field->name] = $field->get($this->_data['initial'][$field->name]);
 				}
 				else
 				{
-					$value = $this->_current[$field->name] = $field->get($this, $this->_current[$field->name]);
+					$value = $this->_data['current'][$field->name] = $field->get($this, $this->_data['current'][$field->name]);
 				}
 			}
 			else if (isset($this->_data[$key]))
@@ -773,11 +751,11 @@ abstract class Jelly_Core_Model
 	 * @param   string  $context
 	 * @return  string
 	 */
-	protected function _context($context)
+	protected function _context($context = NULL)
 	{
 		if ($context === NULL)
 		{
-			$context = $this->_loaded ? 'update' : 'insert';
+			$context = $this->_loaded ? Jelly::UPDATE : Jelly::INSERT;
 		}
 		
 		return $context;

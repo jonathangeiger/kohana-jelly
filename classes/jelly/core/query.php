@@ -126,6 +126,17 @@ class Jelly_Core_Query extends Kohana_Database_Query_Builder_Where
 	 */
 	public function select()
 	{
+		$model = NULL;
+		
+		if ($model === NULL AND $this->meta())
+		{
+			$model = $this->meta()->model;
+		}
+		
+		// Some DB drivers will convert NULL as_objects to a stdClass
+		// while others will convert it to an array. When $as_object
+		// is NULL, we want the result to return an array and let
+		// Jelly_Collection load that array into a model.
 		$as_object = $this->_as_object;
 		
 		if ($as_object === NULL)
@@ -133,7 +144,7 @@ class Jelly_Core_Query extends Kohana_Database_Query_Builder_Where
 			$this->_as_object = FALSE;
 		}
 		
-		$result = $this->execute($this->_db);
+		$result = new Jelly_Collection($model, $as_object, $this->execute($this->db()));
 		
 		if ($as_object === NULL)
 		{
@@ -158,7 +169,7 @@ class Jelly_Core_Query extends Kohana_Database_Query_Builder_Where
 			$this->set($data);
 		}
 		
-		return $this->_build(Database::INSERT)->execute($this->_db);
+		return $this->_build(Database::INSERT)->execute($this->db());
 	}
 	
 	/**
@@ -174,7 +185,7 @@ class Jelly_Core_Query extends Kohana_Database_Query_Builder_Where
 			$this->set($data);
 		}
 		
-		return $this->_build(Database::UPDATE)->execute($this->_db);
+		return $this->_build(Database::UPDATE)->execute($this->db());
 	}
 	
 	/**
@@ -184,7 +195,7 @@ class Jelly_Core_Query extends Kohana_Database_Query_Builder_Where
 	 */
 	public function delete()
 	{
-		return $this->_build(Database::DELETE)->execute($this->_db);
+		return $this->_build(Database::DELETE)->execute($this->db());
 	}
 	
 	/**
@@ -208,7 +219,7 @@ class Jelly_Core_Query extends Kohana_Database_Query_Builder_Where
 	 	return (int) $query
 		               ->column(array('COUNT("*")', 'total'))
 		               ->as_object(FALSE)
-		               ->execute($this->_db)
+		               ->execute($this->db())
 		               ->get('total');
 	}
 
@@ -222,7 +233,7 @@ class Jelly_Core_Query extends Kohana_Database_Query_Builder_Where
 	 */
 	public function compile(Database $db = NULL, $type = NULL)
 	{
-		$db = Database::instance($this->_db);
+		$db = Database::instance($this->db());
 		
 		// If we're not doing a SELECT, we can pass it off to the Database lib
 		if ($this->type() !== Database::SELECT)

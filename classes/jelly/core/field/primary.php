@@ -27,7 +27,7 @@ abstract class Jelly_Core_Field_Primary extends Jelly_Field
 	/**
 	 * @see Jelly_Field::value
 	 */
-	public function value($model, $value)
+	public function set($model, $value)
 	{
 		list($value, $return) = $this->_default($value);
 		

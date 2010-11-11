@@ -18,17 +18,17 @@ abstract class Jelly_Core_Field_Password extends Jelly_Field_String
 	public $hash_with = 'sha1';
 
 	/**
-	 * Hashes the password only if it's changed
-	 *
-	 * @param   Jelly_Validator  $validate 
-	 * @param   Jelly_Model      $model 
-	 * @return  void
+	 * Hashes the password only if it's changed.
+	 * 
+	 * @return  string
 	 */
-	public function save($model, $value)
+	public function validate($model, $validator, $context)
 	{
-		if ($this->hash_with)
+		if ($this->changed($model) AND $this->hash_with)
 		{
 			return call_user_func($this->hash_with, $value);
 		}
+		
+		return $value;
 	}
 }

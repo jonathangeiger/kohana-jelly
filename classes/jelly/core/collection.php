@@ -1,14 +1,14 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Jelly_Collection encapsulates a Database_Result object. It has the exact same API.
+ * Jelly_Collection encapsulates a Database_Result object.
  *
- * It offers a few special features that make it useful:
- *
- *  * Only one model is instantiated for the whole result set, which
- *    is significantly faster in terms of performance.
- *  * It is easily extensible, so things like polymorphism and
- *    recursive result sets can be easily implemented.
+ * It offers a few special features that make it useful,
+ * specifically the ability to add and remove models from the
+ * result set.
+ * 
+ * The interface of Jelly_Collection is usually encapsulated
+ * by Jelly_Manager.
  *
  * Jelly_Collection likes to know what model its result set is related to,
  * though it's not required. Some features may disappear, however, if
@@ -16,40 +16,59 @@
  *
  * @package  Jelly
  */
-abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIterator, ArrayAccess
-{
-	/**
-	 * @var  Jelly_Meta  The current meta object, based on the model we're returning
-	 */
-	protected $_meta = NULL;
-	
-	/**
-	 * @var  Jelly_Model  The current class we're placing results into
-	 */
-	protected $_model = NULL;
-
+abstract class Jelly_Core_Collection implements Iterator, Countable
+{	
 	/**
 	 * @var  mixed  The current result set
 	 */
 	protected $_result = NULL;
+	
 	/**
-	 * Tracks a database result
+	 * @var  mixed  The model we're working with
+	 */
+	protected $_model = FALSE;
+	
+	/**
+	 * @var  mixed  The type of data we're to return
+	 */
+	protected $_as_object = FALSE;
+	
+	/**
+	 * @var  Jelly_Model  The current row 
+	 */
+	protected $_current = NULL;
+	
+	/**
+	 * @var  mixed  An index that is created while iterating
+	 */
+	protected $_index = array();
+	
+	/**
+	 * @var  array  The original index of keys, before addition or removals
+	 */
+	protected $_original = array();
+	
+	/**
+	 * Constructor.
 	 *
 	 * @param  mixed  $model
+	 * @param  mixed  $as_object
 	 * @param  mixed  $result
 	 */
-	public function __construct($result, $as_object = NULL)
+	public function __construct($model, $as_object = NULL, $result = array())
 	{
-		$this->_result = $result;
+		$this->_model     = $model;
+		$this->_as_object = $as_object;
+		$this->_result    = $result;
+		$this->_meta      = Jelly::meta($model);
 		
-		// Load our default model
-		if ($as_object AND Jelly::meta($as_object))
+		if ( ! $this->_meta)
 		{
-			$this->_model = ($as_object instanceof Jelly_Model) ? $as_object : new $as_object;
-			$this->_meta  = $this->_model->meta();
+			$this->_model = NULL;
+			$this->_meta  = NULL;
 		}
 	}
-
+	
 	/**
 	 * Converts MySQL Results to Cached Results, since MySQL resources are not serializable.
 	 *
@@ -57,9 +76,16 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 */
 	public function __sleep()
 	{
-		if ( ! $this->_result instanceof Database_Result_Cached)
+		if (is_object($this->_result) AND ! $this->_result instanceof Database_Result_Cached)
 		{
-			$this->_result = new Database_Result_Cached($this->_result->as_array(), '');
+			if ($this->_indexable())
+			{
+				$this->_index();
+			}
+			else
+			{
+				$this->_result = $this->cached();
+			}
 		}
 
 		return array_keys(get_object_vars($this));
@@ -70,40 +96,116 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 *
 	 * @return  string
 	 */
-	public function __toString()
+	public function __tostring()
 	{
-		return get_class($this).': '.Jelly::model_name($this->_model).' ('.$this->count().')';
+		if ($this->_model)
+		{
+			return get_class($this).': '.$this->meta()->class.' ('.$this->ids().')';
+		}
+		else
+		{
+			return get_class($this).'('.$this->count().')';
+		}
 	}
 	
 	/**
-	 * Returns the collection's meta object, if it exists.
+	 * Adds a model or models to the result set.
 	 *
-	 * @return  Jelly_Meta
+	 * @param   mixed  $models 
+	 * @return  $this
 	 */
-	public function meta()
+	public function add($models)
 	{
-		return $this->_meta;
+		$this->_index();
+		
+		if ( ! $models instanceof Traversable AND ! is_array($models))
+		{
+			$models = array($models);
+		}
+		
+		foreach ($models as $model)
+		{
+			if ($id = $this->_id($model))
+			{
+				$this->_result[$id] = $model;
+			}
+		}
+		
+		return $this;
 	}
-
+	
 	/**
-	 * Return all of the rows in the result as an array.
+	 * Removes a model or models from the result set.
+	 * 
+	 * Currently, only loaded models can be removed.
 	 *
-	 * @param   string  column for associative keys
-	 * @param   string  column for values
-	 * @return  array
+	 * @param   mixed  $models 
+	 * @return  $this
 	 */
-	public function as_array($key = NULL, $value = NULL)
+	public function remove($models)
 	{
-		return $this->_result->as_array($key, $value);
+		$this->_index();
+		
+		if ( ! $models instanceof Traversable AND ! is_array($models))
+		{
+			$models = array($models);
+		}
+		
+		foreach ($models as $model)
+		{
+			if ($id = $this->_id($model))
+			{
+				unset($this->_result[$id]);
+			}
+		}
+		
+		return $this;
 	}
-
+	
+	/**
+	 * Returns whether or not the set contains all of the models passed.
+	 * 
+	 * @param   mixed  $models 
+	 */
+	public function contains($models)
+	{
+		$this->_index();
+		
+		if ( ! $models instanceof Traversable AND ! is_array($models))
+		{
+			$models = array($models);
+		}
+		
+		foreach ($models as $model)
+		{
+			if ($id = $this->_id($model))
+			{
+				if (empty($this->_result[$id]))
+				{
+					return FALSE;
+				}
+			}
+		}
+		
+		return TRUE;
+	}
+	
+	/**
+	 * Implementation of the Countable interface
+	 * @return  int
+	 */
+	public function count()
+	{
+		return $this->_indexed() ? count($this->_result) : $this->_result->count();
+	}
+	
 	/**
 	 * Implementation of the Iterator interface
 	 * @return  $this
 	 */
 	public function rewind()
 	{
-		$this->_result->rewind();
+		$this->_indexed() ? reset($this->_result) : $this->_result->rewind();
 		return $this;
 	}
 
@@ -113,18 +215,34 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 */
     public function current()
 	{
-		// Database_Result causes errors if you call current()
-		// on an object with no results, so we check first.
-		if ($this->_result->count())
+		$current = NULL;
+		
+		if ($this->_indexed())
 		{
-			$result = $this->_result->current();
+			$current = current($this->_result);
 		}
 		else
 		{
-			$result = array();
+			$current = $this->_result->current();
 		}
-
-		return $this->_load($result);
+		
+		$this->_current = $this->_load($current);
+		
+		if ($this->_indexable() AND ($id = $this->_id($this->_current)))
+		{
+			if ( ! $this->_indexed())
+			{
+				// We're still indexing, so we save it to the index
+				// to avoid overwriting the result.
+				$this->_index[$id] = $this->_current;
+			}
+			else
+			{
+				$this->_result[$id] = $this->_current;
+			}
+		}
+		
+		return $this->_current;
 	}
 
 	/**
@@ -133,7 +251,7 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 */
 	public function key()
 	{
-		return $this->_result->key();
+		return $this->_indexed() ? key($this->_result) : $this->_result->key();
 	}
 
 	/**
@@ -142,7 +260,7 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 */
 	public function next()
 	{
-		$this->_result->next();
+		$this->_indexed() ? next($this->_result) : $this->_result->next();
 		return $this;
 	}
 
@@ -151,84 +269,155 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	 * @return  boolean
 	 */
 	public function valid()
-	{
-		return $this->_result->valid();;
+	{	
+		if ($this->_indexed())
+		{
+			if (key($this->_result) !== NULL)
+			{
+				return TRUE;
+			}
+		}
+		else if ($this->_result->valid())
+		{
+			return TRUE;
+		}
+		
+		return FALSE;
 	}
-
+	
 	/**
-	 * Implementation of the Countable interface
-	 * @return  boolean
+	 * Returns the meta object this is working with.
+	 * 
+	 * @return  Jelly_Meta
 	 */
-	public function count()
-	{
-		return $this->_result->count();;
+	public function meta()
+	{	
+		return $this->_meta;
 	}
 
 	/**
-	 * Implementation of SeekableIterator
+	 * Creates the index of results.
 	 *
-	 * @param   mixed  $offset
-	 * @return  boolean
+	 * @param   mixed  $data 
+	 * @return  $this
 	 */
-	public function seek($offset)
+	protected function _index()
 	{
-		return $this->_result->seek($offset);
+		if ( ! $this->_indexable())
+		{
+			throw new Kohana_Exception('Cannot index :model', array(':model' => $this->meta()->model));
+		}
+		
+		if ( ! $this->_indexed())
+		{
+			$this->_result = $this->_original = $this->_result->as_array($this->meta()->primary_key);
+		}
 	}
-
+	
 	/**
-	 * ArrayAccess: offsetExists
+	 * Checks if we've indexed the result by other means
+	 * and swaps them around if possible.
+	 * 
+	 * @return void
 	 */
-	public function offsetExists($offset)
+	protected function _indexed()
 	{
-		return $this->_result->offsetExists($offset);
+		if ($this->_result instanceof Traversable)
+		{
+			if (count($this->_index) === $this->_result->count())
+			{
+				// We've already indexed by iterating, just copy it on over
+				$this->_result = $this->_original = $this->_index;
+				
+				// If we don't set the point to the end of the 
+				// array here it will be set at the beginning
+				// If we're iterating when this happens we'll go over
+				// the results again!
+				end($this->_result);
+				return TRUE;
+			}
+			
+			return FALSE;
+		}
+		
+		return TRUE;
 	}
-
+	
 	/**
-	 * ArrayAccess: offsetGet
+	 * Checks if the result is indexable, based on whether or not
+	 * the model exists.
+	 * 
+	 * @return boolean
 	 */
-	public function offsetGet($offset, $object = TRUE)
+	protected function _indexable()
 	{
-		return $this->_load($this->_result->offsetGet($offset), $object);
+		return (bool) $this->_model;
 	}
-
+	
 	/**
-	 * ArrayAccess: offsetSet
-	 *
-	 * @throws  Kohana_Exception
+	 * Returns the id of the record passed
 	 */
-	final public function offsetSet($offset, $value)
+	protected function _id($model)
 	{
-		throw new Kohana_Exception('Jelly results are read-only');
+		$meta = $this->meta();
+		
+		if (is_string($model) OR is_numeric($model))
+		{
+			// We want to lazy load models as they're retrieved
+			// so we just hold on to (what we assume) to be a primary key
+			return $model;
+		}
+		else if (is_object($model) AND $model instanceof Jelly_Model)
+		{
+			if ($model->loaded())
+			{
+				return $model->id();
+			}
+		}
+		else if (is_array($model) AND Arr::is_assoc($model))
+		{
+			if (isset($model[$meta->primary_key]))
+			{
+				return $model[$meta->primary_key];
+			}
+		}
+		else if (is_object($model) AND $model instanceof StdClass)
+		{
+			if (isset($model->{$meta->primary_key}))
+			{
+				return $model->{$meta->primary_key};
+			}
+		}
+		
+		return FALSE;
 	}
-
-	/**
-	 * ArrayAccess: offsetUnset
-	 *
-	 * @throws  Kohana_Exception
-	 */
-	final public function offsetUnset($offset)
-	{
-		throw new Kohana_Exception('Jelly results are read-only');
-	}
-
+	
 	/**
 	 * Loads values into the model.
 	 *
-	 * @param   array $values
+	 * @param   mixed   The row we're to return
 	 * @return  Jelly_Model|array
 	 */
-	protected function _load($values)
+	protected function _load($row)
 	{
-		if ($this->_model)
+		// If we don't know what we're dealing with 
+		// model-wise we just return the result directly
+		if ( ! $this->_model OR $this->_as_object !== NULL)
 		{
-			$model = clone $this->_model;
-
-			// Don't return models when we don't have one
-			return ($values)
-			        ? $model->load_values($values)
-			        : $model->clear();
+			return $row;
+		}
+		
+		// Assumed to be a known primary key
+		if (is_string($row) OR is_numeric($row))
+		{
+			return Jelly::factory($this->_model, $row);
+		}
+		// Assumed to be an array/object of data from a known model
+		else if (is_array($row) OR is_object($row))
+		{
+			return Jelly::factory($this->_model)->load_values($row);
 		}
 
-		return $values;
+		return $model;
 	}
 }
