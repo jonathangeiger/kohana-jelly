@@ -100,9 +100,9 @@ abstract class Jelly_Core_Meta
 	protected $_field_cache = array();
 	
 	/**
-	 * @var  array  Events attached to this model
+	 * @var  Jelly_Event  Events attached to this model
 	 */
-	protected $_events = array();
+	protected $_events = NULL;
 	
 	/**
 	 * @var  array  Behaviors attached to this model
@@ -118,6 +118,7 @@ abstract class Jelly_Core_Meta
 	 * This is called after initialization to
 	 * finalize any changes to the meta object.
 	 *
+	 * @param   string  model name
 	 * @return  void
 	 */
 	public function finalize($model)
@@ -417,7 +418,6 @@ abstract class Jelly_Core_Meta
 	/**
 	 * Gets the validator attached to the model.
 	 * 
-	 * @param   Jelly_Model $model 
 	 * @param   array       $data 
 	 * @param   boolean     $new 
 	 * @return  Jelly_Validator
@@ -455,7 +455,7 @@ abstract class Jelly_Core_Meta
 	 * Gets or sets the behaviors attached to the object.
 	 * 
 	 * @param   array  $value
-	 * @return  Jelly_Behavior|$this
+	 * @return  array|$this
 	 */
 	public function behaviors($behaviors = NULL)
 	{
@@ -476,7 +476,7 @@ abstract class Jelly_Core_Meta
 	/**
 	 * Gets the events attached to the object.
 	 * 
-	 * @return  Jelly_Behavior|$this
+	 * @return  Jelly_Event
 	 */
 	public function events()
 	{
