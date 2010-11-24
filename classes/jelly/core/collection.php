@@ -29,14 +29,14 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 	protected $_model = NULL;
 
 	/**
-	 * @var  mixed  The current result set
+	 * @var  Database_Result  The current result set
 	 */
 	protected $_result = NULL;
 	/**
 	 * Tracks a database result
 	 *
-	 * @param  mixed  $model
-	 * @param  mixed  $result
+	 * @param  Database_Result  $result
+	 * @param  mixed            $as_object
 	 */
 	public function __construct($result, $as_object = NULL)
 	{
@@ -109,7 +109,7 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 
 	/**
 	 * Implementation of the Iterator interface
-	 * @return  Jelly
+	 * @return  Jelly_Model
 	 */
     public function current()
 	{
@@ -157,7 +157,7 @@ abstract class Jelly_Core_Collection implements Iterator, Countable, SeekableIte
 
 	/**
 	 * Implementation of the Countable interface
-	 * @return  boolean
+	 * @return  integer
 	 */
 	public function count()
 	{
