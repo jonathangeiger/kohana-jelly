@@ -11,7 +11,7 @@
 abstract class Jelly_Core_Event
 {
 	/**
-	 * @var  array  The current model
+	 * @var  string  The current model
 	 */
 	protected $_model = NULL;
 	
