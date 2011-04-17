@@ -411,7 +411,9 @@ abstract class Jelly_Model_Core
 		{
 			$key = $this->_original[$this->_meta->primary_key()];
 		}
-
+        
+		// Apply filters
+		$data = $this->apply_filters($data);
 		// Run validation
 		$data = $this->validate($data);
 
@@ -614,6 +616,33 @@ abstract class Jelly_Model_Core
 	{
 		return $this->_change($name, $models, FALSE);
 	}
+	
+	/**
+	 * 
+	 * Enter description here ...
+	 * @param unknown_type $data
+	 */
+	public function apply_filters(array $data = NULL)
+	{
+	    if (empty($data))
+	    {
+	        return (array) $data;
+	    }
+	    $data = Jelly_Filter::factory((array) $data);
+	    // Loop through all columns, adding filters where data exists
+		foreach ($this->_meta->fields() as $column => $field)
+		{
+			// Do not add any rules for this field
+			if ( ! $data->offsetExists($column))
+			{
+				continue;
+			}
+
+			$data->filters($column, $field->filters);
+		}
+		
+		return $data->execute()->as_array();
+	}
 
 	/**
 	 * Validates the current state of the model.
@@ -630,20 +659,21 @@ abstract class Jelly_Model_Core
 		{
 			$data = $this->_changed;
 		}
+		
 
 		if (empty($data))
 		{
 			return $data;
 		}
+		
+	    // If we are passing a unique key value through, trim this value
+		if (array_key_exists(':unique_key', $data))
+		{
+			$data[':unique_key'] = trim($data[':unique_key']);
+		}
 
 		// Create the validation object
 		$data = Validation::factory($data);
-
-		// If we are passing a unique key value through, add a filter to ensure it isn't removed
-		if ($data->offsetExists(':unique_key'))
-		{
-			$data->filter(':unique_key', 'trim');
-		}
 
 		// Loop through all columns, adding rules where data exists
 		foreach ($this->_meta->fields() as $column => $field)

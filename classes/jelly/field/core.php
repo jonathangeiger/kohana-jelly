@@ -58,7 +58,7 @@ abstract class Jelly_Field_Core
 	public $null = FALSE;
 
 	/**
-	* @var  array  {@link Kohana_Validation} filters for this field.
+	* @var  array  {@link Jelly_Filter} filters for this field.
 	*/
 	public $filters = array();
 
