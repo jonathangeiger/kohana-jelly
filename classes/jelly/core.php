@@ -3,6 +3,8 @@
 /**
  * This core class is the main interface to all
  * models, builders, and meta data.
+ * @package Jelly
+ * @abstract
  */
 abstract class Jelly_Core
 {

@@ -58,23 +58,18 @@ abstract class Jelly_Field_Core
 	public $null = FALSE;
 
 	/**
-	* @var  array  {@link Kohana_Validate} filters for this field.
+	* @var  array  {@link Kohana_Validation} filters for this field.
 	*/
 	public $filters = array();
 
 	/**
-	* @var  array  {@link Kohana_Validate} rules for this field.
+	* @var  array  {@link Kohana_Validation} rules for this field.
 	*/
 	public $rules = array();
 
 	/**
-	* @var  array  {@link Kohana_Validate} callbacks for this field.
-	*/
-	public $callbacks = array();
-
-	/**
 	 * Sets all options
-	 *
+	 * 
 	 * @return  void
 	 **/
 	public function __construct($options = array())
@@ -97,7 +92,7 @@ abstract class Jelly_Field_Core
 		// some callbacks for shortcut properties
 		if ($this->unique === TRUE)
 		{
-			$this->callbacks[] = array($this, '_is_unique');
+		    array_push($this->rules, array(array($this, '_is_unique'), array(':validation', ':field')));
 		}
 	}
 
@@ -226,14 +221,15 @@ abstract class Jelly_Field_Core
 	}
 
 	/**
-	 * Callback for validating that a field is unique.
+	 * Rule's method for validating that a field is unique.
 	 *
-	 * @param   Validate $data
+	 * @param   Validation $data
 	 * @param   string $field
-	 * @return  void
+	 * @return  bool
 	 * @author  Woody Gilk
+	 * @author  Roman Shamritskiy
 	 */
-	public function _is_unique(Validate $data, $field)
+	public function _is_unique(Validation $data, $field)
 	{
 		if ($data[$field])
 		{
@@ -248,7 +244,11 @@ abstract class Jelly_Field_Core
 
 			if ($count->count())
 			{
-				$data->error($field, 'unique');
+				return FALSE;
+			}
+			else
+			{
+			    return TRUE;
 			}
 		}
 	}
