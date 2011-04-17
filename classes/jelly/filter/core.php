@@ -100,7 +100,7 @@ abstract class Jelly_Filter_Core
         if (Kohana::$profiling === TRUE)
         {
             // Start a new benchmark
-            $benchmark = Profiler::start('Validation', __FUNCTION__);
+            $benchmark = Profiler::start('Jelly Filter', __FUNCTION__);
         }
 
         // Import the filters
