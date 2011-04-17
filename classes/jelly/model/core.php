@@ -637,7 +637,7 @@ abstract class Jelly_Model_Core
 		}
 
 		// Create the validation object
-		$data = Validate::factory($data);
+		$data = Jelly_Validation::factory($data);
 
 		// If we are passing a unique key value through, add a filter to ensure it isn't removed
 		if ($data->offsetExists(':unique_key'))
@@ -657,12 +657,13 @@ abstract class Jelly_Model_Core
 			$data->label($column, $field->label);
 			$data->filters($column, $field->filters);
 			$data->rules($column, $field->rules);
-			$data->callbacks($column, $field->callbacks);
+			// TODO Удалить callback в будущем. Использовать rules
+			// $data->callbacks($column, $field->callbacks);
 		}
 
 		if ( ! $data->check())
 		{
-			throw new Validate_Exception($data);
+			throw new Validation_Exception($data);
 		}
 
 		return $data->as_array();
