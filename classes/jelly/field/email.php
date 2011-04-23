@@ -21,6 +21,6 @@ abstract class Jelly_Field_Email extends Field_String
 	{
 		parent::initialize($model, $column);
 
-		$this->rules += array('email' => NULL);
+		$this->rules[] = array('email', array(':value'));
 	}
 }

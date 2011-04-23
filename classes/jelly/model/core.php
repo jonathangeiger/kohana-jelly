@@ -650,7 +650,7 @@ abstract class Jelly_Model_Core
 	 * Only changed data is validated, unless $data is passed.
 	 *
 	 * @param   array  $data
-	 * @throws  Validate_Exception
+	 * @throws  Validation_Exception
 	 * @return  array
 	 */
 	public function validate($data = NULL)
