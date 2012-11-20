@@ -411,9 +411,11 @@ abstract class Jelly_Model_Core
 		{
 			$key = $this->_original[$this->_meta->primary_key()];
 		}
-
+        
+		// Apply filters
+		$data = $this->_apply_filters($data);
 		// Run validation
-		$data = $this->validate($data);
+		$data = $this->_validate($data);
 
 		// These will be processed later
 		$values = $relations = array();
@@ -614,60 +616,8 @@ abstract class Jelly_Model_Core
 	{
 		return $this->_change($name, $models, FALSE);
 	}
-
-	/**
-	 * Validates the current state of the model.
-	 *
-	 * Only changed data is validated, unless $data is passed.
-	 *
-	 * @param   array  $data
-	 * @throws  Validate_Exception
-	 * @return  array
-	 */
-	public function validate($data = NULL)
-	{
-		if ($data === NULL)
-		{
-			$data = $this->_changed;
-		}
-
-		if (empty($data))
-		{
-			return $data;
-		}
-
-		// Create the validation object
-		$data = Validate::factory($data);
-
-		// If we are passing a unique key value through, add a filter to ensure it isn't removed
-		if ($data->offsetExists(':unique_key'))
-		{
-			$data->filter(':unique_key', 'trim');
-		}
-
-		// Loop through all columns, adding rules where data exists
-		foreach ($this->_meta->fields() as $column => $field)
-		{
-			// Do not add any rules for this field
-			if ( ! $data->offsetExists($column))
-			{
-				continue;
-			}
-
-			$data->label($column, $field->label);
-			$data->filters($column, $field->filters);
-			$data->rules($column, $field->rules);
-			$data->callbacks($column, $field->callbacks);
-		}
-
-		if ( ! $data->check())
-		{
-			throw new Validate_Exception($data);
-		}
-
-		return $data->as_array();
-	}
-
+	
+	
 	/**
 	 * Returns a view object that represents the field.
 	 *
@@ -851,4 +801,84 @@ abstract class Jelly_Model_Core
 
 		return $ids;
 	}
+	
+	/**
+	 * 
+	 * Enter description here ...
+	 * @param unknown_type $data
+	 */
+	protected function _apply_filters(array $data = NULL)
+	{
+	    if (empty($data))
+	    {
+	        return (array) $data;
+	    }
+	    $data = Jelly_Filter::factory((array) $data);
+	    // Loop through all columns, adding filters where data exists
+		foreach ($this->_meta->fields() as $column => $field)
+		{
+			// Do not add any rules for this field
+			if ( ! $data->offsetExists($column))
+			{
+				continue;
+			}
+
+			$data->filters($column, $field->filters);
+		}
+		
+		return $data->execute()->as_array();
+	}
+
+	/**
+	 * Validates the current state of the model.
+	 *
+	 * Only changed data is validated, unless $data is passed.
+	 *
+	 * @param   array  $data
+	 * @throws  Validation_Exception
+	 * @return  array
+	 */
+	protected function _validate($data = NULL)
+	{
+		if ($data === NULL)
+		{
+			$data = $this->_changed;
+		}
+		
+
+		if (empty($data))
+		{
+			return $data;
+		}
+		
+	    // If we are passing a unique key value through, trim this value
+		if (array_key_exists(':unique_key', $data))
+		{
+			$data[':unique_key'] = trim($data[':unique_key']);
+		}
+
+		// Create the validation object
+		$data = Validation::factory($data);
+
+		// Loop through all columns, adding rules where data exists
+		foreach ($this->_meta->fields() as $column => $field)
+		{
+			// Do not add any rules for this field
+			if ( ! $data->offsetExists($column))
+			{
+				continue;
+			}
+
+			$data->label($column, $field->label);
+			$data->rules($column, $field->rules);
+		}
+
+		if ( ! $data->check())
+		{
+			throw new Validation_Exception($data);
+		}
+
+		return $data->as_array();
+	}
+	
 }

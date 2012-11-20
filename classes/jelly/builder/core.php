@@ -85,7 +85,7 @@ abstract class Jelly_Builder_Core extends Kohana_Database_Query_Builder_Select
 	 * Builds the builder into a native query
 	 *
 	 * @param   string  $type
-	 * @return  void
+	 * @return  Jelly_Collection
 	 */
 	public function execute($db = 'default')
 	{
