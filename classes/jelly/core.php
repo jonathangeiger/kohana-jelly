@@ -42,7 +42,7 @@ abstract class Jelly_Core
 	 *
 	 * @param   mixed  $model
 	 * @param   mixed  $key
-	 * @return  Jelly
+	 * @return  Jelly_Model
 	 */
 	public static function factory($model, $key = NULL)
 	{
