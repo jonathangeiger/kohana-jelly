@@ -7,7 +7,7 @@
  * @see     Jelly_Model::validate
  * @package Jelly
  */
-abstract class Jelly_Core_Validator extends Validate
+abstract class Jelly_Core_Validator extends Validation
 {
 	/**
 	 * @var  array  Validators added to the array
@@ -221,7 +221,7 @@ abstract class Jelly_Core_Validator extends Validate
 					if ( ! isset($this->_required[TRUE]) AND ! isset($this->_required[$field]))
 					{
 						// It's not required, so if it's empty we skip all rules
-						if ( ! Validate::not_empty($this[$field]))
+						if ( ! Valid::not_empty($this[$field]))
 						{
 							continue;
 						}
